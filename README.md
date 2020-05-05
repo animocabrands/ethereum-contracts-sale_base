@@ -50,7 +50,7 @@ module.exports = config;
 
 #### Solidity Contracts
 
-Import dependency contracts into your Solidity contracts as needed:
+Import dependency contracts into your Solidity contracts and derive as needed:
 
 ```solidity
 import "@animoca/ethereum-contracts-sale_base/contracts/{{Contract Group}}/{{Contract}}.sol"
