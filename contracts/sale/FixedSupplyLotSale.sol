@@ -11,10 +11,7 @@ import "../payment/KyberAdapter.sol";
 abstract contract FixedSupplyLotSale is Pausable, KyberAdapter, PayoutWallet {
     using SafeMath for uint256;
 
-    // a Lot is a class of purchasable sale items. in the case of CDH, each chest
-    // of a given 'star' rarity tier is a different Lot. the Lot items are token
-    // bundles comprising of a single 'card' NFT (of the appropriate 'star' rarity
-    // tier) and a number of fungible 'gem' tokens.
+    // a Lot is a class of purchasable sale items.
     struct Lot {
         bool exists; // state flag to indicate that the Lot item exists.
         uint256[] nonFungibleSupply; // supply of non-fungible tokens for sale.
@@ -468,7 +465,7 @@ abstract contract FixedSupplyLotSale is Pausable, KyberAdapter, PayoutWallet {
     }
 
     /**
-     * @dev Purchases a quantity of Lot items for the given Lot id.
+     * @dev Defines the purchase lifecycle sequence to execute when handling a purchase.
      * @dev Overridable.
      * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
      */
