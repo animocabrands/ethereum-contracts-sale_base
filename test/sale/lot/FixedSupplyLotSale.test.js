@@ -187,7 +187,7 @@ contract('FixedSupplyLotSale', function ([
         });
 
         it('should revert if set with the current payout wallet', async function () {
-            const currentPayoutWallet = await this.sale._payoutWallet();
+            const currentPayoutWallet = await this.sale.payoutWallet();
             await expectRevert.unspecified(
                 this.sale.setPayoutWallet(
                     currentPayoutWallet,
@@ -195,12 +195,12 @@ contract('FixedSupplyLotSale', function ([
         });
 
         it('should set the payout wallet', async function () {
-            const beforePayoutWallet = await this.sale._payoutWallet();
+            const beforePayoutWallet = await this.sale.payoutWallet();
             beforePayoutWallet.should.not.be.equal(newPayoutWallet);
 
             await this.sale.setPayoutWallet(newPayoutWallet, { from: owner });
 
-            const afterPayoutWallet = await this.sale._payoutWallet();
+            const afterPayoutWallet = await this.sale.payoutWallet();
             afterPayoutWallet.should.be.equal(newPayoutWallet);
         });
     });
