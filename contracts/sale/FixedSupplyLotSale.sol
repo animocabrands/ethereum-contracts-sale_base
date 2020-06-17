@@ -1,4 +1,6 @@
-pragma solidity ^0.6.6;
+// SPDX-License-Identifier: MIT
+
+pragma solidity 0.6.8;
 
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
 import "@animoca/ethereum-contracts-core_library/contracts/payment/PayoutWallet.sol";
@@ -101,20 +103,20 @@ abstract contract FixedSupplyLotSale is Pausable, KyberAdapter, PayoutWallet {
     /**
      * @dev Constructor.
      * @param kyberProxy Kyber network proxy contract.
-     * @param payoutWallet Account to receive payout currency tokens from the Lot sales.
+     * @param payoutWallet_ Account to receive payout currency tokens from the Lot sales.
      * @param payoutTokenAddress Payout currency token contract address.
      * @param fungibleTokenId Inventory token id of the fungible tokens bundled in a Lot item.
      * @param inventoryContract Address of the inventory contract to use in the delivery of purchased Lot items.
      */
     constructor(
         address kyberProxy,
-        address payable payoutWallet,
+        address payable payoutWallet_,
         IERC20 payoutTokenAddress,
         uint256 fungibleTokenId,
         address inventoryContract
     )
         KyberAdapter(kyberProxy)
-        PayoutWallet(payoutWallet)
+        PayoutWallet(payoutWallet_)
         public
     {
         pause();
@@ -544,7 +546,7 @@ abstract contract FixedSupplyLotSale is Pausable, KyberAdapter, PayoutWallet {
                 address(uint160(address(this))));
 
         require(payoutTokensReceived >= totalDiscountedPrice);
-        require(_payoutTokenAddress.transfer(_payoutWallet, payoutTokensReceived));
+        require(_payoutTokenAddress.transfer(payoutWallet, payoutTokensReceived));
     }
 
     /**
