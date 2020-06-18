@@ -76,11 +76,11 @@ contract SimpleSale is Ownable, GSNRecipient {
 
     function purchaseFor(
         address destination,
-        string memory purchaseId,
+        string calldata purchaseId,
         uint256 quantity,
         address paymentToken,
-        string memory extData
-    ) public payable {
+        string calldata extData
+    ) external payable {
         require(quantity > 0, "Quantity can't be 0");
         require(paymentToken == ETH_ADDRESS || paymentToken == erc20Token, "Unsupported payment token");
 
