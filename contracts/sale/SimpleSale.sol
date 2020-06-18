@@ -23,7 +23,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
     struct PurchaseForVars {
         address payable recipient;
         string purchaseId;
-        address tokenAddress;
+        address paymentToken;
         uint256 quantity;
         uint256 unitPrice;
         uint256 totalPrice;
@@ -88,7 +88,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
         PurchaseForVars memory purchaseForVars;
         purchaseForVars.recipient = address(uint160(destination));
         purchaseForVars.purchaseId = purchaseId;
-        purchaseForVars.tokenAddress = paymentToken;
+        purchaseForVars.paymentToken = paymentToken;
         purchaseForVars.quantity = quantity;
         purchaseForVars.operator = _msgSender();
         purchaseForVars.value = msg.value;
@@ -213,7 +213,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
         uint256 totalPrice
     )
     {
-        if (purchaseForVars.tokenAddress == ETH_ADDRESS) {
+        if (purchaseForVars.paymentToken == ETH_ADDRESS) {
             purchaseForVars.unitPrice = prices[purchaseForVars.purchaseId].ethPrice;
             require(purchaseForVars.unitPrice != 0, "purchaseId not found");
         } else {
@@ -237,7 +237,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
         internal
         virtual
     {
-        if (purchaseForVars.tokenAddress == ETH_ADDRESS) {
+        if (purchaseForVars.paymentToken == ETH_ADDRESS) {
             require(purchaseForVars.value >= purchaseForVars.totalPrice, "Insufficient ETH");
 
             payoutWallet.transfer(purchaseForVars.totalPrice);
@@ -272,7 +272,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
     {
         emit Purchased(
             purchaseForVars.purchaseId,
-            purchaseForVars.tokenAddress,
+            purchaseForVars.paymentToken,
             purchaseForVars.unitPrice,
             purchaseForVars.quantity,
             purchaseForVars.recipient,
