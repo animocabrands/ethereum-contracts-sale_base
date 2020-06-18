@@ -20,6 +20,16 @@ contract SimpleSale is Ownable, GSNRecipient {
         uint256 erc20Price;
     }
 
+    struct PurchaseForVars {
+        address payable recipient;
+        string purchaseId;
+        address tokenAddress;
+        uint256 quantity;
+        uint256 unitPrice;
+        uint256 totalPrice;
+        address payable operator;
+    }
+
     event Purchased(
         string purchaseId,
         address paymentToken,
@@ -71,28 +81,45 @@ contract SimpleSale is Ownable, GSNRecipient {
         require(quantity > 0, "Quantity can't be 0");
         require(paymentToken == ETH_ADDRESS || paymentToken == erc20Token, "Unsupported payment token");
 
-        address payable sender = _msgSender();
+        PurchaseForVars memory purchaseForVars;
+        purchaseForVars.recipient = address(uint160(destination));
+        purchaseForVars.purchaseId = purchaseId;
+        purchaseForVars.tokenAddress = paymentToken;
+        purchaseForVars.quantity = quantity;
+        purchaseForVars.operator = _msgSender();
 
-        Price memory price = prices[purchaseId];
-
-        if (paymentToken == ETH_ADDRESS) {
-            require(price.ethPrice != 0, "purchaseId not found");
-            uint totalPrice = price.ethPrice.mul(quantity);
-            require(msg.value >= totalPrice, "Insufficient ETH");
-            payoutWallet.transfer(totalPrice);
-
-            uint256 change = msg.value.sub(totalPrice);
-            if (change > 0) {
-                sender.transfer(change);
-            }
-            emit Purchased(purchaseId, paymentToken, price.ethPrice, quantity, destination, sender);
+        if (purchaseForVars.tokenAddress == ETH_ADDRESS) {
+            purchaseForVars.unitPrice = prices[purchaseId].ethPrice;
+            require(purchaseForVars.unitPrice != 0, "purchaseId not found");
         } else {
             require(erc20Token != address(0), "ERC20 payment not supported");
-            require(price.erc20Price != 0, "Price not found");
-            uint totalPrice = price.erc20Price.mul(quantity);
-            require(ERC20(erc20Token).transferFrom(sender, payoutWallet, totalPrice));
-            emit Purchased(purchaseId, paymentToken, price.erc20Price, quantity, destination, sender);
+            purchaseForVars.unitPrice = prices[purchaseId].erc20Price;
+            require(purchaseForVars.unitPrice != 0, "Price not found");
         }
+
+        purchaseForVars.totalPrice = purchaseForVars.unitPrice.mul(purchaseForVars.quantity);
+
+        if (purchaseForVars.tokenAddress == ETH_ADDRESS) {
+            require(msg.value >= purchaseForVars.totalPrice, "Insufficient ETH");
+
+            payoutWallet.transfer(purchaseForVars.totalPrice);
+
+            uint256 change = msg.value.sub(purchaseForVars.totalPrice);
+
+            if (change > 0) {
+                purchaseForVars.operator.transfer(change);
+            }
+        } else {
+            require(ERC20(erc20Token).transferFrom(purchaseForVars.operator, payoutWallet, purchaseForVars.totalPrice));
+        }
+
+        emit Purchased(
+            purchaseForVars.purchaseId,
+            purchaseForVars.tokenAddress,
+            purchaseForVars.unitPrice,
+            purchaseForVars.quantity,
+            purchaseForVars.recipient,
+            purchaseForVars.operator);
     }
 
     /////////////////////////////////////////// GSNRecipient implementation ///////////////////////////////////
