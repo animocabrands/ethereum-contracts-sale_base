@@ -1,7 +1,7 @@
 const { BN, ether } = require('@openzeppelin/test-helpers');
 const { EthAddress, ZeroAddress } = require('@animoca/ethereum-contracts-core_library').constants;
 
-const Sale = artifacts.require('SimpleSale.sol');
+const Sale = artifacts.require('SimpleSaleMock.sol');
 const ERC20Token = artifacts.require('ERC20Mock.sol');
 const ERC20 = artifacts.require('ERC20.sol');
 

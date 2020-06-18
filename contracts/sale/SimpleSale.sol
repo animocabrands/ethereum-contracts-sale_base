@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/GSN/GSNRecipient.sol";
 
-contract SimpleSale is Ownable, GSNRecipient {
+abstract contract SimpleSale is Ownable, GSNRecipient {
     using SafeMath for uint256;
 
     enum ErrorCodes {
@@ -28,6 +28,7 @@ contract SimpleSale is Ownable, GSNRecipient {
         uint256 unitPrice;
         uint256 totalPrice;
         address payable operator;
+        uint256 value;
         string extData;
     }
 
@@ -90,41 +91,10 @@ contract SimpleSale is Ownable, GSNRecipient {
         purchaseForVars.tokenAddress = paymentToken;
         purchaseForVars.quantity = quantity;
         purchaseForVars.operator = _msgSender();
+        purchaseForVars.value = msg.value;
         purchaseForVars.extData = extData;
 
-        if (purchaseForVars.tokenAddress == ETH_ADDRESS) {
-            purchaseForVars.unitPrice = prices[purchaseId].ethPrice;
-            require(purchaseForVars.unitPrice != 0, "purchaseId not found");
-        } else {
-            require(erc20Token != address(0), "ERC20 payment not supported");
-            purchaseForVars.unitPrice = prices[purchaseId].erc20Price;
-            require(purchaseForVars.unitPrice != 0, "Price not found");
-        }
-
-        purchaseForVars.totalPrice = purchaseForVars.unitPrice.mul(purchaseForVars.quantity);
-
-        if (purchaseForVars.tokenAddress == ETH_ADDRESS) {
-            require(msg.value >= purchaseForVars.totalPrice, "Insufficient ETH");
-
-            payoutWallet.transfer(purchaseForVars.totalPrice);
-
-            uint256 change = msg.value.sub(purchaseForVars.totalPrice);
-
-            if (change > 0) {
-                purchaseForVars.operator.transfer(change);
-            }
-        } else {
-            require(ERC20(erc20Token).transferFrom(purchaseForVars.operator, payoutWallet, purchaseForVars.totalPrice));
-        }
-
-        emit Purchased(
-            purchaseForVars.purchaseId,
-            purchaseForVars.tokenAddress,
-            purchaseForVars.unitPrice,
-            purchaseForVars.quantity,
-            purchaseForVars.recipient,
-            purchaseForVars.operator,
-            purchaseForVars.extData);
+        _purchaseFor(purchaseForVars);
     }
 
     /////////////////////////////////////////// GSNRecipient implementation ///////////////////////////////////
@@ -206,5 +176,107 @@ contract SimpleSale is Ownable, GSNRecipient {
      */
     function withdrawDeposits(uint256 amount, address payable payee) external onlyOwner {
         _withdrawDeposits(amount, payee);
+    }
+
+    /////////////////////////////////////////// internal hooks ///////////////////////////////////
+
+    /**
+     * @dev Defines the purchase lifecycle sequence to execute when handling a purchase.
+     * @dev Overridable.
+     * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
+     */
+    function _purchaseFor(
+        PurchaseForVars memory purchaseForVars
+    )
+        internal
+        virtual
+    {
+        purchaseForVars.totalPrice = _purchaseForPricing(purchaseForVars);
+        _purchaseForPayment(purchaseForVars);
+        _purchaseForDelivery(purchaseForVars);
+        _purchaseForNotify(purchaseForVars);
+    }
+
+    /**
+     * @dev Purchase lifecycle hook that handles the calculation of the total price.
+     * @dev Overridable.
+     * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
+     * @return totalPrice Total price.
+     */
+    function _purchaseForPricing(
+        PurchaseForVars memory purchaseForVars
+    )
+        internal
+        virtual
+        returns
+    (
+        uint256 totalPrice
+    )
+    {
+        if (purchaseForVars.tokenAddress == ETH_ADDRESS) {
+            purchaseForVars.unitPrice = prices[purchaseForVars.purchaseId].ethPrice;
+            require(purchaseForVars.unitPrice != 0, "purchaseId not found");
+        } else {
+            require(erc20Token != address(0), "ERC20 payment not supported");
+            purchaseForVars.unitPrice = prices[purchaseForVars.purchaseId].erc20Price;
+            require(purchaseForVars.unitPrice != 0, "Price not found");
+        }
+
+        return purchaseForVars.unitPrice.mul(purchaseForVars.quantity);
+    }
+
+    /**
+     * @dev Purchase lifecycle hook that handles the acceptance of payment.
+     * @dev Any overpayments result in the change difference being returned to the recipient.
+     * @dev Overridable.
+     * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
+     */
+    function _purchaseForPayment(
+        PurchaseForVars memory purchaseForVars
+    )
+        internal
+        virtual
+    {
+        if (purchaseForVars.tokenAddress == ETH_ADDRESS) {
+            require(purchaseForVars.value >= purchaseForVars.totalPrice, "Insufficient ETH");
+
+            payoutWallet.transfer(purchaseForVars.totalPrice);
+
+            uint256 change = purchaseForVars.value.sub(purchaseForVars.totalPrice);
+
+            if (change > 0) {
+                purchaseForVars.operator.transfer(change);
+            }
+        } else {
+            require(ERC20(erc20Token).transferFrom(purchaseForVars.operator, payoutWallet, purchaseForVars.totalPrice));
+        }
+    }
+
+    /**
+     * @dev Purchase lifecycle hook that handles the delivery of the purchased item to the recipient.
+     * @dev Overridable.
+     * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
+     */
+    function _purchaseForDelivery(PurchaseForVars memory purchaseForVars) internal virtual;
+
+    /**
+     * @dev Purchase lifecycle hook that handles the notification of a purchase event.
+     * @dev Overridable.
+     * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
+     */
+    function _purchaseForNotify(
+        PurchaseForVars memory purchaseForVars
+    )
+        internal
+        virtual
+    {
+        emit Purchased(
+            purchaseForVars.purchaseId,
+            purchaseForVars.tokenAddress,
+            purchaseForVars.unitPrice,
+            purchaseForVars.quantity,
+            purchaseForVars.recipient,
+            purchaseForVars.operator,
+            purchaseForVars.extData);
     }
 }
