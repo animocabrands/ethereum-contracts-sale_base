@@ -85,7 +85,7 @@ function simplePurchase(payout, owner, operator, recipient, useErc20) {
                             paymentToken: toChecksumAddress(this.erc20TokenAddress),
                             price: priceForOne,
                             quantity: quantity,
-                            destination: recipient,
+                            recipient: recipient,
                             operator: operator,
                             extData: ''
                         });

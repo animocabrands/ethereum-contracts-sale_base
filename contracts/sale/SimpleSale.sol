@@ -37,7 +37,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
         address paymentToken,
         uint256 price,
         uint256 quantity,
-        address destination,
+        address recipient,
         address operator,
         string extData
     );
@@ -76,7 +76,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
     }
 
     function purchaseFor(
-        address destination,
+        address recipient,
         string calldata purchaseId,
         uint256 quantity,
         address paymentToken,
@@ -86,7 +86,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
         require(paymentToken == ETH_ADDRESS || paymentToken == erc20Token, "Unsupported payment token");
 
         PurchaseForVars memory purchaseForVars;
-        purchaseForVars.recipient = address(uint160(destination));
+        purchaseForVars.recipient = address(uint160(recipient));
         purchaseForVars.purchaseId = purchaseId;
         purchaseForVars.paymentToken = paymentToken;
         purchaseForVars.quantity = quantity;
