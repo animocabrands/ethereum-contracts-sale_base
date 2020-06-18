@@ -28,6 +28,7 @@ contract SimpleSale is Ownable, GSNRecipient {
         uint256 unitPrice;
         uint256 totalPrice;
         address payable operator;
+        string extData;
     }
 
     event Purchased(
@@ -36,7 +37,8 @@ contract SimpleSale is Ownable, GSNRecipient {
         uint256 price,
         uint256 quantity,
         address destination,
-        address operator
+        address operator,
+        string extData
     );
 
     event PriceUpdated(
@@ -76,7 +78,8 @@ contract SimpleSale is Ownable, GSNRecipient {
         address destination,
         string memory purchaseId,
         uint256 quantity,
-        address paymentToken
+        address paymentToken,
+        string memory extData
     ) public payable {
         require(quantity > 0, "Quantity can't be 0");
         require(paymentToken == ETH_ADDRESS || paymentToken == erc20Token, "Unsupported payment token");
@@ -87,6 +90,7 @@ contract SimpleSale is Ownable, GSNRecipient {
         purchaseForVars.tokenAddress = paymentToken;
         purchaseForVars.quantity = quantity;
         purchaseForVars.operator = _msgSender();
+        purchaseForVars.extData = extData;
 
         if (purchaseForVars.tokenAddress == ETH_ADDRESS) {
             purchaseForVars.unitPrice = prices[purchaseId].ethPrice;
@@ -119,7 +123,8 @@ contract SimpleSale is Ownable, GSNRecipient {
             purchaseForVars.unitPrice,
             purchaseForVars.quantity,
             purchaseForVars.recipient,
-            purchaseForVars.operator);
+            purchaseForVars.operator,
+            purchaseForVars.extData);
     }
 
     /////////////////////////////////////////// GSNRecipient implementation ///////////////////////////////////

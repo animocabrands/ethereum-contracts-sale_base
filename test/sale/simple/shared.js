@@ -79,6 +79,7 @@ async function purchaseFor(sale, recipient, purchaseId, quantity, paymentToken, 
         purchaseId,
         quantity,
         paymentToken,
+        '',
         {
             from: operator,
             value: etherValue,

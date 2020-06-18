@@ -86,7 +86,8 @@ function simplePurchase(payout, owner, operator, recipient, useErc20) {
                             price: priceForOne,
                             quantity: quantity,
                             destination: recipient,
-                            operator: operator
+                            operator: operator,
+                            extData: ''
                         });
 
                         const balanceAfter =
