@@ -81,12 +81,12 @@ function simplePurchase(payout, owner, operator, recipient, useErc20) {
                         const receipt = await purchaseFor(this.contract, recipient, purchaseId, quantity, this.erc20TokenAddress, operator, {value: price.add(overvalue)});
 
                         expectEvent.inLogs(receipt.logs, 'Purchased', {
-                            purchaseId: purchaseId,
-                            paymentToken: toChecksumAddress(this.erc20TokenAddress),
-                            price: priceForOne,
-                            quantity: quantity,
                             recipient: recipient,
                             operator: operator,
+                            purchaseId: purchaseId,
+                            paymentToken: toChecksumAddress(this.erc20TokenAddress),
+                            quantity: quantity,
+                            price: priceForOne,
                             extData: ''
                         });
 

@@ -77,8 +77,8 @@ async function purchaseFor(sale, recipient, purchaseId, quantity, paymentToken, 
     return sale.purchaseFor(
         recipient,
         purchaseId,
-        quantity,
         paymentToken,
+        quantity,
         '',
         {
             from: operator,

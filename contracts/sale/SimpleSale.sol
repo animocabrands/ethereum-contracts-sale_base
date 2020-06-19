@@ -22,23 +22,23 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
 
     struct PurchaseForVars {
         address payable recipient;
+        address payable operator;
         string purchaseId;
         address paymentToken;
         uint256 quantity;
         uint256 unitPrice;
         uint256 totalPrice;
-        address payable operator;
         uint256 value;
         string extData;
     }
 
     event Purchased(
-        string purchaseId,
-        address paymentToken,
-        uint256 price,
-        uint256 quantity,
         address recipient,
         address operator,
+        string purchaseId,
+        address paymentToken,
+        uint256 quantity,
+        uint256 price,
         string extData
     );
 
@@ -78,8 +78,8 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
     function purchaseFor(
         address recipient,
         string calldata purchaseId,
-        uint256 quantity,
         address paymentToken,
+        uint256 quantity,
         string calldata extData
     ) external payable {
         require(quantity > 0, "Quantity can't be 0");
@@ -87,10 +87,10 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
 
         PurchaseForVars memory purchaseForVars;
         purchaseForVars.recipient = address(uint160(recipient));
+        purchaseForVars.operator = _msgSender();
         purchaseForVars.purchaseId = purchaseId;
         purchaseForVars.paymentToken = paymentToken;
         purchaseForVars.quantity = quantity;
-        purchaseForVars.operator = _msgSender();
         purchaseForVars.value = msg.value;
         purchaseForVars.extData = extData;
 
@@ -271,12 +271,12 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
         virtual
     {
         emit Purchased(
-            purchaseForVars.purchaseId,
-            purchaseForVars.paymentToken,
-            purchaseForVars.unitPrice,
-            purchaseForVars.quantity,
             purchaseForVars.recipient,
             purchaseForVars.operator,
+            purchaseForVars.purchaseId,
+            purchaseForVars.paymentToken,
+            purchaseForVars.quantity,
+            purchaseForVars.unitPrice,
             purchaseForVars.extData);
     }
 }
