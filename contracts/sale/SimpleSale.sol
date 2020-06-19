@@ -8,30 +8,16 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/GSN/GSNRecipient.sol";
 
+/**
+ * @title SimpleSale
+ */
 abstract contract SimpleSale is Ownable, GSNRecipient, PayoutWallet {
     using SafeMath for uint256;
 
-    enum ErrorCodes {
-        RESTRICTED_METHOD,
-        INSUFFICIENT_BALANCE
-    }
-
-    struct Price {
-        uint256 ethPrice;
-        uint256 erc20Price;
-    }
-
-    struct PurchaseForVars {
-        address payable recipient;
-        address payable operator;
-        string purchaseId;
-        IERC20 paymentToken;
-        uint256 quantity;
-        uint256 unitPrice;
-        uint256 totalPrice;
-        uint256 value;
-        string extData;
-    }
+    // enum ErrorCodes {
+    //     RESTRICTED_METHOD,
+    //     INSUFFICIENT_BALANCE
+    // }
 
     event Purchased(
         address recipient,
@@ -49,12 +35,43 @@ abstract contract SimpleSale is Ownable, GSNRecipient, PayoutWallet {
         uint256 erc20Price
     );
 
+    /**
+     * Used to represent the unit price for a given purchase ID in terms of
+     * ETH and/or an ERC20 token amount.
+     */
+    struct Price {
+        uint256 ethPrice;
+        uint256 erc20Price;
+    }
+
+    /**
+     * Used as a container to pass result values between the purchaseFor()
+     * life-cycle hooks.
+     */
+    struct PurchaseForVars {
+        address payable recipient;
+        address payable operator;
+        string purchaseId;
+        IERC20 paymentToken;
+        uint256 quantity;
+        uint256 unitPrice;
+        uint256 totalPrice;
+        uint256 value;
+        string extData;
+    }
+
+    // special address value to represent a payment in ETH
     IERC20 public ETH_ADDRESS = IERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
 
     IERC20 public erc20Token;
 
-    mapping(string => Price) public prices; //  purchaseId => price in tokens
+    mapping(string /* purchaseId */ => Price) public prices;
 
+    /**
+     * Constructor.
+     * @param payoutWallet_ The wallet address accepting purchase payments.
+     * @param erc20Token_ ERC20 token to use as an alternate payment to ETH.
+     */
     constructor(
         address payable payoutWallet_,
         IERC20 erc20Token_
@@ -65,16 +82,41 @@ abstract contract SimpleSale is Ownable, GSNRecipient, PayoutWallet {
         erc20Token = erc20Token_;
     }
 
+    /**
+     * Sets the ERC20 token to use as an alternate purchase payment to ETH.
+     * @dev Reverts if the given ERC20 token is already set.
+     * @param ERC20 token to use as an alternate payment to ETH.
+     */
     function setErc20Token(IERC20 erc20Token_) public onlyOwner {
         require(erc20Token_ != erc20Token, "SimpleSale: ERC20 token is already set");
         erc20Token = erc20Token_;
     }
 
+    /**
+     * Sets the ETH/ERC20 price for the given purchase ID.
+     * @dev Will emit the PriceUpdated event after calling the function successfully.
+     * @param purchaseId The purchase ID whose price will be set.
+     * @param ethPrice The ETH price to assign to the purchase ID.
+     * @param erc20TokenPrice The ERC20 token price to assign to the purchase ID.
+     */
     function setPrice(string memory purchaseId, uint256 ethPrice, uint256 erc20TokenPrice) public onlyOwner {
         prices[purchaseId] = Price(ethPrice, erc20TokenPrice);
         emit PriceUpdated(purchaseId, ethPrice, erc20TokenPrice);
     }
 
+    /**
+     * Performs a purchase of the given purchase ID.
+     * @dev Will emit the Purchased event after calling the function successfully.
+     * @dev Reverts if the recipient is the zero address.
+     * @dev Reverts if the recipient is this contract.
+     * @dev Reverts if the quantity to purchase is zero.
+     * @dev Reverts if the payment token is neither the pre-defined ERC20 token, or the ETH token.
+     * @param recipient The recipient of the purchase.
+     * @param purchaseId The purchase ID being purchased.
+     * @param paymentToken The method of payment (either the pre-defined ERC20 token, or the ETH token).
+     * @param quantity The quantity of the given purchase ID being purchased.
+     * @param extData User-defined custom data to pass through to the Purchased event.
+     */
     function purchaseFor(
         address recipient,
         string calldata purchaseId,
@@ -183,7 +225,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient, PayoutWallet {
     /////////////////////////////////////////// internal hooks ///////////////////////////////////
 
     /**
-     * @dev Defines the purchase lifecycle sequence to execute when handling a purchase.
+     * Defines the purchase lifecycle sequence to execute when handling a purchase.
      * @dev Overridable.
      * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
      */
@@ -200,7 +242,9 @@ abstract contract SimpleSale is Ownable, GSNRecipient, PayoutWallet {
     }
 
     /**
-     * @dev Purchase lifecycle hook that handles the calculation of the total price.
+     * Purchase lifecycle hook that handles the calculation of the total price.
+     * @dev Reverts if an ERC20 payment is being made but the contract is configured to not support ERC20 payments.
+     * @dev Reverts if no price is associated with the purchase ID being purchased.
      * @dev Overridable.
      * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
      * @return totalPrice Total price.
@@ -228,8 +272,10 @@ abstract contract SimpleSale is Ownable, GSNRecipient, PayoutWallet {
     }
 
     /**
-     * @dev Purchase lifecycle hook that handles the acceptance of payment.
+     * Purchase lifecycle hook that handles the acceptance of payment.
      * @dev Any overpayments result in the change difference being returned to the recipient.
+     * @dev Reverts if there is insufficient ETH provided for an ETH payment.
+     * @dev Reverts if there was a failure in transfering ERC20 tokens for an ERC20 token payment.
      * @dev Overridable.
      * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
      */
@@ -255,14 +301,15 @@ abstract contract SimpleSale is Ownable, GSNRecipient, PayoutWallet {
     }
 
     /**
-     * @dev Purchase lifecycle hook that handles the delivery of the purchased item to the recipient.
+     * Purchase lifecycle hook that handles the delivery of the purchased item to the recipient.
      * @dev Overridable.
      * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
      */
     function _purchaseForDelivery(PurchaseForVars memory purchaseForVars) internal virtual;
 
     /**
-     * @dev Purchase lifecycle hook that handles the notification of a purchase event.
+     * Purchase lifecycle hook that handles the notification of a purchase event.
+     * @dev This function MUST emit the Purchased event after calling the function successfully.
      * @dev Overridable.
      * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
      */
