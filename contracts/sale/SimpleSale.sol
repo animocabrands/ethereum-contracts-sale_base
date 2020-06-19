@@ -66,7 +66,6 @@ abstract contract SimpleSale is Ownable, GSNRecipient, PayoutWallet {
     }
 
     function setErc20Token(IERC20 erc20Token_) public onlyOwner {
-        require(erc20Token_ != IERC20(0), "SimpleSale: ERC20 token cannot be the zero address");
         require(erc20Token_ != erc20Token, "SimpleSale: ERC20 token is already set");
         erc20Token = erc20Token_;
     }
