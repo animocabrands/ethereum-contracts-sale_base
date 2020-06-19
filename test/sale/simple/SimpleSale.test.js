@@ -5,46 +5,6 @@ const simplePurchase = require('./behaviours/SimplePurchase.behaviour');
 const { doFreshDeploy, prices } = require('./shared');
 
 contract.only('SimpleSale', function ([_, payout, owner, operator, recipient]) {
-    describe('setPayoutWallet', async function () {
-        const newPayoutWallet = '0xB553C4B21966123d7f8c02Ca6909c110260052E8';
-
-        beforeEach(async function () {
-            await doFreshDeploy.bind(this)({
-                payout: payout,
-                owner: owner,
-                operator: operator,
-                recipient: recipient,
-                useErc20: true,
-                setPrices: false});
-        });
-
-        it('should fail if not sent by the owner', async function () {
-            await expectRevert.unspecified(
-                this.contract.setPayoutWallet(newPayoutWallet, { from: operator })
-            );
-        });
-
-        it('should fail if setting to the zero address', async function () {
-            await expectRevert.unspecified(
-                this.contract.setPayoutWallet(ZeroAddress, { from: owner })
-            );
-        });
-
-        it('should fail when wallet is sale contract itself', async function () {
-            await expectRevert.unspecified(
-                this.contract.setPayoutWallet(this.contract.address, { from: owner })
-            )
-        });
-
-        it('should update the payout wallet', async function () {
-            let payoutWallet = await this.contract.payoutWallet();
-            payoutWallet.should.be.equal(payout);
-            await this.contract.setPayoutWallet(newPayoutWallet, { from: owner });
-            payoutWallet = await this.contract.payoutWallet();
-            payoutWallet.should.be.equal(newPayoutWallet);
-        });
-    });
-
     describe('Purchase IDs Management', function () {
         describe('setErc20Token', function () {
             const newErc20Token = '0xe19Ec968c15f487E96f631Ad9AA54fAE09A67C8c';

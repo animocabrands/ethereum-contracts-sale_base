@@ -2,12 +2,13 @@
 
 pragma solidity = 0.6.8;
 
+import "@animoca/ethereum-contracts-core_library/contracts/payment/PayoutWallet.sol";
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/GSN/GSNRecipient.sol";
 
-abstract contract SimpleSale is Ownable, GSNRecipient {
+abstract contract SimpleSale is Ownable, GSNRecipient, PayoutWallet {
     using SafeMath for uint256;
 
     enum ErrorCodes {
@@ -51,19 +52,17 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
     IERC20 public ETH_ADDRESS = IERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
 
     IERC20 public erc20Token;
-    address payable public payoutWallet;
 
     mapping(string => Price) public prices; //  purchaseId => price in tokens
 
-    constructor(address payable payoutWallet_, IERC20 erc20Token_) public {
-        setPayoutWallet(payoutWallet_);
+    constructor(
+        address payable payoutWallet_,
+        IERC20 erc20Token_
+    )
+        PayoutWallet(payoutWallet_)
+        public
+    {
         erc20Token = erc20Token_;
-    }
-
-    function setPayoutWallet(address payable payoutWallet_) public onlyOwner {
-        require(payoutWallet_ != address(0));
-        require(payoutWallet_ != address(this));
-        payoutWallet = payoutWallet_;
     }
 
     function setErc20Token(IERC20 erc20Token_) public onlyOwner {
