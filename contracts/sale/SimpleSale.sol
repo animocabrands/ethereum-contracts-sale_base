@@ -2,8 +2,8 @@
 
 pragma solidity = 0.6.8;
 
+import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/GSN/GSNRecipient.sol";
 
@@ -24,7 +24,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
         address payable recipient;
         address payable operator;
         string purchaseId;
-        address paymentToken;
+        IERC20 paymentToken;
         uint256 quantity;
         uint256 unitPrice;
         uint256 totalPrice;
@@ -36,7 +36,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
         address recipient,
         address operator,
         string purchaseId,
-        address paymentToken,
+        IERC20 paymentToken,
         uint256 quantity,
         uint256 price,
         string extData
@@ -48,14 +48,14 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
         uint256 erc20Price
     );
 
-    address public ETH_ADDRESS = address(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
+    IERC20 public ETH_ADDRESS = IERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
 
-    address public erc20Token;
+    IERC20 public erc20Token;
     address payable public payoutWallet;
 
     mapping(string => Price) public prices; //  purchaseId => price in tokens
 
-    constructor(address payable payoutWallet_, address erc20Token_) public {
+    constructor(address payable payoutWallet_, IERC20 erc20Token_) public {
         setPayoutWallet(payoutWallet_);
         erc20Token = erc20Token_;
     }
@@ -66,7 +66,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
         payoutWallet = payoutWallet_;
     }
 
-    function setErc20Token(address erc20Token_) public onlyOwner {
+    function setErc20Token(IERC20 erc20Token_) public onlyOwner {
         erc20Token = erc20Token_;
     }
 
@@ -78,7 +78,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
     function purchaseFor(
         address recipient,
         string calldata purchaseId,
-        address paymentToken,
+        IERC20 paymentToken,
         uint256 quantity,
         string calldata extData
     ) external payable {
@@ -217,7 +217,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
             purchaseForVars.unitPrice = prices[purchaseForVars.purchaseId].ethPrice;
             require(purchaseForVars.unitPrice != 0, "purchaseId not found");
         } else {
-            require(erc20Token != address(0), "ERC20 payment not supported");
+            require(erc20Token != IERC20(0), "ERC20 payment not supported");
             purchaseForVars.unitPrice = prices[purchaseForVars.purchaseId].erc20Price;
             require(purchaseForVars.unitPrice != 0, "Price not found");
         }
@@ -248,7 +248,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient {
                 purchaseForVars.operator.transfer(change);
             }
         } else {
-            require(ERC20(erc20Token).transferFrom(purchaseForVars.operator, payoutWallet, purchaseForVars.totalPrice));
+            require(erc20Token.transferFrom(purchaseForVars.operator, payoutWallet, purchaseForVars.totalPrice));
         }
     }
 

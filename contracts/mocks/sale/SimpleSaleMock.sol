@@ -2,13 +2,14 @@
 
 pragma solidity 0.6.8;
 
+import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
 import "../../sale/SimpleSale.sol";
 
 contract SimpleSaleMock is SimpleSale {
 
     constructor(
         address payable payoutWallet_,
-        address erc20Token_
+        IERC20 erc20Token_
     )
         SimpleSale(
             payoutWallet_,

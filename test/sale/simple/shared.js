@@ -3,7 +3,7 @@ const { EthAddress, ZeroAddress } = require('@animoca/ethereum-contracts-core_li
 
 const Sale = artifacts.require('SimpleSaleMock.sol');
 const ERC20Token = artifacts.require('ERC20Mock.sol');
-const ERC20 = artifacts.require('ERC20.sol');
+const ERC20 = artifacts.require('IERC20.sol');
 
 const prices = {
     'both': {
