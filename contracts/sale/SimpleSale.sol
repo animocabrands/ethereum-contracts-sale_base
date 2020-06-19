@@ -85,7 +85,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient, PayoutWallet {
     /**
      * Sets the ERC20 token to use as an alternate purchase payment to ETH.
      * @dev Reverts if the given ERC20 token is already set.
-     * @param ERC20 token to use as an alternate payment to ETH.
+     * @param erc20Token_ ERC20 token to use as an alternate payment to ETH.
      */
     function setErc20Token(IERC20 erc20Token_) public onlyOwner {
         require(erc20Token_ != erc20Token, "SimpleSale: ERC20 token is already set");
