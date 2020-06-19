@@ -66,6 +66,8 @@ abstract contract SimpleSale is Ownable, GSNRecipient, PayoutWallet {
     }
 
     function setErc20Token(IERC20 erc20Token_) public onlyOwner {
+        require(erc20Token_ != IERC20(0), "SimpleSale: ERC20 token cannot be the zero address");
+        require(erc20Token_ != erc20Token, "SimpleSale: ERC20 token is already set");
         erc20Token = erc20Token_;
     }
 
@@ -81,8 +83,10 @@ abstract contract SimpleSale is Ownable, GSNRecipient, PayoutWallet {
         uint256 quantity,
         string calldata extData
     ) external payable {
-        require(quantity > 0, "Quantity can't be 0");
-        require(paymentToken == ETH_ADDRESS || paymentToken == erc20Token, "Unsupported payment token");
+        require(recipient != address(0), "SimpleSale: Recipient cannot be the zero address");
+        require(recipient != address(uint160(address(this))), "SimpleSale: Recipient cannot be the contract address");
+        require(quantity > 0, "SimpleSale: Quantity cannot be zero");
+        require((paymentToken == ETH_ADDRESS) || (paymentToken == erc20Token), "SimpleSale: Payment token is unsupported");
 
         PurchaseForVars memory purchaseForVars;
         purchaseForVars.recipient = address(uint160(recipient));
@@ -214,12 +218,12 @@ abstract contract SimpleSale is Ownable, GSNRecipient, PayoutWallet {
     {
         if (purchaseForVars.paymentToken == ETH_ADDRESS) {
             purchaseForVars.unitPrice = prices[purchaseForVars.purchaseId].ethPrice;
-            require(purchaseForVars.unitPrice != 0, "purchaseId not found");
         } else {
-            require(erc20Token != IERC20(0), "ERC20 payment not supported");
+            require(erc20Token != IERC20(0), "SimpleSale: ERC20 payment is unsupported");
             purchaseForVars.unitPrice = prices[purchaseForVars.purchaseId].erc20Price;
-            require(purchaseForVars.unitPrice != 0, "Price not found");
         }
+
+        require(purchaseForVars.unitPrice != 0, "SimpleSale: Invalid purchase ID");
 
         return purchaseForVars.unitPrice.mul(purchaseForVars.quantity);
     }
@@ -237,7 +241,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient, PayoutWallet {
         virtual
     {
         if (purchaseForVars.paymentToken == ETH_ADDRESS) {
-            require(purchaseForVars.value >= purchaseForVars.totalPrice, "Insufficient ETH");
+            require(purchaseForVars.value >= purchaseForVars.totalPrice, "SimpleSale: Insufficient ETH provided");
 
             payoutWallet.transfer(purchaseForVars.totalPrice);
 
@@ -247,7 +251,7 @@ abstract contract SimpleSale is Ownable, GSNRecipient, PayoutWallet {
                 purchaseForVars.operator.transfer(change);
             }
         } else {
-            require(erc20Token.transferFrom(purchaseForVars.operator, payoutWallet, purchaseForVars.totalPrice));
+            require(erc20Token.transferFrom(purchaseForVars.operator, payoutWallet, purchaseForVars.totalPrice), "SimpleSale: Failure in transferring ERC20 payment");
         }
     }
 
