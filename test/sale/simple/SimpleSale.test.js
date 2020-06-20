@@ -4,7 +4,7 @@ const { ZeroAddress } = require('@animoca/ethereum-contracts-core_library').cons
 const simplePurchase = require('./behaviours/SimplePurchase.behaviour');
 const { doFreshDeploy, prices } = require('./shared');
 
-contract.only('SimpleSale', function ([_, payout, owner, operator, recipient]) {
+contract('SimpleSale', function ([_, payout, owner, operator, recipient]) {
     describe('Purchase IDs Management', function () {
         describe('setErc20Token', function () {
             const newErc20Token = '0xe19Ec968c15f487E96f631Ad9AA54fAE09A67C8c';
