@@ -1355,7 +1355,7 @@ contract('FixedSupplyLotSale', function ([
                     tokenAddress);
             });
 
-            it.only('should return correct total price pricing info', async function () {
+            it('should return correct total price pricing info', async function () {
                 const expectedTotalPrice = this.lot.price.mul(quantity);
                 const actualTotalPrice = this.priceInfo.minConversionRate.mul(this.priceInfo.totalPrice).div(new BN(10).pow(new BN(18)));
 
@@ -1370,7 +1370,7 @@ contract('FixedSupplyLotSale', function ([
                 }
             });
 
-            it.only('should return correct total discounts pricing info', async function () {
+            it('should return correct total discounts pricing info', async function () {
                 const expectedTotalDiscounts = Constants.Zero;
                 const actualTotalDiscounts = this.priceInfo.minConversionRate.mul(this.priceInfo.totalDiscounts).div(new BN(10).pow(new BN(18)));
 
@@ -2171,7 +2171,7 @@ contract('FixedSupplyLotSale', function ([
                                 { from: operator });
                         });
 
-                        it.only('should transfer purchase tokens from the operator to the sale contract', async function () {
+                        it('should transfer purchase tokens from the operator to the sale contract', async function () {
                             await expectEvent.inTransaction(
                                 this.receipt.tx,
                                 this.erc20,
@@ -2239,7 +2239,7 @@ contract('FixedSupplyLotSale', function ([
                                 { from: operator });
                         });
 
-                        it.only('should transfer purchase tokens from the operator to the sale contract', async function () {
+                        it('should transfer purchase tokens from the operator to the sale contract', async function () {
                             await expectEvent.inTransaction(
                                 this.receipt.tx,
                                 this.erc20,
@@ -2402,7 +2402,7 @@ contract('FixedSupplyLotSale', function ([
         const quantity = Constants.One;
 
         function testShouldEmitThePurchasedEventWhenNotUsingPayoutToken(lotId, quantity, tokenAddress) {
-            it.only('should emit the Purchased event', async function () {
+            it('should emit the Purchased event', async function () {
                 const totalFungibleAmount = this.lot.fungibleAmount.mul(quantity);
                 const totalPrice = this.lot.price.mul(quantity);
 
