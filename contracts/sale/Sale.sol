@@ -31,7 +31,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
     /**
      * Used as an abstract container for a related collection of extended data.
      */
-    struct ExtData {
+    struct ExtendedData {
         mapping(bytes32 => bytes32) data;
     }
 
@@ -123,14 +123,14 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param quantity The quantity of SKU items being purchased.
      * @param paymentToken The ERC20 token to use as the payment currency of the
      *  purchase.
-     * @param extData Implementation-specific extended input data.
+     * @param extendedData Implementation-specific extended input data.
      */
     function _validatePurchase(
         address payable purchaser,
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
-        ExtData memory extData
+        ExtendedData memory extendedData
     ) internal virtual view {}
 
     /**
@@ -140,7 +140,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param quantity The quantity of SKU items being purchased.
      * @param paymentToken The ERC20 token to use as the payment currency of the
      *  purchase.
-     * @param extData Implementation-specific extended input data.
+     * @param extendedData Implementation-specific extended input data.
      * @return paymentInfo Implementation-specific accepted payment information
      *  result.
      */
@@ -149,8 +149,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
-        ExtData memory extData
-    ) internal virtual returns (ExtData memory paymentInfo);
+        ExtendedData memory extendedData
+    ) internal virtual returns (ExtendedData memory paymentInfo);
 
     /**
      * Delivers the purchased SKU item(s) to the purchaser.
@@ -159,7 +159,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param quantity The quantity of SKU items being purchased.
      * @param paymentToken The ERC20 token to use as the payment currency of the
      *  purchase.
-     * @param extData Implementation-specific extended input data.
+     * @param extendedData Implementation-specific extended input data.
      * @return deliveryInfo Implementation-specific delivery information result.
      */
     function _deliverGoods(
@@ -167,8 +167,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
-        ExtData memory extData
-    ) internal virtual returns (ExtData memory deliveryInfo) {}
+        ExtendedData memory extendedData
+    ) internal virtual returns (ExtendedData memory deliveryInfo) {}
 
     /**
      * Finalizes the completed purchase by performing any remaining purchase
@@ -178,14 +178,14 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param quantity The quantity of SKU items purchased.
      * @param paymentToken The ERC20 token to use as the payment currency of the
      *  purchase.
-     * @param *extData* Implementation-specific extended input data.
+     * @param *extendedData* Implementation-specific extended input data.
      */
     function _finalizePurchase(
         address payable purchaser,
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
-        ExtData memory /* extData */
+        ExtendedData memory /* extendedData */
     ) internal virtual {
         emit Purchased(
             purchaser,
