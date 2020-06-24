@@ -117,25 +117,6 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
     ////////////////////////////////////////////////////////////////////////////
 
     /**
-     * Retrieves pricing information for the given set of purchase conditions.
-     * @param purchaser The initiating account that the pricing information is
-     *  retrieved for.
-     * @param sku The SKU of the item whose pricing information is retrieved.
-     * @param quantity The quantity of SKU items to use in calculating the
-     *  retrieved pricing information.
-     * @param paymentToken The ERC20 token to use as the payment currency.
-     * @param extData Implementation-specific extended input data.
-     * @return priceInfo Implementation-specific pricing information result.
-     */
-    function _getPrice(
-        address payable purchaser,
-        bytes32 sku,
-        uint256 quantity,
-        IERC20 paymentToken,
-        ExtData memory extData
-    ) internal virtual view returns (ExtData memory priceInfo);
-
-    /**
      * Validates the given set of purchase conditions.
      * @param purchaser The initiating account making the purchase.
      * @param sku The SKU of the item being purchased.
