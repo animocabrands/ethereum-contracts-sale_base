@@ -32,10 +32,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * Used as an abstract container for a related collection of extended data.
      */
     struct ExtData {
-        mapping(bytes32 => bool) extBool;
-        mapping(bytes32 => uint256) extUint;
-        mapping(bytes32 => string) extString;
-        mapping(bytes32 => address) extAddress;
+        mapping(bytes32 => bytes32) data;
     }
 
     IERC20 public payoutToken;
