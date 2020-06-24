@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity = 0.6.8;
+pragma solidity 0.6.8;
 
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
 import "@animoca/ethereum-contracts-core_library/contracts/utils/Startable.sol";
-import "@animoca/ethereum-contracts-core_library/contracts/access/StarterRole.sol";
-import "@animoca/ethereum-contracts-core_library/contracts/access/PauserRole.sol";
+import "@animoca/ethereum-contracts-core_library/contracts/payment/PayoutWallet.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
@@ -14,7 +13,7 @@ import "@openzeppelin/contracts/GSN/Context.sol";
  * Abstract base contract which defines the events, members, and purchase
  * lifecycle methods for a sale contract.
  */
-abstract contract Sale is Context, Ownable, Startable, StarterRole, Pausable, PauserRole   {
+abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   {
 
     // special address value to represent a payment in ETH
     IERC20 public ETH_ADDRESS = IERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
@@ -26,8 +25,6 @@ abstract contract Sale is Context, Ownable, Startable, StarterRole, Pausable, Pa
         uint256 indexed quantity,
         IERC20 paymentToken
     );
-
-    event PayoutWalletSet(address payoutWallet);
 
     event PayoutTokenSet(IERC20 payoutToken);
 
@@ -41,13 +38,12 @@ abstract contract Sale is Context, Ownable, Startable, StarterRole, Pausable, Pa
         mapping(bytes32 => address) extAddress;
     }
 
-    address payable public payoutWallet;
-
     IERC20 public payoutToken;
 
     /**
      * Constructor.
      * @dev Emits the PayoutWalletSet event.
+     * @dev Emits the PayoutTokenSet event.
      * @dev Emits the Paused event.
      * @param payoutWallet_ The wallet address used to receive purchase payments
      *  with.
@@ -59,8 +55,8 @@ abstract contract Sale is Context, Ownable, Startable, StarterRole, Pausable, Pa
         IERC20 payoutToken_
     )
         internal
+        PayoutWallet(payoutWallet_)
     {
-        setPayoutWallet(payoutWallet_);
         setPayoutToken(payoutToken_);
         _pause();
     }
@@ -74,7 +70,7 @@ abstract contract Sale is Context, Ownable, Startable, StarterRole, Pausable, Pa
      * @dev Emits the Unpaused event.
      * @dev Reverts if the contract has already been started.
      */
-    function start() external onlyStarter {
+    function start() external onlyOwner {
         _start();
         _unpause();
     }
@@ -88,7 +84,7 @@ abstract contract Sale is Context, Ownable, Startable, StarterRole, Pausable, Pa
      * @dev Reverts if the contract is already paused.
      * @dev Reverts if the contract has not been started yet.
      */
-    function pause() external onlyPauser whenStarted {
+    function pause() external onlyOwner whenStarted {
         _pause();
     }
 
@@ -99,29 +95,11 @@ abstract contract Sale is Context, Ownable, Startable, StarterRole, Pausable, Pa
      * @dev Reverts if the contract is not paused.
      * @dev Reverts if the contract has not been started yet.
      */
-    function unpause() external onlyPauser whenStarted {
+    function unpause() external onlyOwner whenStarted {
         _unpause();
     }
 
     ////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * Sets the wallet address used to receive the purchase payments with.
-     * @dev Emits the PayoutWalletSet event.
-     * @dev Reverts if the payout wallet is the zero address.
-     * @dev Reverts if the payout wallet is this contract.
-     * @dev Reverts if the payout wallet address is the same as the current
-     *  value.
-     * @param payoutWallet_ The new wallet address used to receive the
-     *  purchase payments with.
-     */
-    function setPayoutWallet(address payoutWallet_) public onlyOwner {
-        require(payoutWallet_ != address(0), "Sale: zero address payout wallet");
-        require(payoutWallet_ != address(this), "Sale: contract address payout wallet");
-        require(payoutWallet_ != payoutWallet, "Sale: identical payout wallet re-assignment");
-        payoutWallet = payable(payoutWallet_);
-        emit PayoutWalletSet(payoutWallet_);
-    }
 
     /**
      * Sets the ERC20 token currency accepted by the payout wallet for purchase
