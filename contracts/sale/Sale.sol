@@ -28,13 +28,6 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
 
     event PayoutTokenSet(IERC20 payoutToken);
 
-    /**
-     * Used as an abstract container for a related collection of extended data.
-     */
-    struct ExtendedData {
-        mapping(bytes32 => bytes32) data;
-    }
-
     IERC20 public payoutToken;
 
     /**
@@ -130,7 +123,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
-        ExtendedData memory extendedData
+        bytes32[] memory extendedData
     ) internal virtual view {}
 
     /**
@@ -149,8 +142,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
-        ExtendedData memory extendedData
-    ) internal virtual returns (ExtendedData memory paymentInfo);
+        bytes32[] memory extendedData
+    ) internal virtual returns (bytes32[] memory paymentInfo);
 
     /**
      * Delivers the purchased SKU item(s) to the purchaser.
@@ -167,8 +160,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
-        ExtendedData memory extendedData
-    ) internal virtual returns (ExtendedData memory deliveryInfo) {}
+        bytes32[] memory extendedData
+    ) internal virtual returns (bytes32[] memory deliveryInfo) {}
 
     /**
      * Finalizes the completed purchase by performing any remaining purchase
@@ -185,7 +178,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
-        ExtendedData memory /* extendedData */
+        bytes32[] memory /* extendedData */
     ) internal virtual {
         emit Purchased(
             purchaser,
