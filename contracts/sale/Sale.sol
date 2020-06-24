@@ -44,8 +44,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         address payable payoutWallet_,
         IERC20 payoutToken_
     )
-        internal
         PayoutWallet(payoutWallet_)
+        internal
     {
         setPayoutToken(payoutToken_);
         _pause();
