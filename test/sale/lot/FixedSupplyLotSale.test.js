@@ -1,7 +1,7 @@
 const { BN, balance, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const InventoryIds = require('@animoca/blockchain-inventory_metadata').inventoryIds;
 const Constants = require('@animoca/ethereum-contracts-core_library').constants;
-const { shouldBeEqualWithProportionalPrecision } = require('@animoca/ethereum-contracts-core_library').fixtures
+const { shouldBeEqualWithPercentPrecision } = require('@animoca/ethereum-contracts-core_library').fixtures
 
 const ERC20 = artifacts.require('IERC20');
 const AssetsInventory = artifacts.require('AssetsInventoryMock');
@@ -33,29 +33,6 @@ contract('FixedSupplyLotSale', function ([
     const lotPrice = ether('0.00001'); // must be at least 0.00001
 
     const unknownLotId = Constants.One;
-
-    function shouldBeEqualWithinDeviationPercent(expected, actual, significand, orderOfMagnitude = 0) {
-        if (expected.isZero()) {
-            actual.isZero().should.be.true;
-        } else {
-            // const delta = expected.sub(actual).abs();
-            // const numerator = delta.muln(100).mul(new BN(10).pow(new BN(-1 * orderOfMagnitude)));
-            // const actualPercentDeviation = numerator.div(expected);
-            // actualPercentDeviation.lte(significand).should.be.true;
-
-            // e.g. 5% deviation
-            //      => 1/N = 0.05
-            //      => 1 / 0.05 = N
-            //      => 100 / 5 = N
-            //      => 100 / (5 * 10 ^ 0) = N
-            //      => 100 / (significand * 10 ^ orderOfMagnitude) = N
-            //      => (100 * 10 ^ (-1 * orderOfMagnitude)) / significand = N
-            const numerator = new BN(100).mul(new BN(10).pow(new BN(-1 * orderOfMagnitude)));
-            const denominator = new BN(significand);
-            const divisor = numerator.div(denominator);
-            shouldBeEqualWithProportionalPrecision(actual, expected, divisor);
-        }
-    }
 
     async function shouldHaveStartedTheSale(state) {
         const startedAt = await this.sale._startedAt();
@@ -1360,9 +1337,9 @@ contract('FixedSupplyLotSale', function ([
                 const actualTotalPrice = this.priceInfo.minConversionRate.mul(this.priceInfo.totalPrice).div(new BN(10).pow(new BN(18)));
 
                 if (maxDeviationPercentSignificand) {
-                    shouldBeEqualWithinDeviationPercent(
-                        expectedTotalPrice,
+                    shouldBeEqualWithPercentPrecision(
                         actualTotalPrice,
+                        expectedTotalPrice,
                         maxDeviationPercentSignificand,
                         maxDeviationPercentOrderOfMagnitude);
                 } else {
@@ -1375,9 +1352,9 @@ contract('FixedSupplyLotSale', function ([
                 const actualTotalDiscounts = this.priceInfo.minConversionRate.mul(this.priceInfo.totalDiscounts).div(new BN(10).pow(new BN(18)));
 
                 if (maxDeviationPercentSignificand) {
-                    shouldBeEqualWithinDeviationPercent(
-                        expectedTotalDiscounts,
+                    shouldBeEqualWithPercentPrecision(
                         actualTotalDiscounts,
+                        expectedTotalDiscounts,
                         maxDeviationPercentSignificand,
                         maxDeviationPercentOrderOfMagnitude);
                 } else {
@@ -1413,7 +1390,7 @@ contract('FixedSupplyLotSale', function ([
                 this,
                 recipient,
                 tokenAddress,
-                Constants.One,
+                1,
                 -7)();  // max % dev: 0.0000001%
         });
 
@@ -2190,11 +2167,10 @@ contract('FixedSupplyLotSale', function ([
                             const buyerPurchaseTokenBalance = await this.erc20.balanceOf(operator);
                             const buyerPurchaseTokenBalanceDelta = this.buyerPurchaseTokenBalance.sub(buyerPurchaseTokenBalance);
 
-                            shouldBeEqualWithinDeviationPercent(
-                                this.priceInfo.totalPrice,
+                            shouldBeEqualWithPercentPrecision(
                                 buyerPurchaseTokenBalanceDelta,
-                                Constants.Five,
-                                0); // max % dev: 5%
+                                this.priceInfo.totalPrice,
+                                5); // max % dev: 5%
 
                             const spenderPurchaseTokenAllowance = await this.erc20.allowance(operator, this.sale.address);
                             spenderPurchaseTokenAllowance.should.be.bignumber.equal(
@@ -2253,11 +2229,10 @@ contract('FixedSupplyLotSale', function ([
                             const buyerPurchaseTokenBalance = await this.erc20.balanceOf(operator);
                             const buyerPurchaseTokenBalanceDelta = this.buyerPurchaseTokenBalance.sub(buyerPurchaseTokenBalance);
 
-                            shouldBeEqualWithinDeviationPercent(
-                                this.priceInfo.totalPrice,
+                            shouldBeEqualWithPercentPrecision(
                                 buyerPurchaseTokenBalanceDelta,
-                                Constants.Five,
-                                0); // max % dev: 5%
+                                this.priceInfo.totalPrice,
+                                5); // max % dev: 5%
 
                             const spenderPurchaseTokenAllowance = await this.erc20.allowance(operator, this.sale.address);
                             spenderPurchaseTokenAllowance.should.be.bignumber.equal(
@@ -2431,10 +2406,10 @@ contract('FixedSupplyLotSale', function ([
                 purchasedEvent.totalPrice.should.be.bignumber.equal(totalPrice);
                 purchasedEvent.tokenAddress.should.be.equal(tokenAddress);
 
-                shouldBeEqualWithinDeviationPercent(
-                    this.priceInfo.totalPrice,
+                shouldBeEqualWithPercentPrecision(
                     purchasedEvent.tokensSent,
-                    Constants.Five);
+                    this.priceInfo.totalPrice,
+                    5);
 
                 purchasedEvent.tokensReceived.should.be.bignumber.equal(totalPrice);
                 purchasedEvent.extData.should.be.equal('extData');
