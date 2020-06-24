@@ -47,7 +47,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         PayoutWallet(payoutWallet_)
         internal
     {
-        setPayoutToken(payoutToken_);
+        _setPayoutToken(payoutToken_);
         _pause();
     }
 
@@ -99,10 +99,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param payoutToken_ The new ERC20 token currency accepted by the payout
      *  wallet for purchase payments.
      */
-    function setPayoutToken(IERC20 payoutToken_) public onlyOwner {
+    function setPayoutToken(IERC20 payoutToken_) external onlyOwner {
         require(payoutToken_ != payoutToken, "Sale: identical payout token re-assignment");
-        payoutToken = payoutToken_;
-        emit PayoutTokenSet(payoutToken_);
+        _setPayoutToken(payoutToken_);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -239,6 +238,18 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
             sku,
             quantity,
             paymentToken);
+    }
+
+    /**
+     * Sets the ERC20 token currency accepted by the payout wallet for purchase
+     *  payments.
+     * @dev Emits the PayoutTokenSet event.
+     * @param payoutToken_ The new ERC20 token currency accepted by the payout
+     *  wallet for purchase payments.
+     */
+    function _setPayoutToken(IERC20 payoutToken_) internal {
+        payoutToken = payoutToken_;
+        emit PayoutTokenSet(payoutToken_);
     }
 
 }
