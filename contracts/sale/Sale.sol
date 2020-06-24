@@ -41,7 +41,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      *  wallet for purchase payments.
      */
     constructor(
-        address payoutWallet_,
+        address payable payoutWallet_,
         IERC20 payoutToken_
     )
         internal
