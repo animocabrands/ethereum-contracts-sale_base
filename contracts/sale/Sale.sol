@@ -95,13 +95,11 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * Sets the ERC20 token currency accepted by the payout wallet for purchase
      *  payments.
      * @dev Emits the PayoutTokenSet event.
-     * @dev Reverts if the payout token is the zero address.
      * @dev Reverts if the payout token is the same as the current value.
      * @param payoutToken_ The new ERC20 token currency accepted by the payout
      *  wallet for purchase payments.
      */
     function setPayoutToken(IERC20 payoutToken_) public onlyOwner {
-        require(payoutToken_ != IERC20(0), "Sale: zero address payout token");
         require(payoutToken_ != payoutToken, "Sale: identical payout token re-assignment");
         payoutToken = payoutToken_;
         emit PayoutTokenSet(payoutToken_);
