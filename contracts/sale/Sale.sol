@@ -110,6 +110,55 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
     ////////////////////////////////////////////////////////////////////////////
 
     /**
+     * Performs a purchase based on the given purchase conditions.
+     * @param purchaser The initiating account making the purchase.
+     * @param sku The SKU of the item being purchased.
+     * @param quantity The quantity of SKU items being purchased.
+     * @param paymentToken The ERC20 token to use as the payment currency of the
+     *  purchase.
+     * @param extendedData Implementation-specific extended input data.
+     */
+    function _purchase(
+        address payable purchaser,
+        bytes32 sku,
+        uint256 quantity,
+        IERC20 paymentToken,
+        bytes32[] memory extendedData
+    ) internal virtual {
+        _validatePurchase(
+            purchaser,
+            sku,
+            quantity,
+            paymentToken,
+            extendedData);
+
+        bytes32[] memory paymentInfo =
+            _acceptPayment(
+                purchaser,
+                sku,
+                quantity,
+                paymentToken,
+                extendedData);
+
+        bytes32[] memory deliveryInfo =
+            _deliverGoods(
+                purchaser,
+                sku,
+                quantity,
+                paymentToken,
+                extendedData);
+
+        _finalizePurchase(
+            purchaser,
+            sku,
+            quantity,
+            paymentToken,
+            extendedData,
+            paymentInfo,
+            deliveryInfo);
+    }
+
+    /**
      * Validates the given set of purchase conditions.
      * @param purchaser The initiating account making the purchase.
      * @param sku The SKU of the item being purchased.
@@ -172,13 +221,19 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param paymentToken The ERC20 token to use as the payment currency of the
      *  purchase.
      * @param *extendedData* Implementation-specific extended input data.
+     * @param *paymentInfo* Implementation-specific accepted payment
+     *  information result.
+     * @param *deliveryInfo* Implementation-specific delivery information
+     *  result.
      */
     function _finalizePurchase(
         address payable purchaser,
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
-        bytes32[] memory /* extendedData */
+        bytes32[] memory /* extendedData */,
+        bytes32[] memory /* paymentInfo */,
+        bytes32[] memory /* deliveryInfo */
     ) internal virtual {
         emit Purchased(
             purchaser,
