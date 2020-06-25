@@ -173,7 +173,21 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
                 msgData,
                 extData);
 
-        _finalizePurchase(
+        bytes32[] memory finalizeInfo =
+            _finalizePurchase(
+                purchaser,
+                sku,
+                quantity,
+                paymentToken,
+                priceInfo,
+                paymentInfo,
+                deliveryInfo,
+                msgSender,
+                msgValue,
+                msgData,
+                extData);
+
+        _notifyPurchased(
             purchaser,
             sku,
             quantity,
@@ -181,6 +195,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
             priceInfo,
             paymentInfo,
             deliveryInfo,
+            finalizeInfo,
             msgSender,
             msgValue,
             msgData,
@@ -289,7 +304,41 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
 
     /**
      * Finalizes the completed purchase by performing any remaining purchase
-     * housekeeping updates and/or emitting related purchase events.
+     * housekeeping updates.
+     * @param purchaser The initiating account that made the purchase.
+     * @param sku The SKU of the purchased item.
+     * @param quantity The quantity of SKU items purchased.
+     * @param paymentToken The ERC20 token to use as the payment currency of the
+     *  purchase.
+     * @param priceInfo Implementation-specific calculated price information
+     *  result.
+     * @param paymentInfo Implementation-specific accepted payment
+     *  information result.
+     * @param deliveryInfo Implementation-specific delivery information
+     *  result.
+     * @param msgSender Caller of the purchase transaction function.
+     * @param msgValue Number of wei sent with the purchase transaction.
+     * @param msgData Calldata supplied with the purchase transaction.
+     * @param extData Implementation-specific extra input data.
+     * @return finalizeInfo Implementation-specific finalize information
+     *  result.
+     */
+    function _finalizePurchase(
+        address payable purchaser,
+        bytes32 sku,
+        uint256 quantity,
+        IERC20 paymentToken,
+        bytes32[] memory priceInfo,
+        bytes32[] memory paymentInfo,
+        bytes32[] memory deliveryInfo,
+        address payable msgSender,
+        uint256 msgValue,
+        bytes memory msgData,
+        bytes32[] memory extData
+    ) internal virtual returns (bytes32[] memory finalizeInfo) {}
+
+    /**
+     * Triggers a notification that the purchase has been complete.
      * @dev Emits the Purchased event when the function is called successfully.
      * @param purchaser The initiating account that made the purchase.
      * @param sku The SKU of the purchased item.
@@ -302,12 +351,14 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      *  information result.
      * @param *deliveryInfo* Implementation-specific delivery information
      *  result.
+     * @param *finalizeInfo* Implementation-specific finalize information
+     *  result.
      * @param msgSender Caller of the purchase transaction function.
      * @param *msgValue* Number of wei sent with the purchase transaction.
      * @param *msgData* Calldata supplied with the purchase transaction.
      * @param *extData* Implementation-specific extra input data.
      */
-    function _finalizePurchase(
+    function _notifyPurchased(
         address payable purchaser,
         bytes32 sku,
         uint256 quantity,
@@ -315,6 +366,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         bytes32[] memory /* priceInfo */,
         bytes32[] memory /* paymentInfo */,
         bytes32[] memory /* deliveryInfo */,
+        bytes32[] memory /* finalizeInfo */,
         address payable msgSender,
         uint256 /* msgValue */,
         bytes memory /* msgData */,
