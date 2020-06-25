@@ -73,7 +73,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * Actvates, or 'starts', the contract.
      * @dev Emits the Started event.
      * @dev Emits the Unpaused event.
+     * @dev Reverts if called by any other than the contract owner.
      * @dev Reverts if the contract has already been started.
+     * @dev Reverts if the contract is not paused.
      */
     function start() external onlyOwner {
         _start();
@@ -85,9 +87,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
     /**
      * Pauses the contract.
      * @dev Emits the Paused event.
-     * @dev Reverts if called by a non-pauser.
-     * @dev Reverts if the contract is already paused.
+     * @dev Reverts if called by any other than the contract owner.
      * @dev Reverts if the contract has not been started yet.
+     * @dev Reverts if the contract is already paused.
      */
     function pause() external onlyOwner whenStarted {
         _pause();
@@ -96,9 +98,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
     /**
      * Resumes the contract.
      * @dev Emits the Unpaused event.
-     * @dev Reverts if called by a non-pauser.
-     * @dev Reverts if the contract is not paused.
+     * @dev Reverts if called by any other than the contract owner.
      * @dev Reverts if the contract has not been started yet.
+     * @dev Reverts if the contract is not paused.
      */
     function unpause() external onlyOwner whenStarted {
         _unpause();
@@ -110,6 +112,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * Sets the ERC20 token currency accepted by the payout wallet for purchase
      *  payments.
      * @dev Emits the PayoutTokenSet event.
+     * @dev Reverts if called by any other than the contract owner.
      * @dev Reverts if the payout token is the same as the current value.
      * @param payoutToken_ The new ERC20 token currency accepted by the payout
      *  wallet for purchase payments.
