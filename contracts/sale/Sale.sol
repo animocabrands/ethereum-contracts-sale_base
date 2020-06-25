@@ -108,6 +108,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
 
     /**
      * Performs a purchase based on the given purchase conditions.
+     * @dev Emits the Purchased event when the function is called successfully.
      * @param purchaser The initiating account making the purchase.
      * @param sku The SKU of the item being purchased.
      * @param quantity The quantity of SKU items being purchased.
@@ -248,6 +249,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
     /**
      * Finalizes the completed purchase by performing any remaining purchase
      * housekeeping updates and/or emitting related purchase events.
+     * @dev Emits the Purchased event when the function is called successfully.
      * @param purchaser The initiating account that made the purchase.
      * @param sku The SKU of the purchased item.
      * @param quantity The quantity of SKU items purchased.
