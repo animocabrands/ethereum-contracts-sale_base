@@ -1,8 +1,8 @@
 const { BN, balance, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const { EthAddress, Zero, One, Two } = require('@animoca/ethereum-contracts-core_library').constants;
-const { fromWei, toChecksumAddress } = require('web3-utils');
+const { fromWei, toChecksumAddress, sha3 } = require('web3-utils');
 
-const { doFreshDeploy, prices, purchaseFor, getPrice } = require('../shared.js');
+const { doFreshDeploy, prices, purchaseFor, getPrice, purchaseData } = require('../shared.js');
 
 const ERC20 = artifacts.require('IERC20.sol');
 
@@ -11,7 +11,7 @@ async function getBalance(token, address) {
     return await contract.balanceOf(address);
 }
 
-function simplePurchase(payout, owner, operator, recipient, useErc20) {
+function simplePurchase(payout, owner, operator, purchaser, useErc20) {
 
     describe('reverts', function () {
         before(async function () {
@@ -19,7 +19,7 @@ function simplePurchase(payout, owner, operator, recipient, useErc20) {
                 payout: payout,
                 owner: owner,
                 operator: operator,
-                recipient: recipient,
+                purchaser: purchaser,
                 useErc20: useErc20,
                 setPrices: true});
         });
@@ -27,29 +27,29 @@ function simplePurchase(payout, owner, operator, recipient, useErc20) {
         it('when quantity == 0', async function () {
             for (const purchaseId of Object.keys(prices)) {
                 await expectRevert.unspecified(
-                    purchaseFor(this.contract, recipient, purchaseId, Zero, this.erc20TokenAddress, recipient)
+                    purchaseFor(this.contract, purchaser, purchaseId, Zero, this.payoutTokenAddress, purchaser)
                 );
             }
         });
 
         it('when paymentToken is not a supported type', async function() {
             await expectRevert.unspecified(
-                purchaseFor(this.contract, recipient, 'both', One, '0xe19Ec968c15f487E96f631Ad9AA54fAE09A67C8c', recipient)
+                purchaseFor(this.contract, purchaser, 'both', One, '0xe19Ec968c15f487E96f631Ad9AA54fAE09A67C8c', purchaser)
             );
         });
 
         it('when purchaseId does not exist', async function () {
             await expectRevert.unspecified(
-                purchaseFor(this.contract, recipient, 'invalid', One, this.erc20TokenAddress, recipient)
+                purchaseFor(this.contract, purchaser, 'invalid', One, this.payoutTokenAddress, purchaser)
             );
         });
 
         it('when the value is inssuficient', async function () {
-            const priceForOne = await getPrice(this.contract, 'both', One, this.erc20TokenAddress);
+            const unitPrice = await getPrice(this.contract, 'both', One, this.payoutTokenAddress);
 
             await expectRevert.unspecified(
-                purchaseFor(this.contract, recipient, 'both', Two, this.erc20TokenAddress, recipient, {
-                    value: priceForOne
+                purchaseFor(this.contract, purchaser, 'both', Two, this.payoutTokenAddress, purchaser, {
+                    value: unitPrice
                 })
             );
         });
@@ -60,48 +60,49 @@ function simplePurchase(payout, owner, operator, recipient, useErc20) {
             const quantities = [One, new BN('10'), new BN('1000')];
             for (const quantity of quantities) {
                 it('<this.test.title>', async function () {
-                    const priceForOne = (this.erc20TokenAddress == EthAddress) ? ethPrice : erc20Price;
-                    const price = (new BN(priceForOne)).mul(quantity);
+                    const unitPrice = (this.payoutTokenAddress == EthAddress) ? ethPrice : erc20Price;
+                    const totalPrice = (new BN(unitPrice)).mul(quantity);
 
-                    this.test.title = `purchasing ${quantity.toString()} * '${purchaseId}' for ${fromWei(price.toString())} ${this.erc20TokenAddress == EthAddress ? 'ETH' : 'ERC20'}`;
+                    this.test.title = `purchasing ${quantity.toString()} * '${purchaseId}' for ${fromWei(totalPrice.toString())} ${this.payoutTokenAddress == EthAddress ? 'ETH' : 'ERC20'}`;
 
-                    const priceFromContract = await getPrice(this.contract, purchaseId, quantity, this.erc20TokenAddress);
-                    priceFromContract.should.be.bignumber.equal(price);
+                    const priceFromContract = await getPrice(this.contract, purchaseId, quantity, this.payoutTokenAddress);
+                    priceFromContract.should.be.bignumber.equal(totalPrice);
 
-                    if (price.eq(Zero)) {
+                    if (totalPrice.eq(Zero)) {
                         await expectRevert.unspecified(
-                            purchaseFor(this.contract, recipient, purchaseId, quantity, this.erc20TokenAddress, operator)
+                            purchaseFor(this.contract, purchaser, purchaseId, quantity, this.payoutTokenAddress, operator)
                         );
                     } else {
                         const balanceBefore =
-                            this.erc20TokenAddress == EthAddress ?
+                            this.payoutTokenAddress == EthAddress ?
                                 await balance.current(operator) :
-                                await getBalance(this.erc20TokenAddress, operator);
+                                await getBalance(this.payoutTokenAddress, operator);
 
-                        const receipt = await purchaseFor(this.contract, recipient, purchaseId, quantity, this.erc20TokenAddress, operator, {value: price.add(overvalue)});
+                        const receipt = await purchaseFor(this.contract, purchaser, purchaseId, quantity, this.payoutTokenAddress, operator, {value: totalPrice.add(overvalue)});
 
                         expectEvent.inLogs(receipt.logs, 'Purchased', {
-                            recipient: recipient,
+                            purchaser: purchaser,
                             operator: operator,
-                            purchaseId: purchaseId,
-                            paymentToken: toChecksumAddress(this.erc20TokenAddress),
+                            purchaseId: sha3(purchaseId),  // indexed string arg is keccak hashed
                             quantity: quantity,
-                            price: priceForOne,
-                            extData: ''
+                            paymentToken: toChecksumAddress(this.payoutTokenAddress),
+                            totalPrice: totalPrice,
+                            unitPrice: unitPrice,
+                            data: purchaseData  // un-indexed string arg is left as-is
                         });
 
                         const balanceAfter =
-                            this.erc20TokenAddress == EthAddress ?
+                            this.payoutTokenAddress == EthAddress ?
                                 await balance.current(operator) :
-                                await getBalance(this.erc20TokenAddress, operator);
+                                await getBalance(this.payoutTokenAddress, operator);
 
                         const balanceDiff = balanceBefore.sub(balanceAfter);
 
-                        if (this.erc20TokenAddress == EthAddress) {
+                        if (this.payoutTokenAddress == EthAddress) {
                             const gasUsed = new BN(receipt.receipt.gasUsed);
-                            balanceDiff.should.be.bignumber.equal(price.add(gasUsed));
+                            balanceDiff.should.be.bignumber.equal(totalPrice.add(gasUsed));
                         } else {
-                            balanceDiff.should.be.bignumber.equal(price);
+                            balanceDiff.should.be.bignumber.equal(totalPrice);
                         }
                     }
                 });
@@ -117,11 +118,11 @@ function simplePurchase(payout, owner, operator, recipient, useErc20) {
                         payout: payout,
                         owner: owner,
                         operator: operator,
-                        recipient: recipient,
+                        purchaser: purchaser,
                         useErc20: useErc20,
                         setPrices: true});
                 });
-                await testPurchases(recipient, Zero);
+                await testPurchases(purchaser, Zero);
             });
             describe('with overvalue (change)', async function () {
                 before(async function () {
@@ -129,11 +130,11 @@ function simplePurchase(payout, owner, operator, recipient, useErc20) {
                         payout: payout,
                         owner: owner,
                         operator: operator,
-                        recipient: recipient,
+                        purchaser: purchaser,
                         useErc20: useErc20,
                         setPrices: true});
                 });
-                await testPurchases(recipient, ether('1'));
+                await testPurchases(purchaser, ether('1'));
             });
         });
 
@@ -144,7 +145,7 @@ function simplePurchase(payout, owner, operator, recipient, useErc20) {
                         payout: payout,
                         owner: owner,
                         operator: operator,
-                        recipient: recipient,
+                        purchaser: purchaser,
                         useErc20: useErc20,
                         setPrices: true});
                 });
@@ -156,7 +157,7 @@ function simplePurchase(payout, owner, operator, recipient, useErc20) {
                         payout: payout,
                         owner: owner,
                         operator: operator,
-                        recipient: recipient,
+                        purchaser: purchaser,
                         useErc20: useErc20,
                         setPrices: true});
                 });

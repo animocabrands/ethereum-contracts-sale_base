@@ -1,4 +1,5 @@
 const { BN, ether } = require('@openzeppelin/test-helpers');
+const { asciiToHex } = require('web3-utils');
 const { EthAddress, ZeroAddress } = require('@animoca/ethereum-contracts-core_library').constants;
 
 const Sale = artifacts.require('SimpleSaleMock.sol');
@@ -20,35 +21,38 @@ const prices = {
     },
 };
 
+const purchaseData = 'some data';
+
 async function doFreshDeploy(params) {
-    let erc20TokenAddress;
+    let payoutTokenAddress;
 
     if (params.useErc20) {
         const erc20Token = await ERC20Token.new(ether('1000000000'), { from: params.owner });
         await erc20Token.transfer(params.operator, ether('100000'), { from: params.owner });
-        await erc20Token.transfer(params.recipient, ether('100000'), { from: params.owner });
-        erc20TokenAddress = erc20Token.address;
-        this.erc20TokenAddress = erc20TokenAddress;
+        await erc20Token.transfer(params.purchaser, ether('100000'), { from: params.owner });
+        payoutTokenAddress = erc20Token.address;
+        this.payoutTokenAddress = payoutTokenAddress;
     } else {
-        erc20TokenAddress = ZeroAddress;
-        this.erc20TokenAddress = EthAddress;
+        payoutTokenAddress = ZeroAddress;
+        this.payoutTokenAddress = EthAddress;
     }
 
-    this.contract = await Sale.new(params.payout, erc20TokenAddress, { from: params.owner });
+    this.contract = await Sale.new(params.payout, payoutTokenAddress, { from: params.owner });
 
     if (params.setPrices) {
         for (const [purchaseId, { ethPrice, erc20Price }] of Object.entries(prices)) {
-            await this.contract.setPrice(purchaseId, ethPrice, erc20Price, { from: params.owner });
+            const sku = asciiToHex(purchaseId);
+            await this.contract.setPrice(sku, ethPrice, erc20Price, { from: params.owner });
         }
     }
 };
 
 async function getPrice(sale, purchaseId, quantity, paymentToken) {
-    const { ethPrice, erc20Price } = await sale.prices(purchaseId);
+    const { ethPrice, erc20Price } = await sale.getPrice(purchaseId);
     return (paymentToken == EthAddress) ? ethPrice.mul(new BN(quantity)) : erc20Price.mul(new BN(quantity));
 }
 
-async function purchaseFor(sale, recipient, purchaseId, quantity, paymentToken, operator, overrides) {
+async function purchaseFor(sale, purchaser, purchaseId, quantity, paymentToken, operator, overrides) {
     const price = await getPrice(sale, purchaseId, quantity, paymentToken);
 
     let value = price;
@@ -75,11 +79,11 @@ async function purchaseFor(sale, recipient, purchaseId, quantity, paymentToken, 
 
     // console.log(`Purchasing ${quantity}*'${purchaseId}'`);
     return sale.purchaseFor(
-        recipient,
+        purchaser,
         purchaseId,
-        paymentToken,
         quantity,
-        '',
+        paymentToken,
+        'some data',
         {
             from: operator,
             value: etherValue,
@@ -92,5 +96,6 @@ module.exports = {
     doFreshDeploy,
     prices,
     purchaseFor,
-    getPrice
+    getPrice,
+    purchaseData
 };
