@@ -139,6 +139,16 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
             msgData,
             extData);
 
+        bytes32[] memory priceInfo =
+            _calculatePrice(
+                purchaser,
+                sku,
+                quantity,
+                paymentToken,
+                msgSender,
+                msgValue,
+                msgData,
+                extData);
 
         bytes32[] memory paymentInfo =
             _acceptPayment(
@@ -146,6 +156,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
                 sku,
                 quantity,
                 paymentToken,
+                priceInfo,
                 msgSender,
                 msgValue,
                 msgData,
@@ -167,6 +178,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
             sku,
             quantity,
             paymentToken,
+            priceInfo,
             paymentInfo,
             deliveryInfo,
             msgSender,
@@ -199,12 +211,39 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
     ) internal virtual view {}
 
     /**
+     * Calculates the purchase price for the given set of purchase conditions.
+     * @param purchaser The initiating account making the purchase.
+     * @param sku The SKU of the item being purchased.
+     * @param quantity The quantity of SKU items being purchased.
+     * @param paymentToken The ERC20 token to use as the payment currency of the
+     *  purchase.
+     * @param msgSender Caller of the purchase transaction function.
+     * @param msgValue Number of wei sent with the purchase transaction.
+     * @param msgData Calldata supplied with the purchase transaction.
+     * @param extData Implementation-specific extra input data.
+     * @return priceInfo Implementation-specific calculated price information
+     *  result.
+     */
+    function _calculatePrice(
+        address payable purchaser,
+        bytes32 sku,
+        uint256 quantity,
+        IERC20 paymentToken,
+        address payable msgSender,
+        uint256 msgValue,
+        bytes memory msgData,
+        bytes32[] memory extData
+    ) internal virtual returns (bytes32[] memory priceInfo);
+
+    /**
      * Accepts the purchase payment for the given set of purchase conditions.
      * @param purchaser The initiating account making the purchase.
      * @param sku The SKU of the item being purchased.
      * @param quantity The quantity of SKU items being purchased.
      * @param paymentToken The ERC20 token to use as the payment currency of the
      *  purchase.
+     * @param priceInfo Implementation-specific calculated price information
+     *  result.
      * @param msgSender Caller of the purchase transaction function.
      * @param msgValue Number of wei sent with the purchase transaction.
      * @param msgData Calldata supplied with the purchase transaction.
@@ -217,6 +256,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
+        bytes32[] memory priceInfo,
         address payable msgSender,
         uint256 msgValue,
         bytes memory msgData,
@@ -256,6 +296,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param quantity The quantity of SKU items purchased.
      * @param paymentToken The ERC20 token to use as the payment currency of the
      *  purchase.
+     * @param *priceInfo* Implementation-specific calculated price information
+     *  result.
      * @param *paymentInfo* Implementation-specific accepted payment
      *  information result.
      * @param *deliveryInfo* Implementation-specific delivery information
@@ -270,6 +312,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
+        bytes32[] memory /* priceInfo */,
         bytes32[] memory /* paymentInfo */,
         bytes32[] memory /* deliveryInfo */,
         address payable msgSender,
