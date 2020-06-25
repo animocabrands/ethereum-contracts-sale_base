@@ -117,7 +117,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param msgSender Caller of the purchase transaction function.
      * @param msgValue Number of wei sent with the purchase transaction.
      * @param msgData Calldata supplied with the purchase transaction.
-     * @param extendedData Implementation-specific extended input data.
+     * @param extData Implementation-specific extra input data.
      */
     function _purchase(
         address payable purchaser,
@@ -127,7 +127,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         address payable msgSender,
         uint256 msgValue,
         bytes memory msgData,
-        bytes32[] memory extendedData
+        bytes32[] memory extData
     ) internal virtual {
         _validatePurchase(
             purchaser,
@@ -137,7 +137,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
             msgSender,
             msgValue,
             msgData,
-            extendedData);
+            extData);
+
 
         bytes32[] memory paymentInfo =
             _acceptPayment(
@@ -148,7 +149,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
                 msgSender,
                 msgValue,
                 msgData,
-                extendedData);
+                extData);
 
         bytes32[] memory deliveryInfo =
             _deliverGoods(
@@ -159,7 +160,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
                 msgSender,
                 msgValue,
                 msgData,
-                extendedData);
+                extData);
 
         _finalizePurchase(
             purchaser,
@@ -171,7 +172,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
             msgSender,
             msgValue,
             msgData,
-            extendedData);
+            extData);
     }
 
     /**
@@ -184,7 +185,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param msgSender Caller of the purchase transaction function.
      * @param msgValue Number of wei sent with the purchase transaction.
      * @param msgData Calldata supplied with the purchase transaction.
-     * @param extendedData Implementation-specific extended input data.
+     * @param extData Implementation-specific extra input data.
      */
     function _validatePurchase(
         address payable purchaser,
@@ -194,7 +195,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         address payable msgSender,
         uint256 msgValue,
         bytes memory msgData,
-        bytes32[] memory extendedData
+        bytes32[] memory extData
     ) internal virtual view {}
 
     /**
@@ -207,7 +208,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param msgSender Caller of the purchase transaction function.
      * @param msgValue Number of wei sent with the purchase transaction.
      * @param msgData Calldata supplied with the purchase transaction.
-     * @param extendedData Implementation-specific extended input data.
+     * @param extData Implementation-specific extra input data.
      * @return paymentInfo Implementation-specific accepted payment information
      *  result.
      */
@@ -219,7 +220,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         address payable msgSender,
         uint256 msgValue,
         bytes memory msgData,
-        bytes32[] memory extendedData
+        bytes32[] memory extData
     ) internal virtual returns (bytes32[] memory paymentInfo);
 
     /**
@@ -232,7 +233,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param msgSender Caller of the purchase transaction function.
      * @param msgValue Number of wei sent with the purchase transaction.
      * @param msgData Calldata supplied with the purchase transaction.
-     * @param extendedData Implementation-specific extended input data.
+     * @param extData Implementation-specific extra input data.
      * @return deliveryInfo Implementation-specific delivery information result.
      */
     function _deliverGoods(
@@ -243,7 +244,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         address payable msgSender,
         uint256 msgValue,
         bytes memory msgData,
-        bytes32[] memory extendedData
+        bytes32[] memory extData
     ) internal virtual returns (bytes32[] memory deliveryInfo) {}
 
     /**
@@ -262,7 +263,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param msgSender Caller of the purchase transaction function.
      * @param *msgValue* Number of wei sent with the purchase transaction.
      * @param *msgData* Calldata supplied with the purchase transaction.
-     * @param *extendedData* Implementation-specific extended input data.
+     * @param *extData* Implementation-specific extra input data.
      */
     function _finalizePurchase(
         address payable purchaser,
@@ -274,7 +275,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         address payable msgSender,
         uint256 /* msgValue */,
         bytes memory /* msgData */,
-        bytes32[] memory /* extendedData */
+        bytes32[] memory /* extData */
     ) internal virtual {
         emit Purchased(
             purchaser,
