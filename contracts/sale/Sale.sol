@@ -28,6 +28,21 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
 
     event PayoutTokenSet(IERC20 payoutToken);
 
+    /**
+     * Used to wrap the purchase conditions passed to the purchase lifecycle
+     * functions.
+     */
+    struct Purchase {
+        address payable purchaser;
+        bytes32 sku;
+        uint256 quantity;
+        IERC20 paymentToken;
+        address payable msgSender;
+        uint256 msgValue;
+        bytes msgData;
+        bytes32[] extData;
+    }
+
     IERC20 public payoutToken;
 
     /**
@@ -129,255 +144,125 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         bytes memory msgData,
         bytes32[] memory extData
     ) internal virtual {
-        _validatePurchase(
-            purchaser,
-            sku,
-            quantity,
-            paymentToken,
-            msgSender,
-            msgValue,
-            msgData,
-            extData);
+        Purchase memory purchase;
+        purchase.purchaser = purchaser;
+        purchase.sku = sku;
+        purchase.quantity = quantity;
+        purchase.paymentToken = paymentToken;
+        purchase.msgSender = msgSender;
+        purchase.msgValue = msgValue;
+        purchase.msgData = msgData;
+        purchase.extData = extData;
+
+        _validatePurchase(purchase);
 
         bytes32[] memory priceInfo =
-            _calculatePrice(
-                purchaser,
-                sku,
-                quantity,
-                paymentToken,
-                msgSender,
-                msgValue,
-                msgData,
-                extData);
+            _calculatePrice(purchase);
 
         bytes32[] memory paymentInfo =
-            _acceptPayment(
-                purchaser,
-                sku,
-                quantity,
-                paymentToken,
-                priceInfo,
-                msgSender,
-                msgValue,
-                msgData,
-                extData);
+            _acceptPayment(purchase, priceInfo);
 
         bytes32[] memory deliveryInfo =
-            _deliverGoods(
-                purchaser,
-                sku,
-                quantity,
-                paymentToken,
-                msgSender,
-                msgValue,
-                msgData,
-                extData);
+            _deliverGoods(purchase);
 
         bytes32[] memory finalizeInfo =
-            _finalizePurchase(
-                purchaser,
-                sku,
-                quantity,
-                paymentToken,
-                priceInfo,
-                paymentInfo,
-                deliveryInfo,
-                msgSender,
-                msgValue,
-                msgData,
-                extData);
+            _finalizePurchase(purchase, priceInfo, paymentInfo, deliveryInfo);
 
         _notifyPurchased(
-            purchaser,
-            sku,
-            quantity,
-            paymentToken,
+            purchase,
             priceInfo,
             paymentInfo,
             deliveryInfo,
-            finalizeInfo,
-            msgSender,
-            msgValue,
-            msgData,
-            extData);
+            finalizeInfo);
     }
 
     /**
-     * Validates the given set of purchase conditions.
-     * @param purchaser The initiating account making the purchase.
-     * @param sku The SKU of the item being purchased.
-     * @param quantity The quantity of SKU items being purchased.
-     * @param paymentToken The ERC20 token to use as the payment currency of the
-     *  purchase.
-     * @param msgSender Caller of the purchase transaction function.
-     * @param msgValue Number of wei sent with the purchase transaction.
-     * @param msgData Calldata supplied with the purchase transaction.
-     * @param extData Implementation-specific extra input data.
+     * Validates a purchase.
+     * @param purchase Purchase conditions.
      */
     function _validatePurchase(
-        address payable purchaser,
-        bytes32 sku,
-        uint256 quantity,
-        IERC20 paymentToken,
-        address payable msgSender,
-        uint256 msgValue,
-        bytes memory msgData,
-        bytes32[] memory extData
+        Purchase memory purchase
     ) internal virtual view {}
 
     /**
-     * Calculates the purchase price for the given set of purchase conditions.
-     * @param purchaser The initiating account making the purchase.
-     * @param sku The SKU of the item being purchased.
-     * @param quantity The quantity of SKU items being purchased.
-     * @param paymentToken The ERC20 token to use as the payment currency of the
-     *  purchase.
-     * @param msgSender Caller of the purchase transaction function.
-     * @param msgValue Number of wei sent with the purchase transaction.
-     * @param msgData Calldata supplied with the purchase transaction.
-     * @param extData Implementation-specific extra input data.
-     * @return priceInfo Implementation-specific calculated price information
-     *  result.
+     * Calculates the purchase price.
+     * @param purchase Purchase conditions.
+     * @return priceInfo Implementation-specific calculated purchase price
+     *  information.
      */
     function _calculatePrice(
-        address payable purchaser,
-        bytes32 sku,
-        uint256 quantity,
-        IERC20 paymentToken,
-        address payable msgSender,
-        uint256 msgValue,
-        bytes memory msgData,
-        bytes32[] memory extData
+        Purchase memory purchase
     ) internal virtual returns (bytes32[] memory priceInfo);
 
     /**
-     * Accepts the purchase payment for the given set of purchase conditions.
-     * @param purchaser The initiating account making the purchase.
-     * @param sku The SKU of the item being purchased.
-     * @param quantity The quantity of SKU items being purchased.
-     * @param paymentToken The ERC20 token to use as the payment currency of the
-     *  purchase.
-     * @param priceInfo Implementation-specific calculated price information
-     *  result.
-     * @param msgSender Caller of the purchase transaction function.
-     * @param msgValue Number of wei sent with the purchase transaction.
-     * @param msgData Calldata supplied with the purchase transaction.
-     * @param extData Implementation-specific extra input data.
-     * @return paymentInfo Implementation-specific accepted payment information
-     *  result.
+     * Accepts payment for a purchase.
+     * @param purchase Purchase conditions.
+     * @param priceInfo Implementation-specific calculated purchase price
+     *  information.
+     * @return paymentInfo Implementation-specific accepted purchase payment
+     *  information.
      */
     function _acceptPayment(
-        address payable purchaser,
-        bytes32 sku,
-        uint256 quantity,
-        IERC20 paymentToken,
-        bytes32[] memory priceInfo,
-        address payable msgSender,
-        uint256 msgValue,
-        bytes memory msgData,
-        bytes32[] memory extData
+        Purchase memory purchase,
+        bytes32[] memory priceInfo
     ) internal virtual returns (bytes32[] memory paymentInfo);
 
     /**
      * Delivers the purchased SKU item(s) to the purchaser.
-     * @param purchaser The initiating account making the purchase.
-     * @param sku The SKU of the item being purchased.
-     * @param quantity The quantity of SKU items being purchased.
-     * @param paymentToken The ERC20 token to use as the payment currency of the
-     *  purchase.
-     * @param msgSender Caller of the purchase transaction function.
-     * @param msgValue Number of wei sent with the purchase transaction.
-     * @param msgData Calldata supplied with the purchase transaction.
-     * @param extData Implementation-specific extra input data.
-     * @return deliveryInfo Implementation-specific delivery information result.
+     * @param purchase Purchase conditions.
+     * @return deliveryInfo Implementation-specific purchase delivery
+     *  information.
      */
     function _deliverGoods(
-        address payable purchaser,
-        bytes32 sku,
-        uint256 quantity,
-        IERC20 paymentToken,
-        address payable msgSender,
-        uint256 msgValue,
-        bytes memory msgData,
-        bytes32[] memory extData
+        Purchase memory purchase
     ) internal virtual returns (bytes32[] memory deliveryInfo) {}
 
     /**
      * Finalizes the completed purchase by performing any remaining purchase
      * housekeeping updates.
-     * @param purchaser The initiating account that made the purchase.
-     * @param sku The SKU of the purchased item.
-     * @param quantity The quantity of SKU items purchased.
-     * @param paymentToken The ERC20 token to use as the payment currency of the
-     *  purchase.
-     * @param priceInfo Implementation-specific calculated price information
-     *  result.
-     * @param paymentInfo Implementation-specific accepted payment
-     *  information result.
-     * @param deliveryInfo Implementation-specific delivery information
-     *  result.
-     * @param msgSender Caller of the purchase transaction function.
-     * @param msgValue Number of wei sent with the purchase transaction.
-     * @param msgData Calldata supplied with the purchase transaction.
-     * @param extData Implementation-specific extra input data.
-     * @return finalizeInfo Implementation-specific finalize information
-     *  result.
+     * @param purchase Purchase conditions.
+     * @param priceInfo Implementation-specific calculated purchase price
+     *  information.
+     * @param paymentInfo Implementation-specific accepted purchase payment
+     *  information.
+     * @param deliveryInfo Implementation-specific purchase delivery
+     *  information.
+     * @return finalizeInfo Implementation-specific purchase finalization
+     *  information.
      */
     function _finalizePurchase(
-        address payable purchaser,
-        bytes32 sku,
-        uint256 quantity,
-        IERC20 paymentToken,
+        Purchase memory purchase,
         bytes32[] memory priceInfo,
         bytes32[] memory paymentInfo,
-        bytes32[] memory deliveryInfo,
-        address payable msgSender,
-        uint256 msgValue,
-        bytes memory msgData,
-        bytes32[] memory extData
+        bytes32[] memory deliveryInfo
     ) internal virtual returns (bytes32[] memory finalizeInfo) {}
 
     /**
-     * Triggers a notification that the purchase has been complete.
+     * Triggers a notification(s) that the purchase has been complete.
      * @dev Emits the Purchased event when the function is called successfully.
-     * @param purchaser The initiating account that made the purchase.
-     * @param sku The SKU of the purchased item.
-     * @param quantity The quantity of SKU items purchased.
-     * @param paymentToken The ERC20 token to use as the payment currency of the
-     *  purchase.
-     * @param *priceInfo* Implementation-specific calculated price information
-     *  result.
-     * @param *paymentInfo* Implementation-specific accepted payment
-     *  information result.
-     * @param *deliveryInfo* Implementation-specific delivery information
-     *  result.
-     * @param *finalizeInfo* Implementation-specific finalize information
-     *  result.
-     * @param msgSender Caller of the purchase transaction function.
-     * @param *msgValue* Number of wei sent with the purchase transaction.
-     * @param *msgData* Calldata supplied with the purchase transaction.
-     * @param *extData* Implementation-specific extra input data.
+     * @param purchase Purchase conditions.
+     * @param *priceInfo* Implementation-specific calculated purchase price
+     *  information.
+     * @param *paymentInfo* Implementation-specific accepted purchase payment
+     *  information.
+     * @param *deliveryInfo* Implementation-specific purchase delivery
+     *  information.
+     * @param *finalizeInfo* Implementation-specific purchase finalization
+     *  information.
      */
     function _notifyPurchased(
-        address payable purchaser,
-        bytes32 sku,
-        uint256 quantity,
-        IERC20 paymentToken,
+        Purchase memory purchase,
         bytes32[] memory /* priceInfo */,
         bytes32[] memory /* paymentInfo */,
         bytes32[] memory /* deliveryInfo */,
-        bytes32[] memory /* finalizeInfo */,
-        address payable msgSender,
-        uint256 /* msgValue */,
-        bytes memory /* msgData */,
-        bytes32[] memory /* extData */
+        bytes32[] memory /* finalizeInfo */
     ) internal virtual {
         emit Purchased(
-            purchaser,
-            msgSender,
-            sku,
-            quantity,
-            paymentToken);
+            purchase.purchaser,
+            purchase.msgSender,
+            purchase.sku,
+            purchase.quantity,
+            purchase.paymentToken);
     }
 
     /**
