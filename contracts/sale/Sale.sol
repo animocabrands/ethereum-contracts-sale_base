@@ -114,30 +114,30 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param quantity The quantity of SKU items being purchased.
      * @param paymentToken The ERC20 token to use as the payment currency of the
      *  purchase.
-     * @param extendedData Implementation-specific extended input data.
-     * @param msgData Calldata supplied with the purchase transaction.
      * @param msgSender Caller of the purchase transaction function.
      * @param msgValue Number of wei sent with the purchase transaction.
+     * @param msgData Calldata supplied with the purchase transaction.
+     * @param extendedData Implementation-specific extended input data.
      */
     function _purchase(
         address payable purchaser,
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
-        bytes32[] memory extendedData,
-        bytes memory msgData,
         address payable msgSender,
-        uint256 msgValue
+        uint256 msgValue,
+        bytes memory msgData,
+        bytes32[] memory extendedData
     ) internal virtual {
         _validatePurchase(
             purchaser,
             sku,
             quantity,
             paymentToken,
-            extendedData,
-            msgData,
             msgSender,
-            msgValue);
+            msgValue,
+            msgData,
+            extendedData);
 
         bytes32[] memory paymentInfo =
             _acceptPayment(
@@ -145,10 +145,10 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
                 sku,
                 quantity,
                 paymentToken,
-                extendedData,
-                msgData,
                 msgSender,
-                msgValue);
+                msgValue,
+                msgData,
+                extendedData);
 
         bytes32[] memory deliveryInfo =
             _deliverGoods(
@@ -156,22 +156,22 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
                 sku,
                 quantity,
                 paymentToken,
-                extendedData,
-                msgData,
                 msgSender,
-                msgValue);
+                msgValue,
+                msgData,
+                extendedData);
 
         _finalizePurchase(
             purchaser,
             sku,
             quantity,
             paymentToken,
-            extendedData,
             paymentInfo,
             deliveryInfo,
-            msgData,
             msgSender,
-            msgValue);
+            msgValue,
+            msgData,
+            extendedData);
     }
 
     /**
@@ -181,20 +181,20 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param quantity The quantity of SKU items being purchased.
      * @param paymentToken The ERC20 token to use as the payment currency of the
      *  purchase.
-     * @param extendedData Implementation-specific extended input data.
-     * @param msgData Calldata supplied with the purchase transaction.
      * @param msgSender Caller of the purchase transaction function.
      * @param msgValue Number of wei sent with the purchase transaction.
+     * @param msgData Calldata supplied with the purchase transaction.
+     * @param extendedData Implementation-specific extended input data.
      */
     function _validatePurchase(
         address payable purchaser,
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
-        bytes32[] memory extendedData,
-        bytes memory msgData,
         address payable msgSender,
-        uint256 msgValue
+        uint256 msgValue,
+        bytes memory msgData,
+        bytes32[] memory extendedData
     ) internal virtual view {}
 
     /**
@@ -204,10 +204,10 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param quantity The quantity of SKU items being purchased.
      * @param paymentToken The ERC20 token to use as the payment currency of the
      *  purchase.
-     * @param extendedData Implementation-specific extended input data.
-     * @param msgData Calldata supplied with the purchase transaction.
      * @param msgSender Caller of the purchase transaction function.
      * @param msgValue Number of wei sent with the purchase transaction.
+     * @param msgData Calldata supplied with the purchase transaction.
+     * @param extendedData Implementation-specific extended input data.
      * @return paymentInfo Implementation-specific accepted payment information
      *  result.
      */
@@ -216,10 +216,10 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
-        bytes32[] memory extendedData,
-        bytes memory msgData,
         address payable msgSender,
-        uint256 msgValue
+        uint256 msgValue,
+        bytes memory msgData,
+        bytes32[] memory extendedData
     ) internal virtual returns (bytes32[] memory paymentInfo);
 
     /**
@@ -229,10 +229,10 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param quantity The quantity of SKU items being purchased.
      * @param paymentToken The ERC20 token to use as the payment currency of the
      *  purchase.
-     * @param extendedData Implementation-specific extended input data.
-     * @param msgData Calldata supplied with the purchase transaction.
      * @param msgSender Caller of the purchase transaction function.
      * @param msgValue Number of wei sent with the purchase transaction.
+     * @param msgData Calldata supplied with the purchase transaction.
+     * @param extendedData Implementation-specific extended input data.
      * @return deliveryInfo Implementation-specific delivery information result.
      */
     function _deliverGoods(
@@ -240,10 +240,10 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
-        bytes32[] memory extendedData,
-        bytes memory msgData,
         address payable msgSender,
-        uint256 msgValue
+        uint256 msgValue,
+        bytes memory msgData,
+        bytes32[] memory extendedData
     ) internal virtual returns (bytes32[] memory deliveryInfo) {}
 
     /**
@@ -255,26 +255,26 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param quantity The quantity of SKU items purchased.
      * @param paymentToken The ERC20 token to use as the payment currency of the
      *  purchase.
-     * @param *extendedData* Implementation-specific extended input data.
      * @param *paymentInfo* Implementation-specific accepted payment
      *  information result.
      * @param *deliveryInfo* Implementation-specific delivery information
      *  result.
-     * @param *msgData* Calldata supplied with the purchase transaction.
      * @param msgSender Caller of the purchase transaction function.
      * @param *msgValue* Number of wei sent with the purchase transaction.
+     * @param *msgData* Calldata supplied with the purchase transaction.
+     * @param *extendedData* Implementation-specific extended input data.
      */
     function _finalizePurchase(
         address payable purchaser,
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
-        bytes32[] memory /* extendedData */,
         bytes32[] memory /* paymentInfo */,
         bytes32[] memory /* deliveryInfo */,
-        bytes memory /* msgData */,
         address payable msgSender,
-        uint256 /* msgValue */
+        uint256 /* msgValue */,
+        bytes memory /* msgData */,
+        bytes32[] memory /* extendedData */
     ) internal virtual {
         emit Purchased(
             purchaser,
