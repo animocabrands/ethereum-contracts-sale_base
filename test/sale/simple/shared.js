@@ -5,6 +5,8 @@ const { EthAddress, ZeroAddress } = require('@animoca/ethereum-contracts-core_li
 const Sale = artifacts.require('SimpleSaleMock.sol');
 const ERC20Token = artifacts.require('ERC20Mock.sol');
 const ERC20 = artifacts.require('IERC20.sol');
+const Bytes32ToString = artifacts.require('Bytes32ToString.sol');
+const StringToBytes32 = artifacts.require('StringToBytes32.sol');
 
 const prices = {
     'both': {
@@ -36,6 +38,12 @@ async function doFreshDeploy(params) {
         payoutTokenAddress = ZeroAddress;
         this.payoutTokenAddress = EthAddress;
     }
+
+    const bytes32ToString = await Bytes32ToString.new();
+    const stringToBytes32 = await StringToBytes32.new();
+
+    await Sale.link('Bytes32ToString', bytes32ToString.address);
+    await Sale.link('StringToBytes32', stringToBytes32.address);
 
     this.contract = await Sale.new(params.payout, payoutTokenAddress, { from: params.owner });
 

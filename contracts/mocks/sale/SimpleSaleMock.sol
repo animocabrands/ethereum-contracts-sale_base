@@ -2,10 +2,15 @@
 
 pragma solidity 0.6.8;
 
+import "@animoca/ethereum-contracts-core_library/contracts/utils/types/Bytes32ToString.sol";
+import "@animoca/ethereum-contracts-core_library/contracts/utils/types/StringToBytes32.sol";
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
 import "../../sale/SimpleSale.sol";
 
 contract SimpleSaleMock is SimpleSale {
+
+    using Bytes32ToString for bytes32;
+    using StringToBytes32 for string;
 
     event Purchased(
         address indexed purchaser,
@@ -40,7 +45,7 @@ contract SimpleSaleMock is SimpleSale {
     function getPrice(
         string calldata purchaseId
     ) external view returns (uint256 ethPrice, uint256 erc20Price) {
-        Price storage price = prices[_stringToBytes32(purchaseId)];
+        Price storage price = prices[purchaseId.toBytes32()];
         ethPrice = price.ethPrice;
         erc20Price = price.erc20Price;
     }
@@ -63,11 +68,11 @@ contract SimpleSaleMock is SimpleSale {
         string calldata data
     ) external payable {
         bytes32[] memory extData = new bytes32[](1);
-        extData[0] = _stringToBytes32(data);
+        extData[0] = data.toBytes32();
 
         _purchase(
             purchaser,
-            _stringToBytes32(purchaseId),
+            purchaseId.toBytes32(),
             quantity,
             paymentToken,
             _msgSender(),
@@ -99,62 +104,12 @@ contract SimpleSaleMock is SimpleSale {
         emit Purchased(
             purchase.purchaser,
             purchase.msgSender,
-            _bytes32ToString(purchase.sku),
+            purchase.sku.toString(),
             purchase.quantity,
             purchase.paymentToken,
             uint256(priceInfo[0]),
             uint256(priceInfo[1]),
-            _bytes32ToString(purchase.extData[0]));
-    }
-
-    /**
-     * Converts a string into bytes32.
-     * @dev Input string must not be longer than 32 8-bit characters in order to
-     *  prevent a lossy result.
-     * @param inputString Input string to convert.
-     * @return outputBytes32 Bytes32 converted result.
-     */
-    function _stringToBytes32(
-        string memory inputString
-    ) public pure returns (bytes32 outputBytes32) {
-        bytes memory inputBytes = bytes(inputString);
-
-        if (inputBytes.length == 0) {
-            return 0x0;
-        }
-
-        assembly {
-            outputBytes32 := mload(add(inputString, 32))
-        }
-    }
-
-    /**
-     * Converts a bytes32 into a string.
-     * @param inputBytes32 Input bytes32 to convert.
-     * @return outputString String converted result.
-     */
-    function _bytes32ToString(
-        bytes32 inputBytes32
-    ) public pure returns (string memory outputString) {
-        bytes memory bytesString = new bytes(32);
-        uint256 charCount = 0;
-
-        for (uint256 index = 0; index < 32; ++index) {
-            byte char = byte(bytes32(uint256(inputBytes32) * 2 ** (8 * index)));
-
-            if (char != 0) {
-                bytesString[charCount] = char;
-                charCount++;
-            }
-        }
-
-        bytes memory bytesStringTrimmed = new bytes(charCount);
-
-        for (uint256 index = 0; index < charCount; ++index) {
-            bytesStringTrimmed[index] = bytesString[index];
-        }
-
-        outputString = string(bytesStringTrimmed);
+            purchase.extData[0].toString());
     }
 
 }
