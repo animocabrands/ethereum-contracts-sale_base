@@ -3,9 +3,9 @@
 pragma solidity = 0.6.8;
 
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-import "@animoca/ethereum-contracts-sale_base/contracts/sale/Sale.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/GSN/GSNRecipient.sol";
+import "./Sale.sol";
 
 /**
  * @title SimpleSale
