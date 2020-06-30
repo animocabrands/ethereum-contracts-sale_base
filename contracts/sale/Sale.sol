@@ -35,10 +35,10 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      */
     struct Purchase {
         address payable purchaser;
+        address payable operator;
         bytes32 sku;
         uint256 quantity;
         IERC20 paymentToken;
-        address payable msgSender;
         bytes32[] extData;
     }
 
@@ -133,10 +133,10 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
     ) external payable {
         Purchase memory purchase;
         purchase.purchaser = purchaser;
+        purchase.operator = _msgSender();
         purchase.sku = sku;
         purchase.quantity = quantity;
         purchase.paymentToken = paymentToken;
-        purchase.msgSender = _msgSender();
         purchase.extData = extData;
 
         _purchaseFor(purchase);
@@ -256,7 +256,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
     ) internal virtual {
         emit Purchased(
             purchase.purchaser,
-            purchase.msgSender,
+            purchase.operator,
             purchase.sku,
             purchase.quantity,
             purchase.paymentToken,

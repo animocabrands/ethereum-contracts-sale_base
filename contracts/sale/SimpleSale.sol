@@ -227,11 +227,11 @@ abstract contract SimpleSale is Sale, GSNRecipient {
             uint256 change = msg.value.sub(totalPrice);
 
             if (change > 0) {
-                purchase.msgSender.transfer(change);
+                purchase.operator.transfer(change);
             }
         } else {
             require(
-                payoutToken.transferFrom(purchase.msgSender, payoutWallet, totalPrice),
+                payoutToken.transferFrom(purchase.operator, payoutWallet, totalPrice),
                 "SimpleSale: Failure in transferring ERC20 payment");
         }
     }
