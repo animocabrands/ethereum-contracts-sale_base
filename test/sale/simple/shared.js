@@ -5,8 +5,6 @@ const { EthAddress, ZeroAddress } = require('@animoca/ethereum-contracts-core_li
 const Sale = artifacts.require('SimpleSaleMock.sol');
 const ERC20Token = artifacts.require('ERC20Mock.sol');
 const ERC20 = artifacts.require('IERC20.sol');
-const Bytes32ToString = artifacts.require('Bytes32ToString.sol');
-const StringToBytes32 = artifacts.require('StringToBytes32.sol');
 
 const prices = {
     'both': {
@@ -23,7 +21,7 @@ const prices = {
     },
 };
 
-const purchaseData = 'some data';
+const purchaseData = asciiToHex('some data');
 
 async function doFreshDeploy(params) {
     let payoutTokenAddress;
@@ -39,12 +37,6 @@ async function doFreshDeploy(params) {
         this.payoutTokenAddress = EthAddress;
     }
 
-    const bytes32ToString = await Bytes32ToString.new();
-    const stringToBytes32 = await StringToBytes32.new();
-
-    await Sale.link('Bytes32ToString', bytes32ToString.address);
-    await Sale.link('StringToBytes32', stringToBytes32.address);
-
     this.contract = await Sale.new(params.payout, payoutTokenAddress, { from: params.owner });
 
     if (params.setPrices) {
@@ -56,7 +48,8 @@ async function doFreshDeploy(params) {
 };
 
 async function getPrice(sale, purchaseId, quantity, paymentToken) {
-    const { ethPrice, erc20Price } = await sale.getPrice(purchaseId);
+    const sku = asciiToHex(purchaseId);
+    const { ethPrice, erc20Price } = await sale.getPrice(sku);
     return (paymentToken == EthAddress) ? ethPrice.mul(new BN(quantity)) : erc20Price.mul(new BN(quantity));
 }
 
@@ -85,13 +78,15 @@ async function purchaseFor(sale, purchaser, purchaseId, quantity, paymentToken, 
         etherValue = 0;
     }
 
+    const sku = asciiToHex(purchaseId);
+
     // console.log(`Purchasing ${quantity}*'${purchaseId}'`);
     return sale.purchaseFor(
         purchaser,
-        purchaseId,
+        sku,
         quantity,
         paymentToken,
-        'some data',
+        purchaseData,
         {
             from: operator,
             value: etherValue,

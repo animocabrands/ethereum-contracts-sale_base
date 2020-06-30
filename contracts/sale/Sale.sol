@@ -23,7 +23,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         address operator,
         bytes32 indexed sku,
         uint256 indexed quantity,
-        IERC20 paymentToken
+        IERC20 paymentToken,
+        bytes32[] extData
     );
 
     event PayoutTokenSet(IERC20 payoutToken);
@@ -66,9 +67,6 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         _pause();
     }
 
-
-    //////////////////////////////// Startable /////////////////////////////////
-
     /**
      * Actvates, or 'starts', the contract.
      * @dev Emits the Started event.
@@ -81,8 +79,6 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         _start();
         _unpause();
     }
-
-    //////////////////////////////// Pausable //////////////////////////////////
 
     /**
      * Pauses the contract.
@@ -106,8 +102,6 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         _unpause();
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-
     /**
      * Sets the ERC20 token currency accepted by the payout wallet for purchase
      *  payments.
@@ -121,8 +115,6 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         require(payoutToken_ != payoutToken, "Sale: identical payout token re-assignment");
         _setPayoutToken(payoutToken_);
     }
-
-    ////////////////////////////////////////////////////////////////////////////
 
     /**
      * Performs a purchase based on the given purchase conditions.
@@ -244,6 +236,40 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * Triggers a notification(s) that the purchase has been complete.
      * @dev Emits the Purchased event when the function is called successfully.
      * @param purchase Purchase conditions.
+     * @param priceInfo Implementation-specific calculated purchase price
+     *  information.
+     * @param paymentInfo Implementation-specific accepted purchase payment
+     *  information.
+     * @param deliveryInfo Implementation-specific purchase delivery
+     *  information.
+     * @param finalizeInfo Implementation-specific purchase finalization
+     *  information.
+     */
+    function _notifyPurchased(
+        Purchase memory purchase,
+        bytes32[] memory priceInfo,
+        bytes32[] memory paymentInfo,
+        bytes32[] memory deliveryInfo,
+        bytes32[] memory finalizeInfo
+    ) internal virtual {
+        emit Purchased(
+            purchase.purchaser,
+            purchase.msgSender,
+            purchase.sku,
+            purchase.quantity,
+            purchase.paymentToken,
+            _getPurchasedEventExtData(
+                purchase,
+                priceInfo,
+                paymentInfo,
+                deliveryInfo,
+                finalizeInfo));
+    }
+
+    /**
+     * Retrieves implementation-specific extra data passed as the Purchased
+     *  event extData argument.
+     * @param *purchase* Purchase conditions.
      * @param *priceInfo* Implementation-specific calculated purchase price
      *  information.
      * @param *paymentInfo* Implementation-specific accepted purchase payment
@@ -252,20 +278,17 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      *  information.
      * @param *finalizeInfo* Implementation-specific purchase finalization
      *  information.
+     * @return extData Implementation-specific extra data passed as the Purchased event
+     *  extData argument.
      */
-    function _notifyPurchased(
-        Purchase memory purchase,
+    function _getPurchasedEventExtData(
+        Purchase memory /* purchase */,
         bytes32[] memory /* priceInfo */,
         bytes32[] memory /* paymentInfo */,
         bytes32[] memory /* deliveryInfo */,
         bytes32[] memory /* finalizeInfo */
-    ) internal virtual {
-        emit Purchased(
-            purchase.purchaser,
-            purchase.msgSender,
-            purchase.sku,
-            purchase.quantity,
-            purchase.paymentToken);
+    ) internal virtual view returns (bytes32[] memory extData) {
+        extData = new bytes32[](0);
     }
 
     /**

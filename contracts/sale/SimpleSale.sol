@@ -18,15 +18,6 @@ abstract contract SimpleSale is Sale, GSNRecipient {
     //     INSUFFICIENT_BALANCE
     // }
 
-    event Purchased(
-        address indexed purchaser,
-        address operator,
-        bytes32 indexed sku,
-        uint256 indexed quantity,
-        IERC20 paymentToken,
-        uint256 totalPrice
-    );
-
     event PriceUpdated(
         bytes32 sku,
         uint256 ethPrice,
@@ -186,7 +177,7 @@ abstract contract SimpleSale is Sale, GSNRecipient {
      * Calculates the purchase price.
      * @param purchase Purchase conditions.
      * @return priceInfo Implementation-specific calculated purchase price
-     *  information.
+     *  information (0:total price, 1:unit price).
      */
     function _calculatePrice(
         Purchase memory purchase
@@ -246,9 +237,9 @@ abstract contract SimpleSale is Sale, GSNRecipient {
     }
 
     /**
-     * Triggers a notification(s) that the purchase has been complete.
-     * @dev Emits the Purchased event when the function is called successfully.
-     * @param purchase Purchase conditions.
+     * Retrieves implementation-specific extra data passed as the Purchased
+     *  event extData argument.
+     * @param *purchase* Purchase conditions.
      * @param priceInfo Implementation-specific calculated purchase price
      *  information.
      * @param *paymentInfo* Implementation-specific accepted purchase payment
@@ -257,21 +248,19 @@ abstract contract SimpleSale is Sale, GSNRecipient {
      *  information.
      * @param *finalizeInfo* Implementation-specific purchase finalization
      *  information.
+     * @return extData Implementation-specific extra data passed as the Purchased event
+     *  extData argument (0:total price, 1:unit price).
      */
-    function _notifyPurchased(
-        Purchase memory purchase,
+    function _getPurchasedEventExtData(
+        Purchase memory /* purchase */,
         bytes32[] memory priceInfo,
         bytes32[] memory /* paymentInfo */,
         bytes32[] memory /* deliveryInfo */,
         bytes32[] memory /* finalizeInfo */
-    ) internal override virtual {
-        emit Purchased(
-            purchase.purchaser,
-            purchase.msgSender,
-            purchase.sku,
-            purchase.quantity,
-            purchase.paymentToken,
-            uint256(priceInfo[0]));
+    ) internal override virtual view returns (bytes32[] memory extData) {
+        extData = new bytes32[](2);
+        extData[0] = priceInfo[0];
+        extData[1] = priceInfo[1];
     }
 
 }

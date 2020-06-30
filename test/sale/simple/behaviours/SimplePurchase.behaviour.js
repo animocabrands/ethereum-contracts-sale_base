@@ -1,6 +1,6 @@
 const { BN, balance, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const { EthAddress, Zero, One, Two } = require('@animoca/ethereum-contracts-core_library').constants;
-const { fromWei, toChecksumAddress, sha3 } = require('web3-utils');
+const { fromWei, toChecksumAddress, sha3, asciiToHex, padRight } = require('web3-utils');
 
 const { doFreshDeploy, prices, purchaseFor, getPrice, purchaseData } = require('../shared.js');
 
@@ -57,6 +57,7 @@ function simplePurchase(payout, owner, operator, purchaser, useErc20) {
 
     const testPurchases = async function (operator, overvalue) {
         for (const [purchaseId, { ethPrice, erc20Price }] of Object.entries(prices)) {
+            const sku = asciiToHex(purchaseId);
             const quantities = [One, new BN('10'), new BN('1000')];
             for (const quantity of quantities) {
                 it('<this.test.title>', async function () {
@@ -80,16 +81,21 @@ function simplePurchase(payout, owner, operator, purchaser, useErc20) {
 
                         const receipt = await purchaseFor(this.contract, purchaser, purchaseId, quantity, this.payoutTokenAddress, operator, {value: totalPrice.add(overvalue)});
 
-                        expectEvent.inLogs(receipt.logs, 'Purchased', {
-                            purchaser: purchaser,
-                            operator: operator,
-                            purchaseId: sha3(purchaseId),  // indexed string arg is keccak hashed
-                            quantity: quantity,
-                            paymentToken: toChecksumAddress(this.payoutTokenAddress),
-                            totalPrice: totalPrice,
-                            unitPrice: unitPrice,
-                            data: purchaseData  // un-indexed string arg is left as-is
-                        });
+                        expectEvent.inTransaction(
+                            receipt.tx,
+                            this.contract,
+                            'Purchased',
+                            {
+                                purchaser: purchaser,
+                                operator: operator,
+                                sku: padRight(sku, 64),
+                                quantity: quantity,
+                                paymentToken: toChecksumAddress(this.payoutTokenAddress),
+                                extData: [
+                                    '0x' + totalPrice.toString(16, 64),
+                                    '0x' + unitPrice.toString(16, 64),
+                                    padRight(purchaseData, 64)]
+                            });
 
                         const balanceAfter =
                             this.payoutTokenAddress == EthAddress ?
