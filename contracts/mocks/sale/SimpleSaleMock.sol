@@ -60,8 +60,6 @@ contract SimpleSaleMock is SimpleSale {
             quantity,
             paymentToken,
             _msgSender(),
-            msg.value,
-            _msgData(),
             extData);
     }
 

@@ -219,12 +219,12 @@ abstract contract SimpleSale is Sale, GSNRecipient {
 
         if (purchase.paymentToken == ETH_ADDRESS) {
             require(
-                purchase.msgValue >= totalPrice,
+                msg.value >= totalPrice,
                 "SimpleSale: Insufficient ETH provided");
 
             payoutWallet.transfer(totalPrice);
 
-            uint256 change = purchase.msgValue.sub(totalPrice);
+            uint256 change = msg.value.sub(totalPrice);
 
             if (change > 0) {
                 purchase.msgSender.transfer(change);

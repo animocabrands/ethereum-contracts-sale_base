@@ -39,8 +39,6 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         uint256 quantity;
         IERC20 paymentToken;
         address payable msgSender;
-        uint256 msgValue;
-        bytes msgData;
         bytes32[] extData;
     }
 
@@ -125,8 +123,6 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param paymentToken The ERC20 token to use as the payment currency of the
      *  purchase.
      * @param msgSender Caller of the purchase transaction function.
-     * @param msgValue Number of wei sent with the purchase transaction.
-     * @param msgData Calldata supplied with the purchase transaction.
      * @param extData Implementation-specific extra input data.
      */
     function _purchase(
@@ -135,8 +131,6 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         uint256 quantity,
         IERC20 paymentToken,
         address payable msgSender,
-        uint256 msgValue,
-        bytes memory msgData,
         bytes32[] memory extData
     ) internal virtual {
         Purchase memory purchase;
@@ -145,8 +139,6 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         purchase.quantity = quantity;
         purchase.paymentToken = paymentToken;
         purchase.msgSender = msgSender;
-        purchase.msgValue = msgValue;
-        purchase.msgData = msgData;
         purchase.extData = extData;
 
         _validatePurchase(purchase);
