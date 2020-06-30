@@ -125,7 +125,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param msgSender Caller of the purchase transaction function.
      * @param extData Implementation-specific extra input data.
      */
-    function _purchase(
+    function _purchaseFor(
         address payable purchaser,
         bytes32 sku,
         uint256 quantity,

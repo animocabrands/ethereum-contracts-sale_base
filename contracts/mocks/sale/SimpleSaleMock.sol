@@ -54,7 +54,7 @@ contract SimpleSaleMock is SimpleSale {
         bytes32[] memory extData = new bytes32[](1);
         extData[0] = data;
 
-        _purchase(
+        _purchaseFor(
             purchaser,
             sku,
             quantity,
