@@ -116,31 +116,41 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
 
     /**
      * Performs a purchase based on the given purchase conditions.
-     * @dev Emits the Purchased event when the function is called successfully.
+     * @dev Emits the Purchased event.
      * @param purchaser The initiating account making the purchase.
      * @param sku The SKU of the item being purchased.
      * @param quantity The quantity of SKU items being purchased.
      * @param paymentToken The ERC20 token to use as the payment currency of the
      *  purchase.
-     * @param msgSender Caller of the purchase transaction function.
-     * @param extData Implementation-specific extra input data.
+     * @param extData Deriving contract-specific extra input data.
      */
-    function _purchaseFor(
+    function purchaseFor(
         address payable purchaser,
         bytes32 sku,
         uint256 quantity,
         IERC20 paymentToken,
-        address payable msgSender,
-        bytes32[] memory extData
-    ) internal virtual {
+        bytes32[] calldata extData
+    ) external payable {
         Purchase memory purchase;
         purchase.purchaser = purchaser;
         purchase.sku = sku;
         purchase.quantity = quantity;
         purchase.paymentToken = paymentToken;
-        purchase.msgSender = msgSender;
+        purchase.msgSender = _msgSender();
         purchase.extData = extData;
 
+        _purchaseFor(purchase);
+    }
+
+    /**
+     * Defines and invokes the purchase lifecycle functions for the given
+     * purchase conditions.
+     * @param purchase The purchase conditions upon which the purchase is being
+     *  made.
+     */
+    function _purchaseFor(
+        Purchase memory purchase
+    ) internal virtual {
         _validatePurchase(purchase);
 
         bytes32[] memory priceInfo =
@@ -226,7 +236,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
 
     /**
      * Triggers a notification(s) that the purchase has been complete.
-     * @dev Emits the Purchased event when the function is called successfully.
+     * @dev Emits the Purchased event.
      * @param purchase Purchase conditions.
      * @param priceInfo Implementation-specific calculated purchase price
      *  information.

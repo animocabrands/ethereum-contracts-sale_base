@@ -35,35 +35,6 @@ contract SimpleSaleMock is SimpleSale {
     }
 
     /**
-     * Performs a purchase based on the given purchase conditions.
-     * @dev Emits the Purchased event when the function is called successfully.
-     * @param purchaser The initiating account making the purchase.
-     * @param sku The SKU of the item being purchased.
-     * @param quantity The quantity of SKU items being purchased.
-     * @param paymentToken The ERC20 token to use as the payment currency of the
-     *  purchase.
-     * @param data Bytes32 data associated with the purchase.
-     */
-    function purchaseFor(
-        address payable purchaser,
-        bytes32 sku,
-        uint256 quantity,
-        IERC20 paymentToken,
-        bytes32 data
-    ) external payable {
-        bytes32[] memory extData = new bytes32[](1);
-        extData[0] = data;
-
-        _purchaseFor(
-            purchaser,
-            sku,
-            quantity,
-            paymentToken,
-            _msgSender(),
-            extData);
-    }
-
-    /**
      * Retrieves implementation-specific extra data passed as the Purchased
      *  event extData argument.
      * @param *purchase* Purchase conditions.
