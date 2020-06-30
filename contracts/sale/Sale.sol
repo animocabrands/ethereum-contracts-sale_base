@@ -289,9 +289,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         bytes32[] memory /* paymentInfo */,
         bytes32[] memory /* deliveryInfo */,
         bytes32[] memory /* finalizeInfo */
-    ) internal virtual view returns (bytes32[] memory extData) {
-        extData = new bytes32[](0);
-    }
+    ) internal virtual view returns (bytes32[] memory extData) {}
 
     /**
      * Sets the ERC20 token currency accepted by the payout wallet for purchase
