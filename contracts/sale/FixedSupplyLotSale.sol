@@ -1,4 +1,6 @@
-pragma solidity ^0.6.6;
+// SPDX-License-Identifier: MIT
+
+pragma solidity 0.6.8;
 
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
 import "@animoca/ethereum-contracts-core_library/contracts/payment/PayoutWallet.sol";
@@ -11,10 +13,7 @@ import "../payment/KyberAdapter.sol";
 abstract contract FixedSupplyLotSale is Pausable, KyberAdapter, PayoutWallet {
     using SafeMath for uint256;
 
-    // a Lot is a class of purchasable sale items. in the case of CDH, each chest
-    // of a given 'star' rarity tier is a different Lot. the Lot items are token
-    // bundles comprising of a single 'card' NFT (of the appropriate 'star' rarity
-    // tier) and a number of fungible 'gem' tokens.
+    // a Lot is a class of purchasable sale items.
     struct Lot {
         bool exists; // state flag to indicate that the Lot item exists.
         uint256[] nonFungibleSupply; // supply of non-fungible tokens for sale.
@@ -104,20 +103,20 @@ abstract contract FixedSupplyLotSale is Pausable, KyberAdapter, PayoutWallet {
     /**
      * @dev Constructor.
      * @param kyberProxy Kyber network proxy contract.
-     * @param payoutWallet Account to receive payout currency tokens from the Lot sales.
+     * @param payoutWallet_ Account to receive payout currency tokens from the Lot sales.
      * @param payoutTokenAddress Payout currency token contract address.
      * @param fungibleTokenId Inventory token id of the fungible tokens bundled in a Lot item.
      * @param inventoryContract Address of the inventory contract to use in the delivery of purchased Lot items.
      */
     constructor(
         address kyberProxy,
-        address payable payoutWallet,
+        address payable payoutWallet_,
         IERC20 payoutTokenAddress,
         uint256 fungibleTokenId,
         address inventoryContract
     )
         KyberAdapter(kyberProxy)
-        PayoutWallet(payoutWallet)
+        PayoutWallet(payoutWallet_)
         public
     {
         pause();
@@ -468,7 +467,7 @@ abstract contract FixedSupplyLotSale is Pausable, KyberAdapter, PayoutWallet {
     }
 
     /**
-     * @dev Purchases a quantity of Lot items for the given Lot id.
+     * @dev Defines the purchase lifecycle sequence to execute when handling a purchase.
      * @dev Overridable.
      * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
      */
@@ -547,7 +546,7 @@ abstract contract FixedSupplyLotSale is Pausable, KyberAdapter, PayoutWallet {
                 address(uint160(address(this))));
 
         require(payoutTokensReceived >= totalDiscountedPrice);
-        require(_payoutTokenAddress.transfer(_payoutWallet, payoutTokensReceived));
+        require(_payoutTokenAddress.transfer(payoutWallet, payoutTokensReceived));
     }
 
     /**
