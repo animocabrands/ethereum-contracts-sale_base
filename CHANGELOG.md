@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.0.0 (05/05/2020)
+## 3.0.0 (03/07/2020)
 
 ### Breaking changes
  * Refactored the purchase as a generic lifecycle.
