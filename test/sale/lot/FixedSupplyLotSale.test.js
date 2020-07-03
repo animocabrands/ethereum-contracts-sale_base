@@ -3,7 +3,7 @@ const InventoryIds = require('@animoca/blockchain-inventory_metadata').inventory
 const Constants = require('@animoca/ethereum-contracts-core_library').constants;
 const { shouldBeEqualWithPercentPrecision } = require('@animoca/ethereum-contracts-core_library').fixtures
 
-const ERC20 = artifacts.require('IERC20');
+const IERC20 = artifacts.require('IERC20');
 const AssetsInventory = artifacts.require('AssetsInventoryMock');
 const Sale = artifacts.require('FixedSupplyLotSaleMock');
 
@@ -948,7 +948,7 @@ contract('FixedSupplyLotSale', function ([
             }
 
             beforeEach(async function () {
-                this.erc20Payout = await ERC20.at(PayoutTokenAddress);
+                this.erc20Payout = await IERC20.at(PayoutTokenAddress);
 
                 this.lot = await this.sale._lots(lotId);
 
@@ -1136,7 +1136,7 @@ contract('FixedSupplyLotSale', function ([
                     const tokenAddress = Erc20TokenAddress;
 
                     beforeEach(async function () {
-                        this.erc20 = await ERC20.at(tokenAddress);
+                        this.erc20 = await IERC20.at(tokenAddress);
 
                         this.priceInfo = await this.sale.getPrice(
                             recipient,
@@ -1235,7 +1235,7 @@ contract('FixedSupplyLotSale', function ([
                     const tokenAddress = PayoutTokenAddress;
 
                     beforeEach(async function () {
-                        this.erc20 = await ERC20.at(tokenAddress);
+                        this.erc20 = await IERC20.at(tokenAddress);
 
                         this.priceInfo = await this.sale.getPrice(
                             recipient,
@@ -1556,7 +1556,7 @@ contract('FixedSupplyLotSale', function ([
                 const tokenAddress = Erc20TokenAddress;
 
                 beforeEach(async function () {
-                    this.erc20 = await ERC20.at(tokenAddress);
+                    this.erc20 = await IERC20.at(tokenAddress);
 
                     this.priceInfo = await this.sale.getPrice(
                         recipient,
@@ -1673,7 +1673,7 @@ contract('FixedSupplyLotSale', function ([
                 const tokenAddress = PayoutTokenAddress;
 
                 beforeEach(async function () {
-                    this.erc20 = await ERC20.at(tokenAddress);
+                    this.erc20 = await IERC20.at(tokenAddress);
 
                     this.priceInfo = await this.sale.getPrice(
                         recipient,
@@ -1947,7 +1947,7 @@ contract('FixedSupplyLotSale', function ([
         }
 
         beforeEach(async function () {
-            this.erc20Payout = await ERC20.at(PayoutTokenAddress);
+            this.erc20Payout = await IERC20.at(PayoutTokenAddress);
         });
 
         context('when the purchase token currency is ETH', function () {
@@ -2068,7 +2068,7 @@ contract('FixedSupplyLotSale', function ([
                 const tokenAddress = Erc20TokenAddress;
 
                 beforeEach(async function () {
-                    this.erc20 = await ERC20.at(tokenAddress);
+                    this.erc20 = await IERC20.at(tokenAddress);
                 });
 
                 it('should revert if the transaction contains any ETH', async function () {
@@ -2272,7 +2272,7 @@ contract('FixedSupplyLotSale', function ([
                 }
 
                 beforeEach(async function () {
-                    this.erc20 = await ERC20.at(tokenAddress);
+                    this.erc20 = await IERC20.at(tokenAddress);
                 });
 
                 testShouldRevertIfPurchasingForLessThanTheTotalPrice.bind(
@@ -2646,7 +2646,7 @@ contract('FixedSupplyLotSale', function ([
                 const tokenAddress = Erc20TokenAddress;
 
                 beforeEach(async function () {
-                    this.erc20 = await ERC20.at(tokenAddress);
+                    this.erc20 = await IERC20.at(tokenAddress);
                     await this.erc20.approve(this.sale.address, tokenBalance, { from: operator });
                     await this.erc20.transfer(operator, tokenBalance, { from: recipient });
 
@@ -2760,7 +2760,7 @@ contract('FixedSupplyLotSale', function ([
                 const tokenAddress = PayoutTokenAddress;
 
                 beforeEach(async function () {
-                    this.erc20 = await ERC20.at(tokenAddress);
+                    this.erc20 = await IERC20.at(tokenAddress);
                     await this.erc20.approve(this.sale.address, tokenBalance, { from: operator });
                     await this.erc20.transfer(operator, tokenBalance, { from: recipient });
 

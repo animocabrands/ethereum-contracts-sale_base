@@ -3,8 +3,8 @@ const { asciiToHex } = require('web3-utils');
 const { EthAddress, ZeroAddress } = require('@animoca/ethereum-contracts-core_library').constants;
 
 const Sale = artifacts.require('SimpleSaleMock.sol');
-const ERC20Token = artifacts.require('ERC20Mock.sol');
-const ERC20 = artifacts.require('IERC20.sol');
+const ERC20 = artifacts.require('ERC20Mock.sol');
+const IERC20 = artifacts.require('IERC20.sol');
 
 const prices = {
     'both': {
@@ -27,7 +27,7 @@ async function doFreshDeploy(params) {
     let payoutTokenAddress;
 
     if (params.useErc20) {
-        const erc20Token = await ERC20Token.new(ether('1000000000'), { from: params.owner });
+        const erc20Token = await ERC20.new(ether('1000000000'), { from: params.owner });
         await erc20Token.transfer(params.operator, ether('100000'), { from: params.owner });
         await erc20Token.transfer(params.purchaser, ether('100000'), { from: params.owner });
         payoutTokenAddress = erc20Token.address;
@@ -71,7 +71,7 @@ async function purchaseFor(sale, purchaser, purchaseId, quantity, paymentToken, 
     let etherValue = value;
 
     if (paymentToken != EthAddress) {
-        const ERC20Contract = await ERC20.at(paymentToken);
+        const ERC20Contract = await IERC20.at(paymentToken);
         // approve first for sale
         await ERC20Contract.approve(sale.address, value, { from: operator });
         // do not send any ether

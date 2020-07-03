@@ -4,7 +4,7 @@ const { fromWei, toChecksumAddress, sha3, asciiToHex, padRight } = require('web3
 
 const { doFreshDeploy, prices, purchaseFor, getPrice, purchaseData } = require('../shared.js');
 
-const ERC20 = artifacts.require('IERC20.sol');
+const ERC20 = artifacts.require('ERC20Mock.sol');
 
 async function getBalance(token, address) {
     const contract = await ERC20.at(token);
