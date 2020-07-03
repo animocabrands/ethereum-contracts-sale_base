@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.0 (05/05/2020)
+
+### Breaking changes
+ * Refactored the purchase as a generic lifecycle.
+
+### Improvements
+ * Updated dependency on `@animoca/ethereum-contracts-core_library` to `3.1.0`.
+
 ## 2.0.0 (17/06/2020)
 
 ### Breaking changes
