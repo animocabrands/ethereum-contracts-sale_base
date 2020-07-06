@@ -73,7 +73,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @dev Reverts if the contract has already been started.
      * @dev Reverts if the contract is not paused.
      */
-    function start() external onlyOwner {
+    function start() external virtual onlyOwner {
         _start();
         _unpause();
     }
@@ -85,7 +85,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @dev Reverts if the contract has not been started yet.
      * @dev Reverts if the contract is already paused.
      */
-    function pause() external onlyOwner whenStarted {
+    function pause() external virtual onlyOwner whenStarted {
         _pause();
     }
 
@@ -96,7 +96,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @dev Reverts if the contract has not been started yet.
      * @dev Reverts if the contract is not paused.
      */
-    function unpause() external onlyOwner whenStarted {
+    function unpause() external virtual onlyOwner whenStarted {
         _unpause();
     }
 
@@ -109,7 +109,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param payoutToken_ The new ERC20 token currency accepted by the payout
      *  wallet for purchase payments.
      */
-    function setPayoutToken(IERC20 payoutToken_) external onlyOwner {
+    function setPayoutToken(IERC20 payoutToken_) external virtual onlyOwner {
         require(payoutToken_ != payoutToken, "Sale: identical payout token re-assignment");
         _setPayoutToken(payoutToken_);
     }
