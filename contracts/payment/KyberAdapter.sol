@@ -12,7 +12,7 @@ contract KyberAdapter {
 
     IKyber public kyber;
 
-    IERC20 public ETH_ADDRESS = IERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
+    IERC20 public KYBER_ETH_ADDRESS = IERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
 
     constructor(address _kyberProxy) public {
         kyber = IKyber(_kyberProxy);
@@ -23,11 +23,11 @@ contract KyberAdapter {
     receive () external payable {}
 
     function _getTokenDecimals(IERC20 _token) internal view returns (uint8 _decimals) {
-        return _token != ETH_ADDRESS ? IERC20Detailed(address(_token)).decimals() : 18;
+        return _token != KYBER_ETH_ADDRESS ? IERC20Detailed(address(_token)).decimals() : 18;
     }
 
     function _getTokenBalance(IERC20 _token, address _account) internal view returns (uint256 _balance) {
-        return _token != ETH_ADDRESS ? _token.balanceOf(_account) : _account.balance;
+        return _token != KYBER_ETH_ADDRESS ? _token.balanceOf(_account) : _account.balance;
     }
 
     function ceilingDiv(uint256 a, uint256 b) internal pure returns (uint256 c) {
@@ -101,12 +101,12 @@ contract KyberAdapter {
             _destAmount = _srcAmount = _maxDestAmount;
             require(_src.transferFrom(_initiator, address(this), _destAmount));
         } else {
-            require(_src == ETH_ADDRESS ? msg.value >= _maxSrcAmount : msg.value == 0);
+            require(_src == KYBER_ETH_ADDRESS ? msg.value >= _maxSrcAmount : msg.value == 0);
 
             // Prepare for handling back the change if there is any.
             uint256 _balanceBefore = _getTokenBalance(_src, address(this));
 
-            if (_src != ETH_ADDRESS) {
+            if (_src != KYBER_ETH_ADDRESS) {
                 require(_src.transferFrom(_initiator, address(this), _maxSrcAmount));
                 require(_src.approve(address(kyber), _maxSrcAmount));
             } else {
@@ -114,7 +114,7 @@ contract KyberAdapter {
                 _balanceBefore = _balanceBefore.sub(_maxSrcAmount);
             }
 
-            _destAmount = kyber.trade{ value: _src == ETH_ADDRESS ? _maxSrcAmount : 0 } (
+            _destAmount = kyber.trade{ value: _src == KYBER_ETH_ADDRESS ? _maxSrcAmount : 0 } (
                 _src,
                 _maxSrcAmount,
                 _dest,
@@ -132,7 +132,7 @@ contract KyberAdapter {
                 uint256 _change = _balanceAfter - _balanceBefore;
                 _srcAmount = _srcAmount.sub(_change);
 
-                if (_src != ETH_ADDRESS) {
+                if (_src != KYBER_ETH_ADDRESS) {
                     require(_src.transfer(_initiator, _change));
                 } else {
                     _initiator.transfer(_change);
