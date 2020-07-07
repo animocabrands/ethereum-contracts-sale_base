@@ -179,7 +179,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      */
     function _validatePurchase(
         Purchase memory purchase
-    ) internal virtual view {}
+    ) internal virtual {}
 
     /**
      * Calculates the purchase price.
