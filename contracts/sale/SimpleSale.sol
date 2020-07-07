@@ -155,7 +155,7 @@ abstract contract SimpleSale is Sale, GSNRecipient {
      */
     function _validatePurchase(
         Purchase memory purchase
-    ) internal override virtual view {
+    ) internal override virtual {
         require(
             purchase.purchaser != address(0),
             "SimpleSale: Purchaser cannot be the zero address");
