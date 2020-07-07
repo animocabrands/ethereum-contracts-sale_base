@@ -16,7 +16,7 @@ import "@openzeppelin/contracts/GSN/Context.sol";
 abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   {
 
     // special address value to represent a payment in ETH
-    IERC20 public ETH_ADDRESS = IERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
+    IERC20 public constant ETH_ADDRESS = IERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
 
     event Purchased(
         address indexed purchaser,
