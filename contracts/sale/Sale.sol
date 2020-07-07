@@ -130,7 +130,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         uint256 quantity,
         IERC20 paymentToken,
         bytes32[] calldata extData
-    ) external payable {
+    ) external payable whenStarted whenNotPaused {
         Purchase memory purchase;
         purchase.purchaser = purchaser;
         purchase.operator = _msgSender();

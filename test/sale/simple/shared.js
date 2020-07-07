@@ -45,6 +45,8 @@ async function doFreshDeploy(params) {
             await this.contract.setPrice(sku, ethPrice, erc20Price, { from: params.owner });
         }
     }
+
+    await this.contract.start({ from: params.owner });
 };
 
 async function getPrice(sale, purchaseId, quantity, paymentToken) {
