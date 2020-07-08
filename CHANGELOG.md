@@ -6,12 +6,13 @@
  * `Sale.sol`: Added `whenStarted` and `whenNotPaused` modifiers to `purchaseFor()` to restrict when it can be called.
  * `KyberAdapter.sol`: Renamed `ETH_ADDRESS` constant to `KYBER_ETH_ADDRESS`.
  * `FixedSupplyLotSale.sol`: Derives from `Sale.sol`.
+ * `FixedSupplyLotSale.sol`: Type change of `_inventoryContract` to `IInventoryContract` to ensure API compliance.
 
 ### Improvements
  * `Sale.sol`: Added `virtual` modifier to `start()`, `pause()`, `unpause()`, and `setPayoutToken()` to be able to override the functions.
  * `Sale.sol`: Changed function visibility to `public` on `start()`, `pause()`, `unpause()`, and `setPayoutToken()` to allow internal invocation of the functions, especially for overrides.
  * `Sale.sol`: Removed `view` modifier from `_validatePurchase()` to allow state changes in the function.
- * `Sale.sol`: By default, `_getPurchasedEventExtData()` supplies the `Purchased` event with the `purchaseFor()` extra data and the return values of `_calculatePrice()`, `_acceptPayment()`, `_deliverGoods()`, and `_finalizePurchase()`. 
+ * `Sale.sol`: By default, `_getPurchasedEventExtData()` supplies the `Purchased` event with the `purchaseFor()` extra data and the return values of `_calculatePrice()`, `_acceptPayment()`, `_deliverGoods()`, and `_finalizePurchase()`.
  * `SimpleSale.sol`: Removed `view` modifier from `_validatePurchase()` to allow state changes in the function.
 
 ## 3.0.0 (03/07/2020)

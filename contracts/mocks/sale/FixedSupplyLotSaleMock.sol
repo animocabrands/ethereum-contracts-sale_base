@@ -42,7 +42,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
         address payable payoutWallet_,
         IERC20 payoutToken_,
         uint256 fungibleTokenId,
-        address inventoryContract
+        IInventoryContract inventoryContract
     )
         FixedSupplyLotSale(
             kyberProxy,

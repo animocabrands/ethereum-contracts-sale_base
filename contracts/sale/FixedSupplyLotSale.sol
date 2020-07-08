@@ -44,7 +44,7 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
 
     uint256 public _fungibleTokenId; // inventory token id of the fungible tokens bundled in a Lot item.
 
-    address public _inventoryContract; // inventory contract address.
+    IInventoryContract public _inventoryContract; // inventory contract address.
 
     mapping (uint256 => Lot) public _lots; // mapping of lotId => Lot.
 
@@ -61,7 +61,7 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
         address payable payoutWallet_,
         IERC20 payoutToken_,
         uint256 fungibleTokenId,
-        address inventoryContract
+        IInventoryContract inventoryContract
     )
         Sale(
             payoutWallet_,
@@ -112,13 +112,13 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
      * @param inventoryContract Address of the inventory contract to use.
      */
     function setInventoryContract(
-        address inventoryContract
+        IInventoryContract inventoryContract
     )
         public
         onlyOwner
         whenNotStarted
     {
-        require(inventoryContract != address(0));
+        require(inventoryContract != IInventoryContract(0));
         require(inventoryContract != _inventoryContract);
 
         _inventoryContract = inventoryContract;
@@ -484,4 +484,20 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
         totalPrice = lot.price.mul(quantity);
         totalDiscounts = 0;
     }
+}
+
+interface IInventoryContract {
+
+    /**
+     * @dev Public function to non-safely mint a batch of new tokens
+     * @param to address address that will own the minted tokens
+     * @param ids uint256[] identifiers of the tokens to be minted
+     * @param values uint256[] amounts to be minted
+     */
+    function batchMint(
+        address[] calldata to,
+        uint256[] calldata ids,
+        uint256[] calldata values
+    ) external;
+
 }
