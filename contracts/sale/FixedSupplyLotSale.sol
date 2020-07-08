@@ -329,8 +329,8 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
 
     /**
      * Validates a purchase.
-     * @param purchase Purchase conditions (extData[0]: max token amount,
-     *  extData[1]: min conversion rate).
+     * @param purchase Purchase conditions (extData[0]:max token amount,
+     *  extData[1]:min conversion rate).
      */
     function _validatePurchase(
         Purchase memory purchase
@@ -348,8 +348,8 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
 
     /**
      * Calculates the purchase price.
-     * @param purchase Purchase conditions (extData[0]: max token amount,
-     *  extData[1]: min conversion rate).
+     * @param purchase Purchase conditions (extData[0]:max token amount,
+     *  extData[1]:min conversion rate).
      * @return priceInfo Implementation-specific calculated purchase price
      *  information (0:total price, 1:total discounts).
      */
@@ -373,12 +373,12 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
 
     /**
      * Accepts payment for a purchase.
-     * @param purchase Purchase conditions (extData[0]: max token amount,
-     *  extData[1]: min conversion rate).
+     * @param purchase Purchase conditions (extData[0]:max token amount,
+     *  extData[1]:min conversion rate).
      * @param priceInfo Implementation-specific calculated purchase price
      *  information (0:total price, 1:total discounts).
      * @return paymentInfo Implementation-specific accepted purchase payment
-     *  information (0:purchase tokens sent, 1: payout tokens received).
+     *  information (0:purchase tokens sent, 1:payout tokens received).
      */
     function _acceptPayment(
         Purchase memory purchase,
@@ -437,12 +437,12 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
     /**
      * Finalizes the completed purchase by performing any remaining purchase
      * housekeeping updates.
-     * @param purchase Purchase conditions (extData[0]: max token amount,
-     *  extData[1]: min conversion rate).
+     * @param purchase Purchase conditions (extData[0]:max token amount,
+     *  extData[1]:min conversion rate).
      * @param *priceInfo* Implementation-specific calculated purchase price
      *  information (0:total price, 1:total discounts).
      * @param *paymentInfo* Implementation-specific accepted purchase payment
-     *  information (0:purchase tokens sent, 1: payout tokens received).
+     *  information (0:purchase tokens sent, 1:payout tokens received).
      * @param *deliveryInfo* Implementation-specific purchase delivery
      *  information (0:num non-fungible tokens, 1-n:non-fungible tokens,
      *  n+1:total fungible amount).
@@ -462,21 +462,21 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
     /**
      * Retrieves implementation-specific extra data passed as the Purchased
      *  event extData argument.
-     * @param purchase Purchase conditions (extData[0]: max token amount,
-     *  extData[1]: min conversion rate).
+     * @param purchase Purchase conditions (extData[0]:max token amount,
+     *  extData[1]:min conversion rate).
      * @param priceInfo Implementation-specific calculated purchase price
      *  information (0:total price, 1:total discounts).
      * @param paymentInfo Implementation-specific accepted purchase payment
-     *  information (0:purchase tokens sent, 1: payout tokens received).
+     *  information (0:purchase tokens sent, 1:payout tokens received).
      * @param deliveryInfo Implementation-specific purchase delivery
      *  information (0:num non-fungible tokens, 1-n:non-fungible tokens,
      *  n+1:total fungible amount).
      * @param finalizeInfo Implementation-specific purchase finalization
      *  information.
-     * @return extData Implementation-specific extra data passed as the Purchased event
-     *  extData argument (0:max token amount, 1:min conversion rate, 2:total
-     *  price, 3:total discounts, 4:purchase tokens sent, 5:payout tokens
-     *  received, 4:num non-fungible tokens, 5-n:non-fungible tokens).
+     * @return extData Implementation-specific extra data passed as the
+     *  Purchased event extData argument (0:max token amount, 1:min conversion
+     *  rate, 2:total price, 3:total discounts, 4:purchase tokens sent, 5:payout
+     *  tokens received, 4:num non-fungible tokens, 5-n:non-fungible tokens).
      */
     function _getPurchasedEventExtData(
         Purchase memory purchase,
