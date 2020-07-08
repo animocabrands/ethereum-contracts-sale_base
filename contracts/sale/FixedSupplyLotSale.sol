@@ -3,14 +3,12 @@
 pragma solidity 0.6.8;
 
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-import "@animoca/ethereum-contracts-core_library/contracts/payment/PayoutWallet.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-// import "@openzeppelin/contracts/math/Math.sol";
 
+import "./Sale.sol";
 import "../payment/KyberAdapter.sol";
 
-abstract contract FixedSupplyLotSale is Pausable, KyberAdapter, PayoutWallet {
+abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
     using SafeMath for uint256;
 
     // a Lot is a class of purchasable sale items.
@@ -21,42 +19,6 @@ abstract contract FixedSupplyLotSale is Pausable, KyberAdapter, PayoutWallet {
         uint256 price; // Lot item price, in payout currency tokens.
         uint256 numAvailable; // number of Lot items available for purchase.
     }
-
-    // a struct container for allocating intermediate values, used by the purchaseFor()
-    // function, onto the stack (as opposed to memory) to help reduce gas cost for
-    // calling the function.
-    struct PurchaseForVars {
-        address payable recipient;
-        uint256 lotId;
-        uint256 quantity;
-        IERC20 tokenAddress;
-        uint256 maxTokenAmount;
-        uint256 minConversionRate;
-        string extData;
-        address payable operator;
-        Lot lot;
-        uint256[] nonFungibleTokens;
-        uint256 totalFungibleAmount;
-        uint256 totalPrice;
-        uint256 totalDiscounts;
-        uint256 tokensSent;
-        uint256 tokensReceived;
-    }
-
-    event Purchased (
-        address indexed recipient, // destination account receiving the purchased Lot items.
-        address operator, // account that executed the purchase operation.
-        uint256 indexed lotId, // Lot id of the purchased items.
-        uint256 indexed quantity, // quantity of Lot items purchased.
-        uint256[] nonFungibleTokens, // list of Lot item non-fungible tokens in the purchase.
-        uint256 totalFungibleAmount, // total amount of Lot item fungible tokens in the purchase.
-        uint256 totalPrice, // total price (excluding any discounts) of the purchase, in payout currency tokens.
-        uint256 totalDiscounts, // total discounts applied to the total price, in payout currency tokens.
-        address tokenAddress, // purchase currency token contract address.
-        uint256 tokensSent, // amount of actual purchase tokens spent (to convert to payout tokens) for the purchase.
-        uint256 tokensReceived, // amount of actual payout tokens received (converted from purchase tokens) for the purchase.
-        string extData // string encoded context-specific data blob.
-    );
 
     event LotCreated (
         uint256 lotId, // id of the created Lot.
@@ -80,67 +42,52 @@ abstract contract FixedSupplyLotSale is Pausable, KyberAdapter, PayoutWallet {
         uint256 price // updated item price.
     );
 
-    IERC20 public _payoutTokenAddress; // payout currency token contract address.
-
     uint256 public _fungibleTokenId; // inventory token id of the fungible tokens bundled in a Lot item.
 
     address public _inventoryContract; // inventory contract address.
 
     mapping (uint256 => Lot) public _lots; // mapping of lotId => Lot.
 
-    uint256 public _startedAt; // starting timestamp of the Lot sale.
-
-    modifier whenStarted() {
-        require(_startedAt != 0);
-        _;
-    }
-
-    modifier whenNotStarted() {
-        require(_startedAt == 0);
-        _;
-    }
-
     /**
      * @dev Constructor.
      * @param kyberProxy Kyber network proxy contract.
      * @param payoutWallet_ Account to receive payout currency tokens from the Lot sales.
-     * @param payoutTokenAddress Payout currency token contract address.
+     * @param payoutToken_ Payout currency token contract address.
      * @param fungibleTokenId Inventory token id of the fungible tokens bundled in a Lot item.
      * @param inventoryContract Address of the inventory contract to use in the delivery of purchased Lot items.
      */
     constructor(
         address kyberProxy,
         address payable payoutWallet_,
-        IERC20 payoutTokenAddress,
+        IERC20 payoutToken_,
         uint256 fungibleTokenId,
         address inventoryContract
     )
+        Sale(
+            payoutWallet_,
+            payoutToken_
+        )
         KyberAdapter(kyberProxy)
-        PayoutWallet(payoutWallet_)
         public
     {
-        pause();
-
-        setPayoutTokenAddress(payoutTokenAddress);
         setFungibleTokenId(fungibleTokenId);
         setInventoryContract(inventoryContract);
     }
 
     /**
-     * @dev Sets which token to use as the payout currency from the Lot sales.
-     * @param payoutTokenAddress Payout currency token contract address to use.
+     * Sets the ERC20 token currency accepted by the payout wallet for purchase
+     *  payments.
+     * @dev Emits the PayoutTokenSet event.
+     * @dev Reverts if called by any other than the contract owner.
+     * @dev Reverts if the payout token is the same as the current value.
+     * @dev Reverts if the payout token is the zero address.
+     * @dev Reverts if the contract is not paused.
+     * @param payoutToken_ The new ERC20 token currency accepted by the payout
+     *  wallet for purchase payments.
      */
-    function setPayoutTokenAddress(
-        IERC20 payoutTokenAddress
-    )
-        public
-        onlyOwner
-        whenPaused
-    {
-        require(payoutTokenAddress != IERC20(0));
-        require(payoutTokenAddress != _payoutTokenAddress);
-
-        _payoutTokenAddress = payoutTokenAddress;
+     function setPayoutToken(IERC20 payoutToken_) public override virtual onlyOwner whenPaused {
+        require(payoutToken_ != IERC20(0));
+        super.setPayoutToken(payoutToken_);
     }
 
     /**
@@ -175,33 +122,6 @@ abstract contract FixedSupplyLotSale is Pausable, KyberAdapter, PayoutWallet {
         require(inventoryContract != _inventoryContract);
 
         _inventoryContract = inventoryContract;
-    }
-
-    /**
-     * @dev Starts the sale
-     */
-    function start()
-        public
-        onlyOwner
-        whenNotStarted
-    {
-        // solium-disable-next-line security/no-block-members
-        _startedAt = now;
-
-        unpause();
-    }
-
-    function pause()
-        public
-        onlyOwner
-    {
-        _pause();
-    }
-
-    function unpause()
-        public onlyOwner
-    {
-        _unpause();
     }
 
     /**
@@ -358,65 +278,6 @@ abstract contract FixedSupplyLotSale is Pausable, KyberAdapter, PayoutWallet {
     }
 
     /**
-     * @dev Purchases a quantity of Lot items for the given Lot id.
-     * @param recipient Destination account to receive the purchased Lot items.
-     * @param lotId Lot id of the items to purchase.
-     * @param quantity Quantity of Lot items to purchase.
-     * @param tokenAddress Purchase currency token contract address.
-     * @param maxTokenAmount Maximum amount of purchase tokens to spend for the purchase.
-     * @param minConversionRate Minimum conversion rate, from purchase tokens to payout tokens, to allow for the purchase to succeed.
-     * @param extData Additional string encoded custom data to pass through to the event.
-     */
-    function purchaseFor(
-        address payable recipient,
-        uint256 lotId,
-        uint256 quantity,
-        IERC20 tokenAddress,
-        uint256 maxTokenAmount,
-        uint256 minConversionRate,
-        string calldata extData
-    )
-        external
-        payable
-        whenNotPaused
-        whenStarted
-    {
-        require(recipient != address(0));
-        require(recipient != address(uint160(address(this))));
-        require (quantity > 0);
-        require(tokenAddress != IERC20(0));
-
-        PurchaseForVars memory purchaseForVars;
-        purchaseForVars.recipient = recipient;
-        purchaseForVars.lotId = lotId;
-        purchaseForVars.quantity = quantity;
-        purchaseForVars.tokenAddress = tokenAddress;
-        purchaseForVars.maxTokenAmount = maxTokenAmount;
-        purchaseForVars.minConversionRate = minConversionRate;
-        purchaseForVars.extData = extData;
-        purchaseForVars.operator = msg.sender;
-        purchaseForVars.lot = _lots[lotId];
-
-        require(purchaseForVars.lot.exists);
-        require(quantity <= purchaseForVars.lot.numAvailable);
-
-        purchaseForVars.nonFungibleTokens = new uint256[](quantity);
-
-        uint256 nonFungibleSupplyOffset = purchaseForVars.lot.nonFungibleSupply.length.sub(purchaseForVars.lot.numAvailable);
-
-        for (uint256 index = 0; index < quantity; index++) {
-            uint256 position = nonFungibleSupplyOffset.add(index);
-            purchaseForVars.nonFungibleTokens[index] = purchaseForVars.lot.nonFungibleSupply[position];
-        }
-
-        purchaseForVars.totalFungibleAmount = purchaseForVars.lot.fungibleAmount.mul(quantity);
-
-        _purchaseFor(purchaseForVars);
-
-        _lots[lotId].numAvailable = purchaseForVars.lot.numAvailable.sub(quantity);
-    }
-
-    /**
      * @dev Retrieves user purchase price information for the given quantity of Lot items.
      * @param recipient The user for whom the price information is being retrieved for.
      * @param lotId Lot id of the items from which the purchase price information will be retrieved.
@@ -448,138 +309,172 @@ abstract contract FixedSupplyLotSale is Pausable, KyberAdapter, PayoutWallet {
 
         (totalPrice, totalDiscounts) = _getPrice(recipient, lot, quantity);
 
-        if (tokenAddress == _payoutTokenAddress) {
+        if (tokenAddress == payoutToken) {
             minConversionRate = 1000000000000000000;
         } else {
-            (, uint tokenAmount) = _convertToken(_payoutTokenAddress, totalPrice, tokenAddress);
-            (, minConversionRate) = kyber.getExpectedRate(tokenAddress, _payoutTokenAddress, tokenAmount);
+            (, uint tokenAmount) = _convertToken(payoutToken, totalPrice, tokenAddress);
+            (, minConversionRate) = kyber.getExpectedRate(tokenAddress, payoutToken, tokenAmount);
 
             if (totalPrice > 0) {
                 totalPrice = ceilingDiv(totalPrice.mul(10**36), minConversionRate);
-                totalPrice = _fixTokenDecimals(_payoutTokenAddress, tokenAddress, totalPrice, true);
+                totalPrice = _fixTokenDecimals(payoutToken, tokenAddress, totalPrice, true);
             }
 
             if (totalDiscounts > 0) {
                 totalDiscounts = ceilingDiv(totalDiscounts.mul(10**36), minConversionRate);
-                totalDiscounts = _fixTokenDecimals(_payoutTokenAddress, tokenAddress, totalDiscounts, true);
+                totalDiscounts = _fixTokenDecimals(payoutToken, tokenAddress, totalDiscounts, true);
             }
         }
     }
 
     /**
-     * @dev Defines the purchase lifecycle sequence to execute when handling a purchase.
-     * @dev Overridable.
-     * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
+     * Validates a purchase.
+     * @param purchase Purchase conditions (extData[0]: max token amount,
+     *  extData[1]: min conversion rate).
      */
-    function _purchaseFor(
-        PurchaseForVars memory purchaseForVars
-    )
-        internal
-        virtual
-    {
-        (purchaseForVars.totalPrice, purchaseForVars.totalDiscounts) =
-            _purchaseForPricing(purchaseForVars);
+    function _validatePurchase(
+        Purchase memory purchase
+    ) internal override virtual {
+        require(purchase.purchaser != address(0));
+        require(purchase.purchaser != address(uint160(address(this))));
+        require (purchase.quantity > 0);
+        require(purchase.paymentToken != IERC20(0));
 
-        (purchaseForVars.tokensSent, purchaseForVars.tokensReceived) =
-            _purchaseForPayment(purchaseForVars);
+        uint256 lotId = uint256(purchase.sku);
 
-        _purchaseForDelivery(purchaseForVars);
-        _purchaseForNotify(purchaseForVars);
+        require(_lots[lotId].exists);
+        require(purchase.quantity <= _lots[lotId].numAvailable);
     }
 
     /**
-     * @dev Purchase lifecycle hook that handles the calculation of the total price and total discounts, in payout currency tokens.
-     * @dev Overridable.
-     * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
-     * @return totalPrice Total price (excluding any discounts), in payout currency tokens.
-     * @return totalDiscounts Total discounts to apply to the total price, in payout currency tokens.
+     * Calculates the purchase price.
+     * @param purchase Purchase conditions (extData[0]: max token amount,
+     *  extData[1]: min conversion rate).
+     * @return priceInfo Implementation-specific calculated purchase price
+     *  information (0:total price, 1:total discounts).
      */
-    function _purchaseForPricing(
-        PurchaseForVars memory purchaseForVars
-    )
-        internal
-        virtual
-        returns
-    (
-        uint256 totalPrice,
-        uint256 totalDiscounts
-    )
-    {
-        (totalPrice, totalDiscounts) =
+    function _calculatePrice(
+        Purchase memory purchase
+    ) internal override virtual returns (bytes32[] memory priceInfo) {
+        uint256 lotId = uint256(purchase.sku);
+
+        (uint256 totalPrice, uint256 totalDiscounts) =
             _getPrice(
-                purchaseForVars.recipient,
-                purchaseForVars.lot,
-                purchaseForVars.quantity);
+                purchase.purchaser,
+                _lots[lotId],
+                purchase.quantity);
 
         require(totalDiscounts <= totalPrice);
+
+        priceInfo = new bytes32[](2);
+        priceInfo[0] = bytes32(totalPrice);
+        priceInfo[1] = bytes32(totalDiscounts);
     }
 
     /**
-     * @dev Purchase lifecycle hook that handles the conversion and transfer of payment tokens.
-     * @dev Any overpayments result in the change difference being returned to the recipient, in purchase currency tokens.
-     * @dev Overridable.
-     * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
-     * @return purchaseTokensSent The amount of actual purchase tokens paid by the recipient.
-     * @return payoutTokensReceived The amount of actual payout tokens received by the payout wallet.
+     * Accepts payment for a purchase.
+     * @param purchase Purchase conditions (extData[0]: max token amount,
+     *  extData[1]: min conversion rate).
+     * @param priceInfo Implementation-specific calculated purchase price
+     *  information (0:total price, 1:total discounts).
+     * @return paymentInfo Implementation-specific accepted purchase payment
+     *  information (0:purchase tokens sent, 1: payout tokens received).
      */
-    function _purchaseForPayment(
-        PurchaseForVars memory purchaseForVars
-    )
-        internal
-        virtual
-        returns
-    (
-        uint256 purchaseTokensSent,
-        uint256 payoutTokensReceived
-    )
-    {
-        uint256 totalDiscountedPrice = purchaseForVars.totalPrice.sub(purchaseForVars.totalDiscounts);
+    function _acceptPayment(
+        Purchase memory purchase,
+        bytes32[] memory priceInfo
+    ) internal override virtual returns (bytes32[] memory paymentInfo) {
+        uint256 totalPrice = uint256(priceInfo[0]);
+        uint256 totalDiscounts = uint256(priceInfo[1]);
+        uint256 totalDiscountedPrice = totalPrice.sub(totalDiscounts);
+        uint256 maxTokenAmount = uint256(purchase.extData[0]);
+        uint256 minConversionRate = uint256(purchase.extData[1]);
 
-        (purchaseTokensSent, payoutTokensReceived) =
+        (uint256 purchaseTokensSent, uint256 payoutTokensReceived) =
             _swapTokenAndHandleChange(
-                purchaseForVars.tokenAddress,
-                purchaseForVars.maxTokenAmount,
-                _payoutTokenAddress,
+                purchase.paymentToken,
+                maxTokenAmount,
+                payoutToken,
                 totalDiscountedPrice,
-                purchaseForVars.minConversionRate,
-                purchaseForVars.operator,
+                minConversionRate,
+                purchase.operator,
                 address(uint160(address(this))));
 
         require(payoutTokensReceived >= totalDiscountedPrice);
-        require(_payoutTokenAddress.transfer(payoutWallet, payoutTokensReceived));
+        require(payoutToken.transfer(payoutWallet, payoutTokensReceived));
+
+        paymentInfo = new bytes32[](2);
+        paymentInfo[0] = bytes32(purchaseTokensSent);
+        paymentInfo[1] = bytes32(payoutTokensReceived);
     }
 
     /**
-     * @dev Purchase lifecycle hook that handles the delivery of purchased fungible and non-fungible tokens to the recipient.
-     * @dev Overridable.
-     * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
+     * Finalizes the completed purchase by performing any remaining purchase
+     * housekeeping updates.
+     * @param purchase Purchase conditions (extData[0]: max token amount,
+     *  extData[1]: min conversion rate).
+     * @param *priceInfo* Implementation-specific calculated purchase price
+     *  information (0:total price, 1:total discounts).
+     * @param *paymentInfo* Implementation-specific accepted purchase payment
+     *  information (0:purchase tokens sent, 1: payout tokens received).
+     * @param *deliveryInfo* Implementation-specific purchase delivery
+     *  information.
+     * @return *finalizeInfo* Implementation-specific purchase finalization
+     *  information.
      */
-    function _purchaseForDelivery(PurchaseForVars memory purchaseForVars) internal virtual;
+    function _finalizePurchase(
+        Purchase memory purchase,
+        bytes32[] memory /* priceInfo */,
+        bytes32[] memory /* paymentInfo */,
+        bytes32[] memory /* deliveryInfo */
+    ) internal override virtual returns (bytes32[] memory /* finalizeInfo */) {
+        uint256 lotId = uint256(purchase.sku);
+        _lots[lotId].numAvailable = _lots[lotId].numAvailable.sub(purchase.quantity);
+    }
 
     /**
-     * @dev Purchase lifecycle hook that handles the notification of a purchase event.
-     * @dev Overridable.
-     * @param purchaseForVars PurchaseForVars structure of in-memory intermediate variables used in the purchaseFor() call
+     * Retrieves implementation-specific extra data passed as the Purchased
+     *  event extData argument.
+     * @param purchase Purchase conditions (extData[0]: max token amount,
+     *  extData[1]: min conversion rate).
+     * @param priceInfo Implementation-specific calculated purchase price
+     *  information (0:total price, 1:total discounts).
+     * @param paymentInfo Implementation-specific accepted purchase payment
+     *  information (0:purchase tokens sent, 1: payout tokens received).
+     * @param *deliveryInfo* Implementation-specific purchase delivery
+     *  information.
+     * @param *finalizeInfo* Implementation-specific purchase finalization
+     *  information.
+     * @return extData Implementation-specific extra data passed as the Purchased event
+     *  extData argument.
      */
-    function _purchaseForNotify(
-        PurchaseForVars memory purchaseForVars
-    )
-        internal
-        virtual
-    {
-        emit Purchased(
-            purchaseForVars.recipient,
-            purchaseForVars.operator,
-            purchaseForVars.lotId,
-            purchaseForVars.quantity,
-            purchaseForVars.nonFungibleTokens,
-            purchaseForVars.totalFungibleAmount,
-            purchaseForVars.totalPrice,
-            purchaseForVars.totalDiscounts,
-            address(purchaseForVars.tokenAddress),
-            purchaseForVars.tokensSent,
-            purchaseForVars.tokensReceived,
-            purchaseForVars.extData);
+    function _getPurchasedEventExtData(
+        Purchase memory purchase,
+        bytes32[] memory priceInfo,
+        bytes32[] memory paymentInfo,
+        bytes32[] memory /* deliveryInfo */,
+        bytes32[] memory /* finalizeInfo */
+    ) internal override virtual view returns (bytes32[] memory extData) {
+        extData = new bytes32[](purchase.quantity.add(6));
+        extData[0] = bytes32(purchase.quantity);
+
+        uint256 lotId = uint256(purchase.sku);
+        Lot memory lot = _lots[lotId];
+
+        uint256 numPreviouslyAvailable = lot.numAvailable.add(purchase.quantity);
+        uint256 nonFungibleSupplyOffset = lot.nonFungibleSupply.length.sub(numPreviouslyAvailable);
+        uint256 index = 0;
+
+        while (index < purchase.quantity) {
+            extData[++index] = bytes32(lot.nonFungibleSupply[nonFungibleSupplyOffset]);
+            nonFungibleSupplyOffset = nonFungibleSupplyOffset.add(index);
+        }
+
+        extData[++index] = bytes32(lot.fungibleAmount.mul(purchase.quantity));
+        extData[++index] = priceInfo[0];
+        extData[++index] = priceInfo[1];
+        extData[++index] = paymentInfo[0];
+        extData[++index] = paymentInfo[1];
     }
 
     /**

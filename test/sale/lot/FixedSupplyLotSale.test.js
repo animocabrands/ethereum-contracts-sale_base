@@ -2,6 +2,7 @@ const { BN, balance, ether, expectEvent, expectRevert } = require('@openzeppelin
 const InventoryIds = require('@animoca/blockchain-inventory_metadata').inventoryIds;
 const Constants = require('@animoca/ethereum-contracts-core_library').constants;
 const { shouldBeEqualWithPercentPrecision } = require('@animoca/ethereum-contracts-core_library').fixtures
+const { toHex, padLeft, toBN, hexToUtf8 } = require('web3-utils');
 
 const IERC20 = artifacts.require('IERC20');
 const AssetsInventory = artifacts.require('AssetsInventoryMock');
@@ -32,10 +33,17 @@ contract('FixedSupplyLotSale', function ([
     const lotFungibleAmount = new BN('100');
     const lotPrice = ether('0.00001'); // must be at least 0.00001
 
+    const sku = toBytes32(lotId);
+    const extDataString = 'extData';
+
     const unknownLotId = Constants.One;
 
+    function toBytes32(value) {
+        return padLeft(toHex(value), 64);
+    }
+
     async function shouldHaveStartedTheSale(state) {
-        const startedAt = await this.sale._startedAt();
+        const startedAt = await this.sale.startedAt();
 
         if (state) {
             startedAt.should.be.bignumber.gt(Constants.Zero);
@@ -195,13 +203,13 @@ contract('FixedSupplyLotSale', function ([
         });
     });
 
-    describe('setPayoutTokenAddress()', function () {
+    describe('setPayoutToken()', function () {
         const [ notOwner ] = accounts;
         const newPayoutTokenAddress = Erc20TokenAddress;
 
         it('should revert if not called by the owner', async function () {
             await expectRevert.unspecified(
-                this.sale.setPayoutTokenAddress(
+                this.sale.setPayoutToken(
                     newPayoutTokenAddress,
                     { from: notOwner }));
         });
@@ -212,33 +220,33 @@ contract('FixedSupplyLotSale', function ([
             await shouldHavePausedTheSale.bind(this, false)();
 
             await expectRevert.unspecified(
-                this.sale.setPayoutTokenAddress(
+                this.sale.setPayoutToken(
                     newPayoutTokenAddress,
                     { from: owner }));
         })
 
         it('should revert if set with the zero-address', async function () {
             await expectRevert.unspecified(
-                this.sale.setPayoutTokenAddress(
+                this.sale.setPayoutToken(
                     Constants.ZeroAddress,
                     { from: owner }));
         });
 
         it('should revert if set with the current payout token address', async function () {
-            const currentPayoutTokenAddress = await this.sale._payoutTokenAddress();
+            const currentPayoutTokenAddress = await this.sale.payoutToken();
             await expectRevert.unspecified(
-                this.sale.setPayoutTokenAddress(
+                this.sale.setPayoutToken(
                     currentPayoutTokenAddress,
                     { from: owner }));
         });
 
         it('should set the payout token address', async function () {
-            const beforePayoutTokenAddress = await this.sale._payoutTokenAddress();
+            const beforePayoutTokenAddress = await this.sale.payoutToken();
             beforePayoutTokenAddress.should.not.be.equal(newPayoutTokenAddress);
 
-            await this.sale.setPayoutTokenAddress(newPayoutTokenAddress, { from: owner });
+            await this.sale.setPayoutToken(newPayoutTokenAddress, { from: owner });
 
-            const afterPayoutTokenAddress = await this.sale._payoutTokenAddress();
+            const afterPayoutTokenAddress = await this.sale.payoutToken();
             afterPayoutTokenAddress.should.be.equal(newPayoutTokenAddress);
         });
     });
@@ -361,12 +369,12 @@ contract('FixedSupplyLotSale', function ([
         });
 
         it('should set the lot sale start timestamp', async function () {
-            const beforeStartedAt = await this.sale._startedAt();
+            const beforeStartedAt = await this.sale.startedAt();
             beforeStartedAt.should.be.bignumber.equal(Constants.Zero);
 
             await this.sale.start({ from: owner });
 
-            const afterStartedAt = await this.sale._startedAt();
+            const afterStartedAt = await this.sale.startedAt();
             afterStartedAt.should.be.bignumber.gt(Constants.Zero);
         });
 
@@ -829,12 +837,14 @@ contract('FixedSupplyLotSale', function ([
             await expectRevert.unspecified(
                 this.sale.purchaseFor(
                     recipient,
-                    lotId,
+                    sku,
                     quantity,
                     tokenAddress,
-                    priceInfo.totalPrice,
-                    priceInfo.minConversionRate,
-                    '',
+                    [
+                        priceInfo.totalPrice,
+                        priceInfo.minConversionRate,
+                        extDataString
+                    ].map(item => toBytes32(item)),
                     txParams));
         }
 
@@ -850,10 +860,7 @@ contract('FixedSupplyLotSale', function ([
 
         it('should revert if the sale has not started', async function () {
             await shouldHaveStartedTheSale.bind(this, false)();
-
-            await this.sale.unpause({ from: owner });
-
-            await shouldHavePausedTheSale.bind(this, false)();
+            await shouldHavePausedTheSale.bind(this, true)();
 
             await shouldRevertWithValidatedQuantity.bind(
                 this,
@@ -1028,8 +1035,8 @@ contract('FixedSupplyLotSale', function ([
                         recipient,
                         lotId,
                         quantity,
-                        null,
                         Constants.ZeroAddress,
+                        null,
                         { from: operator })());
             });
 
@@ -1083,12 +1090,14 @@ contract('FixedSupplyLotSale', function ([
 
                             this.receipt = await this.sale.purchaseFor(
                                 recipient,
-                                lotId,
+                                sku,
                                 quantity,
                                 tokenAddress,
-                                maxTokenAmount,
-                                this.priceInfo.minConversionRate,
-                                'extData',
+                                [
+                                    maxTokenAmount,
+                                    this.priceInfo.minConversionRate,
+                                    extDataString
+                                ].map(item => toBytes32(item)),
                                 {
                                     from: operator,
                                     value: maxTokenAmount
@@ -1107,12 +1116,14 @@ contract('FixedSupplyLotSale', function ([
                         beforeEach(async function () {
                             this.receipt = await this.sale.purchaseFor(
                                 recipient,
-                                lotId,
+                                sku,
                                 quantity,
                                 tokenAddress,
-                                this.priceInfo.totalPrice,
-                                this.priceInfo.minConversionRate,
-                                'extData',
+                                [
+                                    this.priceInfo.totalPrice,
+                                    this.priceInfo.minConversionRate,
+                                    extDataString
+                                ].map(item => toBytes32(item)),
                                 {
                                     from: operator,
                                     value: this.priceInfo.totalPrice
@@ -1191,12 +1202,14 @@ contract('FixedSupplyLotSale', function ([
 
                                 this.receipt = await this.sale.purchaseFor(
                                     recipient,
-                                    lotId,
+                                    sku,
                                     quantity,
                                     tokenAddress,
-                                    maxTokenAmount,
-                                    this.priceInfo.minConversionRate,
-                                    'extData',
+                                    [
+                                        maxTokenAmount,
+                                        this.priceInfo.minConversionRate,
+                                        extDataString
+                                    ].map(item => toBytes32(item)),
                                     { from: operator });
                             });
 
@@ -1212,12 +1225,14 @@ contract('FixedSupplyLotSale', function ([
                             beforeEach(async function () {
                                 this.receipt = await this.sale.purchaseFor(
                                     recipient,
-                                    lotId,
+                                    sku,
                                     quantity,
                                     tokenAddress,
-                                    this.priceInfo.totalPrice,
-                                    this.priceInfo.minConversionRate,
-                                    'extData',
+                                    [
+                                        this.priceInfo.totalPrice,
+                                        this.priceInfo.minConversionRate,
+                                        extDataString
+                                    ].map(item => toBytes32(item)),
                                     { from: operator });
                             });
 
@@ -1276,12 +1291,14 @@ contract('FixedSupplyLotSale', function ([
 
                                 this.receipt = await this.sale.purchaseFor(
                                     recipient,
-                                    lotId,
+                                    sku,
                                     quantity,
                                     tokenAddress,
-                                    maxTokenAmount,
-                                    this.priceInfo.minConversionRate,
-                                    'extData',
+                                    [
+                                        maxTokenAmount,
+                                        this.priceInfo.minConversionRate,
+                                        extDataString
+                                    ].map(item => toBytes32(item)),
                                     { from: operator });
                             });
 
@@ -1297,12 +1314,14 @@ contract('FixedSupplyLotSale', function ([
                             beforeEach(async function () {
                                 this.receipt = await this.sale.purchaseFor(
                                     recipient,
-                                    lotId,
+                                    sku,
                                     quantity,
                                     tokenAddress,
-                                    this.priceInfo.totalPrice,
-                                    this.priceInfo.minConversionRate,
-                                    'extData',
+                                    [
+                                        this.priceInfo.totalPrice,
+                                        this.priceInfo.minConversionRate,
+                                        extDataString
+                                    ].map(item => toBytes32(item)),
                                     { from: operator });
                             });
 
@@ -1430,38 +1449,52 @@ contract('FixedSupplyLotSale', function ([
             await expectRevert.unspecified(
                 this.sale.callUnderscorePurchaseFor(
                     recipient,
-                    lotId,
+                    sku,
                     quantity,
                     tokenAddress,
-                    priceInfo.totalPrice,
-                    priceInfo.minConversionRate,
-                    'extData',
+                    [
+                        priceInfo.totalPrice,
+                        priceInfo.minConversionRate,
+                        extDataString
+                    ].map(item => toBytes32(item)),
                     txParams));
         }
 
         function testShouldCallPurchaseForLifecycleFunctions() {
-            it('should successfully call _purchaseForPricing()', async function () {
+            it('should successfully call _validatePurchase()', async function () {
                 expectEvent(
                     this.receipt,
-                    'UnderscorePurchaseForPricingCalled');
+                    'UnderscoreValidatePurchaseCalled');
             });
 
-            it('should successfully call _purchaseForPayment()', async function () {
+            it('should successfully call _calculatePrice()', async function () {
                 expectEvent(
                     this.receipt,
-                    'UnderscorePurchaseForPaymentCalled');
+                    'UnderscoreCalculatePriceCalled');
             });
 
-            it('should successfully call _purchaseForDelivery()', async function () {
+            it('should successfully call _acceptPayment()', async function () {
                 expectEvent(
                     this.receipt,
-                    'UnderscorePurchaseForDeliveryCalled');
+                    'UnderscoreAcceptPaymentCalled');
             });
 
-            it('should successfully call _purchaseForNotify()', async function () {
+            it('should successfully call _deliverGoods()', async function () {
                 expectEvent(
                     this.receipt,
-                    'UnderscorePurchaseForNotifyCalled');
+                    'UnderscoreDeliverGoodsCalled');
+            });
+
+            it('should successfully call _finalizePurchase()', async function () {
+                expectEvent(
+                    this.receipt,
+                    'UnderscoreFinalizePurchaseCalled');
+            });
+
+            it('should successfully call _notifyPurchased()', async function () {
+                expectEvent(
+                    this.receipt,
+                    'UnderscoreNotifyPurchasedCalled');
             });
         }
 
@@ -1513,12 +1546,14 @@ contract('FixedSupplyLotSale', function ([
 
                         this.receipt = await this.sale.callUnderscorePurchaseFor(
                             recipient,
-                            lotId,
+                            sku,
                             quantity,
                             tokenAddress,
-                            maxTokenAmount,
-                            this.priceInfo.minConversionRate,
-                            'extData',
+                            [
+                                maxTokenAmount,
+                                this.priceInfo.minConversionRate,
+                                extDataString
+                            ].map(item => toBytes32(item)),
                             {
                                 from: operator,
                                 value: maxTokenAmount
@@ -1532,12 +1567,14 @@ contract('FixedSupplyLotSale', function ([
                     beforeEach(async function () {
                         this.receipt = await this.sale.callUnderscorePurchaseFor(
                             recipient,
-                            lotId,
+                            sku,
                             quantity,
                             tokenAddress,
-                            this.priceInfo.totalPrice,
-                            this.priceInfo.minConversionRate,
-                            'extData',
+                            [
+                                this.priceInfo.totalPrice,
+                                this.priceInfo.minConversionRate,
+                                extDataString
+                            ].map(item => toBytes32(item)),
                             {
                                 from: operator,
                                 value: this.priceInfo.totalPrice
@@ -1639,12 +1676,14 @@ contract('FixedSupplyLotSale', function ([
                         beforeEach(async function () {
                             this.receipt = await this.sale.callUnderscorePurchaseFor(
                                 recipient,
-                                lotId,
+                                sku,
                                 quantity,
                                 tokenAddress,
-                                this.priceInfo.totalPrice.muln(2),
-                                this.priceInfo.minConversionRate,
-                                'extData',
+                                [
+                                    this.priceInfo.totalPrice.muln(2),
+                                    this.priceInfo.minConversionRate,
+                                    extDataString
+                                ].map(item => toBytes32(item)),
                                 { from: operator });
                         });
 
@@ -1655,12 +1694,14 @@ contract('FixedSupplyLotSale', function ([
                         beforeEach(async function () {
                             this.receipt = await this.sale.callUnderscorePurchaseFor(
                                 recipient,
-                                lotId,
+                                sku,
                                 quantity,
                                 tokenAddress,
-                                this.priceInfo.totalPrice,
-                                this.priceInfo.minConversionRate,
-                                'extData',
+                                [
+                                    this.priceInfo.totalPrice,
+                                    this.priceInfo.minConversionRate,
+                                    extDataString
+                                ].map(item => toBytes32(item)),
                                 { from: operator });
                         });
 
@@ -1742,12 +1783,14 @@ contract('FixedSupplyLotSale', function ([
                         beforeEach(async function () {
                             this.receipt = await this.sale.callUnderscorePurchaseFor(
                                 recipient,
-                                lotId,
+                                sku,
                                 quantity,
                                 tokenAddress,
-                                this.priceInfo.totalPrice.muln(2),
-                                this.priceInfo.minConversionRate,
-                                'extData',
+                                [
+                                    this.priceInfo.totalPrice.muln(2),
+                                    this.priceInfo.minConversionRate,
+                                    extDataString
+                                ].map(item => toBytes32(item)),
                                 { from: operator });
                         });
 
@@ -1758,12 +1801,14 @@ contract('FixedSupplyLotSale', function ([
                         beforeEach(async function () {
                             this.receipt = await this.sale.callUnderscorePurchaseFor(
                                 recipient,
-                                lotId,
+                                sku,
                                 quantity,
                                 tokenAddress,
-                                this.priceInfo.totalPrice,
-                                this.priceInfo.minConversionRate,
-                                'extData',
+                                [
+                                    this.priceInfo.totalPrice,
+                                    this.priceInfo.minConversionRate,
+                                    extDataString
+                                ].map(item => toBytes32(item)),
                                 { from: operator });
                         });
 
@@ -1774,7 +1819,119 @@ contract('FixedSupplyLotSale', function ([
         });
     });
 
-    describe('_purchaseForPricing()', function () {
+    describe('_validatePurchase()', function () {
+        const quantity = Constants.One;
+        const tokenAddress = EthAddress;
+
+        async function shouldRevert(recipient, lotId, quantity, tokenAddress, priceInfo, txParams = {}) {
+            if (!priceInfo) {
+                priceInfo = await this.sale.getPrice(
+                    recipient,
+                    lotId,
+                    quantity,
+                    tokenAddress);
+            }
+
+            await expectRevert.unspecified(
+                this.sale.callUnderscoreValidatePurchase(
+                    recipient,
+                    sku,
+                    quantity,
+                    tokenAddress,
+                    [
+                        priceInfo.totalPrice,
+                        priceInfo.minConversionRate,
+                        extDataString
+                    ].map(item => toBytes32(item)),
+                    txParams));
+        }
+
+        async function shouldRevertWithValidatedQuantity(recipient, lotId, quantity, tokenAddress, priceInfo, txParams = {}) {
+            const lot = await this.sale._lots(lotId);
+
+            if (lot.exists) {
+                (quantity.gt(Constants.Zero) && quantity.lte(lot.numAvailable)).should.be.true;
+            }
+
+            await shouldRevert.bind(this, recipient, lotId, quantity, tokenAddress, priceInfo, txParams)();
+        }
+
+        it('should revert if the recipient is the zero-address', async function () {
+            await shouldRevertWithValidatedQuantity.bind(
+                this,
+                Constants.ZeroAddress,
+                lotId,
+                quantity,
+                tokenAddress,
+                null,
+                { from: operator })();
+        });
+
+        it('should revert if the recipient is the sale contract address', async function () {
+            await shouldRevertWithValidatedQuantity.bind(
+                this,
+                this.sale.address,
+                lotId,
+                quantity,
+                tokenAddress,
+                null,
+                { from: operator })();
+        });
+
+        it('should revert if the lot doesnt exist', async function () {
+            // pre-emptive revert caused by the call to getPrice()
+            await expectRevert.unspecified(
+                shouldRevertWithValidatedQuantity.bind(
+                    this,
+                    recipient,
+                    unknownLotId,
+                    quantity,
+                    tokenAddress,
+                    null,
+                    { from: operator })());
+        });
+
+        it('should revert if the purchase quantity is zero', async function () {
+            const quantity = Constants.Zero;
+
+            await shouldRevert.bind(
+                this,
+                recipient,
+                lotId,
+                Constants.Zero,
+                tokenAddress,
+                null,
+                { from: operator })();
+        });
+
+        it('should revert if the purchase token address is the zero-address', async function () {
+            // pre-emptive revert caused by the call to getPrice()
+            await expectRevert.unspecified(
+                shouldRevertWithValidatedQuantity.bind(
+                    this,
+                    recipient,
+                    lotId,
+                    quantity,
+                    Constants.ZeroAddress,
+                    null,
+                    { from: operator })());
+        });
+
+        it('should revert if the purchase quantity > number of Lot items available for sale', async function () {
+            const lot = await this.sale._lots(lotId);
+
+            await shouldRevert.bind(
+                this,
+                recipient,
+                lotId,
+                lot.numAvailable.add(Constants.One),
+                tokenAddress,
+                null,
+                { from: operator })();
+        });
+    });
+
+    describe('_calculatePrice()', function () {
         const quantity = Constants.One;
         const tokenAddress = EthAddress;
 
@@ -1787,40 +1944,42 @@ contract('FixedSupplyLotSale', function ([
                 quantity,
                 tokenAddress);
 
-            const pricingInfoReceipt = await this.sale.callUnderscorePurchaseForPricing(
+            const pricingInfoReceipt = await this.sale.callUnderscoreCalculatePrice(
                 recipient,
-                lotId,
+                sku,
                 quantity,
                 tokenAddress,
-                priceInfo.totalPrice,
-                priceInfo.minConversionRate,
-                'extData',
+                [
+                    priceInfo.totalPrice,
+                    priceInfo.minConversionRate,
+                    extDataString
+                ].map(item => toBytes32(item)),
                 { from: operator });
 
-            const pricinginfoEvents = await this.sale.getPastEvents(
-                'UnderscorePurchaseForPricingResult',
+            const calculatePriceEvents = await this.sale.getPastEvents(
+                'UnderscoreCalculatePriceResult',
                 {
                     fromBlock: 0,
                     toBlock: 'latest'
                 });
 
-            this.pricingInfo = pricinginfoEvents[0].args;
+            this.calculatePriceResult = calculatePriceEvents[0].args;
         });
 
         it('should return correct total price pricing info', async function () {
             const expectedTotalPrice = this.lot.price.mul(quantity);
-            const actualTotalPrice = this.pricingInfo.totalPrice;
+            const actualTotalPrice = toBN(this.calculatePriceResult.priceInfo[0]);
             expectedTotalPrice.should.be.bignumber.equal(actualTotalPrice);
         });
 
         it('should return correct total discounts pricing info', async function () {
             const expectedTotalDiscounts = Constants.Zero;
-            const actualTotalDiscounts = this.pricingInfo.totalDiscounts;
+            const actualTotalDiscounts = toBN(this.calculatePriceResult.priceInfo[1]);
             expectedTotalDiscounts.should.be.bignumber.equal(actualTotalDiscounts);
         });
     });
 
-    describe('_purchaseForPayment()', function () {
+    describe('_acceptPayment()', function () {
         const quantity = Constants.One;
 
         async function shouldRevert(recipient, lotId, quantity, tokenAddress, priceInfo, txParams = {}) {
@@ -1838,16 +1997,20 @@ contract('FixedSupplyLotSale', function ([
                 quantity);
 
             await expectRevert.unspecified(
-                this.sale.callUnderscorePurchaseForPayment(
+                this.sale.callUnderscoreAcceptPayment(
                     recipient,
-                    lotId,
+                    sku,
                     quantity,
                     tokenAddress,
-                    priceInfo.totalPrice,
-                    priceInfo.minConversionRate,
-                    '',
-                    payoutPriceInfo.totalPrice,
-                    payoutPriceInfo.totalDiscounts,
+                    [
+                        priceInfo.totalPrice,
+                        priceInfo.minConversionRate,
+                        extDataString
+                    ].map(item => toBytes32(item)),
+                    [
+                        payoutPriceInfo.totalPrice,
+                        payoutPriceInfo.totalDiscounts
+                    ].map(item => toBytes32(item)),
                     txParams));
         }
 
@@ -1999,16 +2162,20 @@ contract('FixedSupplyLotSale', function ([
                     beforeEach(async function () {
                         this.maxTokenAmount = this.priceInfo.totalPrice.muln(2);
 
-                        this.receipt = await this.sale.callUnderscorePurchaseForPayment(
+                        this.receipt = await this.sale.callUnderscoreAcceptPayment(
                             recipient,
-                            lotId,
+                            sku,
                             quantity,
                             tokenAddress,
-                            this.maxTokenAmount,
-                            this.priceInfo.minConversionRate,
-                            'extData',
-                            this.payoutPriceInfo.totalPrice,
-                            this.payoutPriceInfo.totalDiscounts,
+                            [
+                                this.maxTokenAmount,
+                                this.priceInfo.minConversionRate,
+                                extDataString
+                            ].map(item => toBytes32(item)),
+                            [
+                                this.payoutPriceInfo.totalPrice,
+                                this.payoutPriceInfo.totalDiscounts
+                            ].map(item => toBytes32(item)),
                             {
                                 from: operator,
                                 value: this.maxTokenAmount
@@ -2030,16 +2197,20 @@ contract('FixedSupplyLotSale', function ([
 
                 context('when spending the exact total price amount', function () {
                     beforeEach(async function () {
-                        this.receipt = await this.sale.callUnderscorePurchaseForPayment(
+                        this.receipt = await this.sale.callUnderscoreAcceptPayment(
                             recipient,
-                            lotId,
+                            sku,
                             quantity,
                             tokenAddress,
-                            this.priceInfo.totalPrice,
-                            this.priceInfo.minConversionRate,
-                            'extData',
-                            this.payoutPriceInfo.totalPrice,
-                            this.payoutPriceInfo.totalDiscounts,
+                            [
+                                this.priceInfo.totalPrice,
+                                this.priceInfo.minConversionRate,
+                                extDataString
+                            ].map(item => toBytes32(item)),
+                            [
+                                this.payoutPriceInfo.totalPrice,
+                                this.payoutPriceInfo.totalDiscounts
+                            ].map(item => toBytes32(item)),
                             {
                                 from: operator,
                                 value: this.priceInfo.totalPrice
@@ -2135,16 +2306,20 @@ contract('FixedSupplyLotSale', function ([
                         beforeEach(async function () {
                             this.maxTokenAmount = this.priceInfo.totalPrice.muln(2);
 
-                            this.receipt = await this.sale.callUnderscorePurchaseForPayment(
+                            this.receipt = await this.sale.callUnderscoreAcceptPayment(
                                 recipient,
-                                lotId,
+                                sku,
                                 quantity,
                                 tokenAddress,
-                                this.maxTokenAmount,
-                                this.priceInfo.minConversionRate,
-                                'extData',
-                                this.payoutPriceInfo.totalPrice,
-                                this.payoutPriceInfo.totalDiscounts,
+                                [
+                                    this.maxTokenAmount,
+                                    this.priceInfo.minConversionRate,
+                                    extDataString
+                                ].map(item => toBytes32(item)),
+                                [
+                                    this.payoutPriceInfo.totalPrice,
+                                    this.payoutPriceInfo.totalDiscounts
+                                ].map(item => toBytes32(item)),
                                 { from: operator });
                         });
 
@@ -2202,16 +2377,20 @@ contract('FixedSupplyLotSale', function ([
 
                     context('when spending the exact total price amount', function () {
                         beforeEach(async function () {
-                            this.receipt = await this.sale.callUnderscorePurchaseForPayment(
+                            this.receipt = await this.sale.callUnderscoreAcceptPayment(
                                 recipient,
-                                lotId,
+                                sku,
                                 quantity,
                                 tokenAddress,
-                                this.priceInfo.totalPrice,
-                                this.priceInfo.minConversionRate,
-                                'extData',
-                                this.payoutPriceInfo.totalPrice,
-                                this.payoutPriceInfo.totalDiscounts,
+                                [
+                                    this.priceInfo.totalPrice,
+                                    this.priceInfo.minConversionRate,
+                                    extDataString
+                                ].map(item => toBytes32(item)),
+                                [
+                                    this.payoutPriceInfo.totalPrice,
+                                    this.payoutPriceInfo.totalDiscounts
+                                ].map(item => toBytes32(item)),
                                 { from: operator });
                         });
 
@@ -2325,16 +2504,20 @@ contract('FixedSupplyLotSale', function ([
                         beforeEach(async function () {
                             this.maxTokenAmount = this.priceInfo.totalPrice.muln(2);
 
-                            this.receipt = await this.sale.callUnderscorePurchaseForPayment(
+                            this.receipt = await this.sale.callUnderscoreAcceptPayment(
                                 recipient,
-                                lotId,
+                                sku,
                                 quantity,
                                 tokenAddress,
-                                this.maxTokenAmount,
-                                this.priceInfo.minConversionRate,
-                                'extData',
-                                this.payoutPriceInfo.totalPrice,
-                                this.payoutPriceInfo.totalDiscounts,
+                                [
+                                    this.maxTokenAmount,
+                                    this.priceInfo.minConversionRate,
+                                    extDataString
+                                ].map(item => toBytes32(item)),
+                                [
+                                    this.payoutPriceInfo.totalPrice,
+                                    this.payoutPriceInfo.totalDiscounts
+                                ].map(item => toBytes32(item)),
                                 { from: operator });
                         });
 
@@ -2348,16 +2531,20 @@ contract('FixedSupplyLotSale', function ([
 
                     context('when spending the exact total price amount', function () {
                         beforeEach(async function () {
-                            this.receipt = await this.sale.callUnderscorePurchaseForPayment(
+                            this.receipt = await this.sale.callUnderscoreAcceptPayment(
                                 recipient,
-                                lotId,
+                                sku,
                                 quantity,
                                 tokenAddress,
-                                this.priceInfo.totalPrice,
-                                this.priceInfo.minConversionRate,
-                                'extData',
-                                this.payoutPriceInfo.totalPrice,
-                                this.payoutPriceInfo.totalDiscounts,
+                                [
+                                    this.priceInfo.totalPrice,
+                                    this.priceInfo.minConversionRate,
+                                    extDataString
+                                ].map(item => toBytes32(item)),
+                                [
+                                    this.payoutPriceInfo.totalPrice,
+                                    this.payoutPriceInfo.totalDiscounts
+                                ].map(item => toBytes32(item)),
                                 { from: operator });
                         });
 
@@ -2373,46 +2560,155 @@ contract('FixedSupplyLotSale', function ([
         });
     });
 
-    describe('_purchaseForNotify()', function () {
+    describe('_finalizePurchase()', function () {
         const quantity = Constants.One;
+        const tokenAddress = EthAddress;
+
+        beforeEach(async function () {
+            this.lot = await this.sale._lots(lotId);
+
+            const priceInfo_ = await this.sale.getPrice(
+                recipient,
+                lotId,
+                quantity,
+                tokenAddress);
+
+            const extData = [
+                priceInfo_.totalPrice,
+                priceInfo_.minConversionRate,
+                extDataString
+            ].map(item => toBytes32(item));
+
+            const priceInfo = [
+                priceInfo_.totalPrice,
+                priceInfo_.totalDiscounts
+            ].map(item => toBytes32(item));
+
+            await this.sale.callUnderscoreAcceptPayment(
+                recipient,
+                sku,
+                quantity,
+                tokenAddress,
+                extData,
+                priceInfo,
+                {
+                    from: operator,
+                    value: priceInfo_.totalPrice
+                });
+
+            const acceptPaymentEvents = await this.sale.getPastEvents(
+                'UnderscoreAcceptPaymentResult',
+                {
+                    fromBlock: 0,
+                    toBlock: 'latest'
+                });
+
+            const acceptPaymentResult = acceptPaymentEvents[0].args;
+            const paymentInfo = acceptPaymentResult.paymentInfo;
+
+            await this.sale.callUnderscoreDeliverGoods(
+                recipient,
+                sku,
+                quantity,
+                tokenAddress,
+                extData);
+
+            const deliverGoodsEvents = await this.sale.getPastEvents(
+                'UnderscoreDeliverGoodsResult',
+                {
+                    fromBlock: 0,
+                    toBlock: 'latest'
+                });
+
+            const deliverGoodsResult = deliverGoodsEvents[0].args;
+            const deliveryInfo = deliverGoodsResult.deliveryInfo;
+
+            await this.sale.callUnderscoreFinalizePurchase(
+                recipient,
+                sku,
+                quantity,
+                tokenAddress,
+                extData,
+                priceInfo,
+                paymentInfo,
+                deliveryInfo,
+                {
+                    from: operator
+                });
+        });
+
+        it('should update the number of lot items available for sale', async function () {
+            const lot = await this.sale._lots(lotId);
+            lot.numAvailable.should.be.bignumber.equals(
+                this.lot.numAvailable.sub(quantity));
+        });
+    });
+
+    describe('_notifyPurchased()', function () {
+        const quantity = Constants.One;
+
+        async function testShouldEmitThePurchasedEvent(lotId, quantity, tokenAddress, usingPayoutToken) {
+            const totalFungibleAmount = this.lot.fungibleAmount.mul(quantity);
+            const totalPrice = this.lot.price.mul(quantity);
+
+            const purchasedEvents = await this.sale.getPastEvents(
+                'Purchased',
+                {
+                    fromBlock: 0,
+                    toBlock: 'latest'
+                });
+
+            const purchasedEvent = purchasedEvents[0].args;
+            const rawExtData = purchasedEvent.extData;
+
+            const extData = {};
+            let offset = 0;
+            extData.numNonFungibleTokens = toBN(rawExtData[offset++]).toNumber();
+            extData.nonFungibleTokens = [];
+
+            for (; offset <= extData.numNonFungibleTokens; offset++) {
+                extData.nonFungibleTokens.push(toBN(rawExtData[offset]));
+            }
+
+            extData.totalFungibleAmount = toBN(rawExtData[offset++]);
+            extData.totalPrice = toBN(rawExtData[offset++]);
+            extData.totalDiscounts = toBN(rawExtData[offset++]);
+            extData.tokensSent = toBN(rawExtData[offset++]);
+            extData.tokensReceived = toBN(rawExtData[offset++]);
+            extData.extDataString = hexToUtf8(rawExtData[offset]);
+
+            purchasedEvent.purchaser.should.be.equal(recipient);
+            purchasedEvent.operator.should.be.equal(operator);
+            purchasedEvent.sku.should.be.equal(sku);
+            purchasedEvent.quantity.should.be.bignumber.equal(quantity);
+            purchasedEvent.paymentToken.should.be.equal(tokenAddress);
+
+            extData.numNonFungibleTokens.should.be.equal(this.nonFungibleTokens.length);
+
+            for (let index = 0; index < extData.numNonFungibleTokens; index++) {
+                extData.nonFungibleTokens[index].should.be.bignumber.equal(
+                    this.nonFungibleTokens[index]);
+            }
+
+            extData.totalFungibleAmount.should.be.bignumber.equal(totalFungibleAmount);
+            extData.totalPrice.should.be.bignumber.equal(totalPrice);
+
+            if (usingPayoutToken) {
+                extData.tokensSent.should.be.bignumber.equal(totalPrice);
+            } else {
+                shouldBeEqualWithPercentPrecision(
+                    extData.tokensSent,
+                    this.priceInfo.totalPrice,
+                    5);
+            }
+
+            extData.tokensReceived.should.be.bignumber.equal(totalPrice);
+            extData.extDataString.should.be.equal(extDataString);
+        }
 
         function testShouldEmitThePurchasedEventWhenNotUsingPayoutToken(lotId, quantity, tokenAddress) {
             it('should emit the Purchased event', async function () {
-                const totalFungibleAmount = this.lot.fungibleAmount.mul(quantity);
-                const totalPrice = this.lot.price.mul(quantity);
-
-                const purchasedEvents = await this.sale.getPastEvents(
-                    'Purchased',
-                    {
-                        fromBlock: 0,
-                        toBlock: 'latest'
-                    });
-
-                const purchasedEvent = purchasedEvents[0].args;
-
-                purchasedEvent.recipient.should.be.equal(recipient);
-                purchasedEvent.operator.should.be.equal(operator);
-                purchasedEvent.lotId.should.be.bignumber.equal(lotId);
-                purchasedEvent.quantity.should.be.bignumber.equal(quantity);
-                purchasedEvent.nonFungibleTokens.length.should.be.equal(
-                    this.nonFungibleTokens.length);
-
-                for (let index = 0; index < purchasedEvent.nonFungibleTokens.length; index++) {
-                    purchasedEvent.nonFungibleTokens[index].should.be.bignumber.equal(
-                        this.nonFungibleTokens[index]);
-                }
-
-                purchasedEvent.totalFungibleAmount.should.be.bignumber.equal(totalFungibleAmount);
-                purchasedEvent.totalPrice.should.be.bignumber.equal(totalPrice);
-                purchasedEvent.tokenAddress.should.be.equal(tokenAddress);
-
-                shouldBeEqualWithPercentPrecision(
-                    purchasedEvent.tokensSent,
-                    this.priceInfo.totalPrice,
-                    5);
-
-                purchasedEvent.tokensReceived.should.be.bignumber.equal(totalPrice);
-                purchasedEvent.extData.should.be.equal('extData');
+                await testShouldEmitThePurchasedEvent.bind(this, lotId, quantity, tokenAddress, false)();
 
                 // expectEvent(
                 //     this.receipt,
@@ -2443,36 +2739,7 @@ contract('FixedSupplyLotSale', function ([
 
         function testShouldEmitThePurchasedEventWhenUsingPayoutToken(lotId, quantity, tokenAddress) {
             it('should emit the Purchased event', async function () {
-                const totalFungibleAmount = this.lot.fungibleAmount.mul(quantity);
-                const totalPrice = this.lot.price.mul(quantity);
-
-                const purchasedEvents = await this.sale.getPastEvents(
-                    'Purchased',
-                    {
-                        fromBlock: 0,
-                        toBlock: 'latest'
-                    });
-
-                const purchasedEvent = purchasedEvents[0].args;
-
-                purchasedEvent.recipient.should.be.equal(recipient);
-                purchasedEvent.operator.should.be.equal(operator);
-                purchasedEvent.lotId.should.be.bignumber.equal(lotId);
-                purchasedEvent.quantity.should.be.bignumber.equal(quantity);
-                purchasedEvent.nonFungibleTokens.length.should.be.equal(
-                    this.nonFungibleTokens.length);
-
-                for (let index = 0; index < purchasedEvent.nonFungibleTokens.length; index++) {
-                    purchasedEvent.nonFungibleTokens[index].should.be.bignumber.equal(
-                        this.nonFungibleTokens[index]);
-                }
-
-                purchasedEvent.totalFungibleAmount.should.be.bignumber.equal(totalFungibleAmount);
-                purchasedEvent.totalPrice.should.be.bignumber.equal(totalPrice);
-                purchasedEvent.tokenAddress.should.be.equal(tokenAddress);
-                purchasedEvent.tokensSent.should.be.bignumber.equal(totalPrice);
-                purchasedEvent.tokensReceived.should.be.bignumber.equal(totalPrice);
-                purchasedEvent.extData.should.be.equal('extData');
+                await testShouldEmitThePurchasedEvent.bind(this, lotId, quantity, tokenAddress, true)();
 
                 // expectEvent(
                 //     this.receipt,
@@ -2495,6 +2762,91 @@ contract('FixedSupplyLotSale', function ([
                 //         extData: 'extData'
                 //     });
             });
+        }
+
+        async function callUnderscoreNotifyPurchased(tokenAddress, maxTokenAmount, minConversionRate, totalPrice, totalDiscounts, value) {
+            const extData = [
+                maxTokenAmount,
+                minConversionRate,
+                extDataString
+            ].map(item => toBytes32(item));
+
+            const priceInfo = [
+                totalPrice,
+                totalDiscounts
+            ].map(item => toBytes32(item));
+
+            await this.sale.callUnderscoreAcceptPayment(
+                recipient,
+                sku,
+                quantity,
+                tokenAddress,
+                extData,
+                priceInfo,
+                {
+                    from: operator,
+                    value: value
+                });
+
+            const acceptPaymentEvents = await this.sale.getPastEvents(
+                'UnderscoreAcceptPaymentResult',
+                {
+                    fromBlock: 0,
+                    toBlock: 'latest'
+                });
+
+            const acceptPaymentResult = acceptPaymentEvents[0].args;
+            const paymentInfo = acceptPaymentResult.paymentInfo;
+
+            await this.sale.callUnderscoreDeliverGoods(
+                recipient,
+                sku,
+                quantity,
+                tokenAddress,
+                extData);
+
+            const deliverGoodsEvents = await this.sale.getPastEvents(
+                'UnderscoreDeliverGoodsResult',
+                {
+                    fromBlock: 0,
+                    toBlock: 'latest'
+                });
+
+            const deliverGoodsResult = deliverGoodsEvents[0].args;
+            const deliveryInfo = deliverGoodsResult.deliveryInfo;
+
+            await this.sale.callUnderscoreFinalizePurchase(
+                recipient,
+                sku,
+                quantity,
+                tokenAddress,
+                extData,
+                priceInfo,
+                paymentInfo,
+                deliveryInfo,
+                { from: operator });
+
+            const finalizePurchaseEvents = await this.sale.getPastEvents(
+                'UnderscoreFinalizePurchaseResult',
+                {
+                    fromBlock: 0,
+                    toBlock: 'latest'
+                });
+
+            const finalizePurchaseResult = finalizePurchaseEvents[0].args;
+            const finalizeInfo = finalizePurchaseResult.finalizeInfo;
+
+            this.receipt = await this.sale.callUnderscoreNotifyPurchased(
+                recipient,
+                sku,
+                quantity,
+                tokenAddress,
+                extData,
+                priceInfo,
+                paymentInfo,
+                deliveryInfo,
+                finalizeInfo,
+                { from: operator });
         }
 
         beforeEach(async function () {
@@ -2544,43 +2896,14 @@ contract('FixedSupplyLotSale', function ([
                 beforeEach(async function () {
                     const maxTokenAmount = this.priceInfo.totalPrice.muln(2);
 
-                    const paymentInfoReceipt = await this.sale.callUnderscorePurchaseForPayment(
-                        recipient,
-                        lotId,
-                        quantity,
+                    await callUnderscoreNotifyPurchased.bind(
+                        this,
                         tokenAddress,
                         maxTokenAmount,
                         this.priceInfo.minConversionRate,
-                        'extData',
                         this.payoutPriceInfo.totalPrice,
                         this.payoutPriceInfo.totalDiscounts,
-                        {
-                            from: operator,
-                            value: maxTokenAmount
-                        });
-
-                    const paymentInfoEvents = await this.sale.getPastEvents(
-                        'UnderscorePurchaseForPaymentResult',
-                        {
-                            fromBlock: 0,
-                            toBlock: 'latest'
-                        });
-
-                    this.paymentInfo = paymentInfoEvents[0].args;
-
-                    this.receipt = await this.sale.callUnderscorePurchaseForNotify(
-                        recipient,
-                        lotId,
-                        quantity,
-                        tokenAddress,
-                        maxTokenAmount,
-                        this.priceInfo.minConversionRate,
-                        'extData',
-                        this.payoutPriceInfo.totalPrice,
-                        this.payoutPriceInfo.totalDiscounts,
-                        this.paymentInfo.purchaseTokensSent,
-                        this.paymentInfo.payoutTokensReceived,
-                        { from: operator });
+                        maxTokenAmount)();
                 });
 
                 testShouldEmitThePurchasedEventWhenNotUsingPayoutToken.bind(
@@ -2592,43 +2915,14 @@ contract('FixedSupplyLotSale', function ([
 
             context('when spending the exact total price amount', function () {
                 beforeEach(async function () {
-                    const paymentInfoReceipt = await this.sale.callUnderscorePurchaseForPayment(
-                        recipient,
-                        lotId,
-                        quantity,
+                    await callUnderscoreNotifyPurchased.bind(
+                        this,
                         tokenAddress,
                         this.priceInfo.totalPrice,
                         this.priceInfo.minConversionRate,
-                        'extData',
                         this.payoutPriceInfo.totalPrice,
                         this.payoutPriceInfo.totalDiscounts,
-                        {
-                            from: operator,
-                            value: this.priceInfo.totalPrice
-                        });
-
-                    const paymentInfoEvents = await this.sale.getPastEvents(
-                        'UnderscorePurchaseForPaymentResult',
-                        {
-                            fromBlock: 0,
-                            toBlock: 'latest'
-                        });
-
-                    this.paymentInfo = paymentInfoEvents[0].args;
-
-                    this.receipt = await this.sale.callUnderscorePurchaseForNotify(
-                        recipient,
-                        lotId,
-                        quantity,
-                        tokenAddress,
-                        this.priceInfo.totalPrice,
-                        this.priceInfo.minConversionRate,
-                        'extData',
-                        this.payoutPriceInfo.totalPrice,
-                        this.payoutPriceInfo.totalDiscounts,
-                        this.paymentInfo.purchaseTokensSent,
-                        this.paymentInfo.payoutTokensReceived,
-                        { from: operator });
+                        this.priceInfo.totalPrice)();
                 });
 
                 testShouldEmitThePurchasedEventWhenNotUsingPayoutToken.bind(
@@ -2667,40 +2961,14 @@ contract('FixedSupplyLotSale', function ([
                     beforeEach(async function () {
                         const maxTokenAmount = this.priceInfo.totalPrice.muln(2);
 
-                        const paymentInfoReceipt = await this.sale.callUnderscorePurchaseForPayment(
-                            recipient,
-                            lotId,
-                            quantity,
+                        await callUnderscoreNotifyPurchased.bind(
+                            this,
                             tokenAddress,
                             maxTokenAmount,
                             this.priceInfo.minConversionRate,
-                            'extData',
                             this.payoutPriceInfo.totalPrice,
                             this.payoutPriceInfo.totalDiscounts,
-                            { from: operator });
-
-                        const paymentInfoEvents = await this.sale.getPastEvents(
-                            'UnderscorePurchaseForPaymentResult',
-                            {
-                                fromBlock: 0,
-                                toBlock: 'latest'
-                            });
-
-                        this.paymentInfo = paymentInfoEvents[0].args;
-
-                        this.receipt = await this.sale.callUnderscorePurchaseForNotify(
-                            recipient,
-                            lotId,
-                            quantity,
-                            tokenAddress,
-                            maxTokenAmount,
-                            this.priceInfo.minConversionRate,
-                            'extData',
-                            this.payoutPriceInfo.totalPrice,
-                            this.payoutPriceInfo.totalDiscounts,
-                            this.paymentInfo.purchaseTokensSent,
-                            this.paymentInfo.payoutTokensReceived,
-                            { from: operator });
+                            0)();
                     });
 
                     testShouldEmitThePurchasedEventWhenNotUsingPayoutToken.bind(
@@ -2712,40 +2980,14 @@ contract('FixedSupplyLotSale', function ([
 
                 context('when spending the exact total price amount', function () {
                     beforeEach(async function () {
-                        const paymentInfoReceipt = await this.sale.callUnderscorePurchaseForPayment(
-                            recipient,
-                            lotId,
-                            quantity,
+                        await callUnderscoreNotifyPurchased.bind(
+                            this,
                             tokenAddress,
                             this.priceInfo.totalPrice,
                             this.priceInfo.minConversionRate,
-                            'extData',
                             this.payoutPriceInfo.totalPrice,
                             this.payoutPriceInfo.totalDiscounts,
-                            { from: operator });
-
-                        const paymentInfoEvents = await this.sale.getPastEvents(
-                            'UnderscorePurchaseForPaymentResult',
-                            {
-                                fromBlock: 0,
-                                toBlock: 'latest'
-                            });
-
-                        this.paymentInfo = paymentInfoEvents[0].args;
-
-                        this.receipt = await this.sale.callUnderscorePurchaseForNotify(
-                            recipient,
-                            lotId,
-                            quantity,
-                            tokenAddress,
-                            this.priceInfo.totalPrice,
-                            this.priceInfo.minConversionRate,
-                            'extData',
-                            this.payoutPriceInfo.totalPrice,
-                            this.payoutPriceInfo.totalDiscounts,
-                            this.paymentInfo.purchaseTokensSent,
-                            this.paymentInfo.payoutTokensReceived,
-                            { from: operator });
+                            0)();
                     });
 
                     testShouldEmitThePurchasedEventWhenNotUsingPayoutToken.bind(
@@ -2781,40 +3023,14 @@ contract('FixedSupplyLotSale', function ([
                     beforeEach(async function () {
                         const maxTokenAmount = this.priceInfo.totalPrice.muln(2);
 
-                        const paymentInfoReceipt = await this.sale.callUnderscorePurchaseForPayment(
-                            recipient,
-                            lotId,
-                            quantity,
+                        await callUnderscoreNotifyPurchased.bind(
+                            this,
                             tokenAddress,
                             maxTokenAmount,
                             this.priceInfo.minConversionRate,
-                            'extData',
                             this.payoutPriceInfo.totalPrice,
                             this.payoutPriceInfo.totalDiscounts,
-                            { from: operator });
-
-                        const paymentInfoEvents = await this.sale.getPastEvents(
-                            'UnderscorePurchaseForPaymentResult',
-                            {
-                                fromBlock: 0,
-                                toBlock: 'latest'
-                            });
-
-                        this.paymentInfo = paymentInfoEvents[0].args;
-
-                        this.receipt = await this.sale.callUnderscorePurchaseForNotify(
-                            recipient,
-                            lotId,
-                            quantity,
-                            tokenAddress,
-                            maxTokenAmount,
-                            this.priceInfo.minConversionRate,
-                            'extData',
-                            this.payoutPriceInfo.totalPrice,
-                            this.payoutPriceInfo.totalDiscounts,
-                            this.paymentInfo.purchaseTokensSent,
-                            this.paymentInfo.payoutTokensReceived,
-                            { from: operator });
+                            0)();
                     });
 
                     testShouldEmitThePurchasedEventWhenUsingPayoutToken.bind(
@@ -2826,40 +3042,14 @@ contract('FixedSupplyLotSale', function ([
 
                 context('when spending the exact total price amount', function () {
                     beforeEach(async function () {
-                        const paymentInfoReceipt = await this.sale.callUnderscorePurchaseForPayment(
-                            recipient,
-                            lotId,
-                            quantity,
+                        await callUnderscoreNotifyPurchased.bind(
+                            this,
                             tokenAddress,
                             this.priceInfo.totalPrice,
                             this.priceInfo.minConversionRate,
-                            'extData',
                             this.payoutPriceInfo.totalPrice,
                             this.payoutPriceInfo.totalDiscounts,
-                            { from: operator });
-
-                        const paymentInfoEvents = await this.sale.getPastEvents(
-                            'UnderscorePurchaseForPaymentResult',
-                            {
-                                fromBlock: 0,
-                                toBlock: 'latest'
-                            });
-
-                        this.paymentInfo = paymentInfoEvents[0].args;
-
-                        this.receipt = await this.sale.callUnderscorePurchaseForNotify(
-                            recipient,
-                            lotId,
-                            quantity,
-                            tokenAddress,
-                            this.priceInfo.totalPrice,
-                            this.priceInfo.minConversionRate,
-                            'extData',
-                            this.payoutPriceInfo.totalPrice,
-                            this.payoutPriceInfo.totalDiscounts,
-                            this.paymentInfo.purchaseTokensSent,
-                            this.paymentInfo.payoutTokensReceived,
-                            { from: operator });
+                            0)();
                     });
 
                     testShouldEmitThePurchasedEventWhenUsingPayoutToken.bind(

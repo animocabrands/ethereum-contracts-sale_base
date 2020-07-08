@@ -9,99 +9,50 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
 
     event UnderscorePurchaseForCalled();
 
-    event UnderscorePurchaseForPricingCalled();
+    event UnderscoreValidatePurchaseCalled();
 
-    event UnderscorePurchaseForPaymentCalled();
+    event UnderscoreCalculatePriceCalled();
 
-    event UnderscorePurchaseForDeliveryCalled();
+    event UnderscoreAcceptPaymentCalled();
 
-    event UnderscorePurchaseForNotifyCalled();
+    event UnderscoreDeliverGoodsCalled();
 
-    event UnderscorePurchaseForPricingResult(
-        uint256 totalPrice,
-        uint256 totalDiscounts
+    event UnderscoreFinalizePurchaseCalled();
+
+    event UnderscoreNotifyPurchasedCalled();
+
+    event UnderscoreCalculatePriceResult(
+        bytes32[] priceInfo
     );
 
-    event UnderscorePurchaseForPaymentResult(
-        uint256 purchaseTokensSent,
-        uint256 payoutTokensReceived
+    event UnderscoreAcceptPaymentResult(
+        bytes32[] paymentInfo
+    );
+
+    event UnderscoreDeliverGoodsResult(
+        bytes32[] deliveryInfo
+    );
+
+    event UnderscoreFinalizePurchaseResult(
+        bytes32[] finalizeInfo
     );
 
     constructor(
         address kyberProxy,
-        address payable payoutWallet,
-        IERC20 payoutTokenAddress,
+        address payable payoutWallet_,
+        IERC20 payoutToken_,
         uint256 fungibleTokenId,
         address inventoryContract
     )
         FixedSupplyLotSale(
             kyberProxy,
-            payoutWallet,
-            payoutTokenAddress,
+            payoutWallet_,
+            payoutToken_,
             fungibleTokenId,
             inventoryContract
         )
         public
     {}
-
-    function _purchaseFor(
-        PurchaseForVars memory purchaseForVars
-    )
-        internal
-        override
-    {
-        super._purchaseFor(purchaseForVars);
-        emit UnderscorePurchaseForCalled();
-    }
-
-    function _purchaseForPricing(
-        PurchaseForVars memory purchaseForVars
-    )
-        internal
-        override
-        returns
-    (
-        uint256 totalPrice,
-        uint256 totalDiscounts
-    )
-    {
-        (totalPrice, totalDiscounts) = super._purchaseForPricing(purchaseForVars);
-        emit UnderscorePurchaseForPricingCalled();
-    }
-
-    function _purchaseForPayment(
-        PurchaseForVars memory purchaseForVars
-    )
-        internal
-        override
-        returns
-    (
-        uint256 purchaseTokensSent,
-        uint256 payoutTokensReceived
-    )
-    {
-        (purchaseTokensSent, payoutTokensReceived) = super._purchaseForPayment(purchaseForVars);
-        emit UnderscorePurchaseForPaymentCalled();
-    }
-
-    function _purchaseForDelivery(
-        PurchaseForVars memory /*purchaseForVars*/
-    )
-        internal
-        override
-    {
-        emit UnderscorePurchaseForDeliveryCalled();
-    }
-
-    function _purchaseForNotify(
-        PurchaseForVars memory purchaseForVars
-    )
-        internal
-        override
-    {
-        super._purchaseForNotify(purchaseForVars);
-        emit UnderscorePurchaseForNotifyCalled();
-    }
 
     function getLotNonFungibleSupply(
         uint256 lotId
@@ -128,166 +79,173 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
         _lots[lotId].numAvailable = numAvailable;
     }
 
-    function getPurchaseForVars(
-        address payable recipient,
-        uint256 lotId,
-        uint256 quantity,
-        IERC20 tokenAddress,
-        uint256 maxTokenAmount,
-        uint256 minConversionRate,
-        string memory extData
-    )
-        private
-        view
-        returns
-    (
-        FixedSupplyLotSale.PurchaseForVars memory purchaseForVars
-    )
-    {
-        purchaseForVars.recipient = recipient;
-        purchaseForVars.lotId = lotId;
-        purchaseForVars.quantity = quantity;
-        purchaseForVars.tokenAddress = tokenAddress;
-        purchaseForVars.maxTokenAmount = maxTokenAmount;
-        purchaseForVars.minConversionRate = minConversionRate;
-        purchaseForVars.extData = extData;
-        purchaseForVars.operator = msg.sender;
-        purchaseForVars.lot = _lots[lotId];
-
-        purchaseForVars.nonFungibleTokens = new uint256[](quantity);
-
-        uint256 nonFungibleSupplyOffset = purchaseForVars.lot.nonFungibleSupply.length.sub(purchaseForVars.lot.numAvailable);
-
-        for (uint256 index = 0; index < quantity; index++) {
-            uint256 position = nonFungibleSupplyOffset.add(index);
-            purchaseForVars.nonFungibleTokens[index] = purchaseForVars.lot.nonFungibleSupply[position];
-        }
-
-        purchaseForVars.totalFungibleAmount = purchaseForVars.lot.fungibleAmount.mul(quantity);
-    }
-
     function callUnderscorePurchaseFor(
-        address payable recipient,
-        uint256 lotId,
+        address payable purchaser,
+        bytes32 sku,
         uint256 quantity,
-        IERC20 tokenAddress,
-        uint256 maxTokenAmount,
-        uint256 minConversionRate,
-        string calldata extData
+        IERC20 paymentToken,
+        bytes32[] calldata extData
     )
         external
         payable
     {
-        FixedSupplyLotSale.PurchaseForVars memory purchaseForVars =
-            getPurchaseForVars(
-                recipient,
-                lotId,
+        FixedSupplyLotSale.Purchase memory purchase =
+            _getPurchaseStruct(
+                purchaser,
+                sku,
                 quantity,
-                tokenAddress,
-                maxTokenAmount,
-                minConversionRate,
+                paymentToken,
                 extData);
 
-        _purchaseFor(purchaseForVars);
+        _purchaseFor(purchase);
     }
 
-    function callUnderscorePurchaseForPricing(
-        address payable recipient,
-        uint256 lotId,
+    function callUnderscoreValidatePurchase(
+        address payable purchaser,
+        bytes32 sku,
         uint256 quantity,
-        IERC20 tokenAddress,
-        uint256 maxTokenAmount,
-        uint256 minConversionRate,
-        string calldata extData
-    )
-        external
-    {
-        FixedSupplyLotSale.PurchaseForVars memory purchaseForVars =
-            getPurchaseForVars(
-                recipient,
-                lotId,
-                quantity,
-                tokenAddress,
-                maxTokenAmount,
-                minConversionRate,
-                extData);
-
-        uint256 totalPrice = 0;
-        uint256 totalDiscounts = 0;
-
-        (totalPrice, totalDiscounts) =
-            _purchaseForPricing(purchaseForVars);
-
-        emit UnderscorePurchaseForPricingResult(totalPrice, totalDiscounts);
-    }
-
-    function callUnderscorePurchaseForPayment(
-        address payable recipient,
-        uint256 lotId,
-        uint256 quantity,
-        IERC20 tokenAddress,
-        uint256 maxTokenAmount,
-        uint256 minConversionRate,
-        string calldata extData,
-        uint256 totalPrice,
-        uint256 totalDiscounts
+        IERC20 paymentToken,
+        bytes32[] calldata extData
     )
         external
         payable
     {
-        FixedSupplyLotSale.PurchaseForVars memory purchaseForVars =
-            getPurchaseForVars(
-                recipient,
-                lotId,
+        FixedSupplyLotSale.Purchase memory purchase =
+            _getPurchaseStruct(
+                purchaser,
+                sku,
                 quantity,
-                tokenAddress,
-                maxTokenAmount,
-                minConversionRate,
+                paymentToken,
                 extData);
 
-        purchaseForVars.totalPrice = totalPrice;
-        purchaseForVars.totalDiscounts = totalDiscounts;
-
-        uint256 purchaseTokensSent = 0;
-        uint256 payoutTokensReceived = 0;
-
-        (purchaseTokensSent, payoutTokensReceived) =
-            _purchaseForPayment(purchaseForVars);
-
-        emit UnderscorePurchaseForPaymentResult(purchaseTokensSent, payoutTokensReceived);
+        _validatePurchase(purchase);
     }
 
-    function callUnderscorePurchaseForNotify(
-        address payable recipient,
-        uint256 lotId,
+    function callUnderscoreCalculatePrice(
+        address payable purchaser,
+        bytes32 sku,
         uint256 quantity,
-        IERC20 tokenAddress,
-        uint256 maxTokenAmount,
-        uint256 minConversionRate,
-        string calldata extData,
-        uint256 totalPrice,
-        uint256 totalDiscounts,
-        uint256 tokensSent,
-        uint256 tokensReceived
+        IERC20 paymentToken,
+        bytes32[] calldata extData
     )
         external
+        payable
     {
-        FixedSupplyLotSale.PurchaseForVars memory purchaseForVars =
-            getPurchaseForVars(
-                recipient,
-                lotId,
+        FixedSupplyLotSale.Purchase memory purchase =
+            _getPurchaseStruct(
+                purchaser,
+                sku,
                 quantity,
-                tokenAddress,
-                maxTokenAmount,
-                minConversionRate,
+                paymentToken,
                 extData);
 
-        purchaseForVars.totalPrice = totalPrice;
-        purchaseForVars.totalDiscounts = totalDiscounts;
-        purchaseForVars.tokensSent = tokensSent;
-        purchaseForVars.tokensReceived = tokensReceived;
+        bytes32[] memory priceInfo = _calculatePrice(purchase);
 
-        _purchaseForNotify(purchaseForVars);
+        emit UnderscoreCalculatePriceResult(priceInfo);
+    }
+
+    function callUnderscoreAcceptPayment(
+        address payable purchaser,
+        bytes32 sku,
+        uint256 quantity,
+        IERC20 paymentToken,
+        bytes32[] calldata extData,
+        bytes32[] calldata priceInfo
+    )
+        external
+        payable
+    {
+        FixedSupplyLotSale.Purchase memory purchase =
+            _getPurchaseStruct(
+                purchaser,
+                sku,
+                quantity,
+                paymentToken,
+                extData);
+
+        bytes32[] memory paymentInfo = _acceptPayment(purchase, priceInfo);
+
+        emit UnderscoreAcceptPaymentResult(paymentInfo);
+    }
+
+    function callUnderscoreDeliverGoods(
+        address payable purchaser,
+        bytes32 sku,
+        uint256 quantity,
+        IERC20 paymentToken,
+        bytes32[] calldata extData
+    )
+        external
+        payable
+    {
+        FixedSupplyLotSale.Purchase memory purchase =
+            _getPurchaseStruct(
+                purchaser,
+                sku,
+                quantity,
+                paymentToken,
+                extData);
+
+        bytes32[] memory deliveryInfo = _deliverGoods(purchase);
+
+        emit UnderscoreDeliverGoodsResult(deliveryInfo);
+    }
+
+    function callUnderscoreFinalizePurchase(
+        address payable purchaser,
+        bytes32 sku,
+        uint256 quantity,
+        IERC20 paymentToken,
+        bytes32[] calldata extData,
+        bytes32[] calldata priceInfo,
+        bytes32[] calldata paymentInfo,
+        bytes32[] calldata deliveryInfo
+    )
+        external
+        payable
+    {
+        FixedSupplyLotSale.Purchase memory purchase =
+            _getPurchaseStruct(
+                purchaser,
+                sku,
+                quantity,
+                paymentToken,
+                extData);
+
+        bytes32[] memory finalizeInfo =
+            _finalizePurchase(purchase, priceInfo, paymentInfo, deliveryInfo);
+
+        emit UnderscoreFinalizePurchaseResult(finalizeInfo);
+    }
+
+    function callUnderscoreNotifyPurchased(
+        address payable purchaser,
+        bytes32 sku,
+        uint256 quantity,
+        IERC20 paymentToken,
+        bytes32[] calldata extData,
+        bytes32[] calldata priceInfo,
+        bytes32[] calldata paymentInfo,
+        bytes32[] calldata deliveryInfo,
+        bytes32[] calldata finalizeInfo
+    )
+        external
+        payable
+    {
+        FixedSupplyLotSale.Purchase memory purchase =
+            _getPurchaseStruct(
+                purchaser,
+                sku,
+                quantity,
+                paymentToken,
+                extData);
+
+        _notifyPurchased(
+            purchase,
+            priceInfo,
+            paymentInfo,
+            deliveryInfo,
+            finalizeInfo);
     }
 
     function callUnderscoreGetPrice(
@@ -306,4 +264,116 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
         (totalPrice, totalDiscounts) =
             _getPrice(recipient, _lots[lotId], quantity);
     }
+
+    function _getPurchaseStruct(
+        address payable purchaser,
+        bytes32 sku,
+        uint256 quantity,
+        IERC20 paymentToken,
+        bytes32[] memory extData
+    ) private view returns (Purchase memory purchase) {
+        purchase.purchaser = purchaser;
+        purchase.operator = _msgSender();
+        purchase.sku = sku;
+        purchase.quantity = quantity;
+        purchase.paymentToken = paymentToken;
+        purchase.extData = extData;
+    }
+
+    function _purchaseFor(
+        Purchase memory purchase
+    )
+        internal
+        override
+    {
+        super._purchaseFor(purchase);
+        emit UnderscorePurchaseForCalled();
+    }
+
+    function _validatePurchase(
+        Purchase memory purchase
+    ) internal override {
+        super._validatePurchase(purchase);
+        emit UnderscoreValidatePurchaseCalled();
+    }
+
+    function _calculatePrice(
+        Purchase memory purchase
+    ) internal override returns (bytes32[] memory priceInfo) {
+        priceInfo = super._calculatePrice(purchase);
+        emit UnderscoreCalculatePriceCalled();
+    }
+
+    function _acceptPayment(
+        Purchase memory purchase,
+        bytes32[] memory priceInfo
+    ) internal override returns (bytes32[] memory paymentInfo) {
+        paymentInfo = super._acceptPayment(purchase, priceInfo);
+        emit UnderscoreAcceptPaymentCalled();
+    }
+
+    function _deliverGoods(
+        Purchase memory purchase
+    ) internal override returns (bytes32[] memory deliveryInfo) {
+        deliveryInfo = super._deliverGoods(purchase);
+        emit UnderscoreDeliverGoodsCalled();
+    }
+
+    function _finalizePurchase(
+        Purchase memory purchase,
+        bytes32[] memory priceInfo,
+        bytes32[] memory paymentInfo,
+        bytes32[] memory deliveryInfo
+    ) internal override returns (bytes32[] memory finalizeInfo) {
+        finalizeInfo = super._finalizePurchase(
+            purchase,
+            priceInfo,
+            paymentInfo,
+            deliveryInfo);
+        emit UnderscoreFinalizePurchaseCalled();
+    }
+
+    function _notifyPurchased(
+        Purchase memory purchase,
+        bytes32[] memory priceInfo,
+        bytes32[] memory paymentInfo,
+        bytes32[] memory deliveryInfo,
+        bytes32[] memory finalizeInfo
+    ) internal override {
+        super._notifyPurchased(
+            purchase,
+            priceInfo,
+            paymentInfo,
+            deliveryInfo,
+            finalizeInfo);
+        emit UnderscoreNotifyPurchasedCalled();
+    }
+
+    function _getPurchasedEventExtData(
+        Purchase memory purchase,
+        bytes32[] memory priceInfo,
+        bytes32[] memory paymentInfo,
+        bytes32[] memory deliveryInfo,
+        bytes32[] memory finalizeInfo
+    ) internal override view returns (bytes32[] memory extData) {
+        bytes32[] memory superExtData =
+            super._getPurchasedEventExtData(
+                purchase,
+                priceInfo,
+                paymentInfo,
+                deliveryInfo,
+                finalizeInfo);
+
+        uint256 count = superExtData.length;
+        uint256 offset = 0;
+
+        extData = new bytes32[](count.add(1));
+
+        for (; offset != count; ++offset) {
+            extData[offset] = superExtData[offset];
+        }
+
+        extData[offset] = purchase.extData[2];
+    }
+
 }
