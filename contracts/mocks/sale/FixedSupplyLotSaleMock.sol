@@ -349,31 +349,4 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
         emit UnderscoreNotifyPurchasedCalled();
     }
 
-    function _getPurchasedEventExtData(
-        Purchase memory purchase,
-        bytes32[] memory priceInfo,
-        bytes32[] memory paymentInfo,
-        bytes32[] memory deliveryInfo,
-        bytes32[] memory finalizeInfo
-    ) internal override view returns (bytes32[] memory extData) {
-        bytes32[] memory superExtData =
-            super._getPurchasedEventExtData(
-                purchase,
-                priceInfo,
-                paymentInfo,
-                deliveryInfo,
-                finalizeInfo);
-
-        uint256 count = superExtData.length;
-        uint256 offset = 0;
-
-        extData = new bytes32[](count.add(1));
-
-        for (; offset != count; ++offset) {
-            extData[offset] = superExtData[offset];
-        }
-
-        extData[offset] = purchase.extData[2];
-    }
-
 }
