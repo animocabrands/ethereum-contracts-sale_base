@@ -409,6 +409,32 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
     }
 
     /**
+     * Delivers the purchased SKU item(s) to the purchaser.
+     * @param purchase Purchase conditions.
+     * @return deliveryInfo Implementation-specific purchase delivery
+     *  information (0:num non-fungible tokens, 1-n:non-fungible tokens,
+     *  n+1:total fungible amount).
+     */
+    function _deliverGoods(
+        Purchase memory purchase
+    ) internal override virtual returns (bytes32[] memory deliveryInfo) {
+        deliveryInfo = new bytes32[](purchase.quantity.add(2));
+        deliveryInfo[0] = bytes32(purchase.quantity);
+
+        uint256 lotId = uint256(purchase.sku);
+        Lot memory lot = _lots[lotId];
+
+        uint256 offset = lot.nonFungibleSupply.length.sub(lot.numAvailable);
+        uint256 index = 0;
+
+        while (index < purchase.quantity) {
+            deliveryInfo[++index] = bytes32(lot.nonFungibleSupply[offset++]);
+        }
+
+        deliveryInfo[++index] = bytes32(lot.fungibleAmount.mul(purchase.quantity));
+    }
+
+    /**
      * Finalizes the completed purchase by performing any remaining purchase
      * housekeeping updates.
      * @param purchase Purchase conditions (extData[0]: max token amount,
@@ -418,7 +444,8 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
      * @param *paymentInfo* Implementation-specific accepted purchase payment
      *  information (0:purchase tokens sent, 1: payout tokens received).
      * @param *deliveryInfo* Implementation-specific purchase delivery
-     *  information.
+     *  information (0:num non-fungible tokens, 1-n:non-fungible tokens,
+     *  n+1:total fungible amount).
      * @return *finalizeInfo* Implementation-specific purchase finalization
      *  information.
      */
@@ -441,42 +468,53 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
      *  information (0:total price, 1:total discounts).
      * @param paymentInfo Implementation-specific accepted purchase payment
      *  information (0:purchase tokens sent, 1: payout tokens received).
-     * @param *deliveryInfo* Implementation-specific purchase delivery
-     *  information.
-     * @param *finalizeInfo* Implementation-specific purchase finalization
+     * @param deliveryInfo Implementation-specific purchase delivery
+     *  information (0:num non-fungible tokens, 1-n:non-fungible tokens,
+     *  n+1:total fungible amount).
+     * @param finalizeInfo Implementation-specific purchase finalization
      *  information.
      * @return extData Implementation-specific extra data passed as the Purchased event
-     *  extData argument (0:num non-fungible tokens, 1-n:non-fungible tokens,
-     *  n+1:total fungible amount, n+2:total price, n+3:total discounts,
-     *  n+4:purchase tokens sent, n+5:payout tokens received).
+     *  extData argument (0:max token amount, 1:min conversion rate, 2:total
+     *  price, 3:total discounts, 4:purchase tokens sent, 5:payout tokens
+     *  received, 4:num non-fungible tokens, 5-n:non-fungible tokens).
      */
     function _getPurchasedEventExtData(
         Purchase memory purchase,
         bytes32[] memory priceInfo,
         bytes32[] memory paymentInfo,
-        bytes32[] memory /* deliveryInfo */,
-        bytes32[] memory /* finalizeInfo */
+        bytes32[] memory deliveryInfo,
+        bytes32[] memory finalizeInfo
     ) internal override virtual view returns (bytes32[] memory extData) {
-        extData = new bytes32[](purchase.quantity.add(6));
-        extData[0] = bytes32(purchase.quantity);
+        uint256 numItems = 0;
+        numItems = numItems.add(purchase.extData.length);
+        numItems = numItems.add(priceInfo.length);
+        numItems = numItems.add(paymentInfo.length);
+        numItems = numItems.add(deliveryInfo.length);
+        numItems = numItems.add(finalizeInfo.length);
 
-        uint256 lotId = uint256(purchase.sku);
-        Lot memory lot = _lots[lotId];
+        extData = new bytes32[](numItems);
 
-        uint256 numPreviouslyAvailable = lot.numAvailable.add(purchase.quantity);
-        uint256 nonFungibleSupplyOffset = lot.nonFungibleSupply.length.sub(numPreviouslyAvailable);
-        uint256 index = 0;
+        uint256 offset = 0;
 
-        while (index < purchase.quantity) {
-            extData[++index] = bytes32(lot.nonFungibleSupply[nonFungibleSupplyOffset]);
-            nonFungibleSupplyOffset = nonFungibleSupplyOffset.add(index);
+        for (uint256 index = 0; index < purchase.extData.length; index++) {
+            extData[offset++] = purchase.extData[index];
         }
 
-        extData[++index] = bytes32(lot.fungibleAmount.mul(purchase.quantity));
-        extData[++index] = priceInfo[0];
-        extData[++index] = priceInfo[1];
-        extData[++index] = paymentInfo[0];
-        extData[++index] = paymentInfo[1];
+        for (uint256 index = 0; index < priceInfo.length; index++) {
+            extData[offset++] = priceInfo[index];
+        }
+
+        for (uint256 index = 0; index < paymentInfo.length; index++) {
+            extData[offset++] = paymentInfo[index];
+        }
+
+        for (uint256 index = 0; index < deliveryInfo.length; index++) {
+            extData[offset++] = deliveryInfo[index];
+        }
+
+        for (uint256 index = 0; index < finalizeInfo.length; index++) {
+            extData[offset++] = finalizeInfo[index];
+        }
     }
 
     /**
