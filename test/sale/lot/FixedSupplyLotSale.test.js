@@ -2647,10 +2647,7 @@ contract('FixedSupplyLotSale', function ([
     describe('_notifyPurchased()', function () {
         const quantity = Constants.One;
 
-        async function testShouldEmitThePurchasedEvent(lotId, quantity, tokenAddress, usingPayoutToken) {
-            const totalFungibleAmount = this.lot.fungibleAmount.mul(quantity);
-            const totalPrice = this.lot.price.mul(quantity);
-
+        async function testShouldEmitThePurchasedEvent(tokenAddress, usingPayoutToken) {
             const purchasedEvents = await this.sale.getPastEvents(
                 'Purchased',
                 {
@@ -2661,54 +2658,43 @@ contract('FixedSupplyLotSale', function ([
             const purchasedEvent = purchasedEvents[0].args;
             const rawExtData = purchasedEvent.extData;
 
-            const extData = {};
-            let offset = 0;
-            extData.numNonFungibleTokens = toBN(rawExtData[offset++]).toNumber();
-            extData.nonFungibleTokens = [];
-
-            for (; offset <= extData.numNonFungibleTokens; offset++) {
-                extData.nonFungibleTokens.push(toBN(rawExtData[offset]));
-            }
-
-            extData.totalFungibleAmount = toBN(rawExtData[offset++]);
-            extData.totalPrice = toBN(rawExtData[offset++]);
-            extData.totalDiscounts = toBN(rawExtData[offset++]);
-            extData.tokensSent = toBN(rawExtData[offset++]);
-            extData.tokensReceived = toBN(rawExtData[offset++]);
-            extData.extDataString = hexToUtf8(rawExtData[offset]);
-
             purchasedEvent.purchaser.should.be.equal(recipient);
             purchasedEvent.operator.should.be.equal(operator);
             purchasedEvent.sku.should.be.equal(sku);
             purchasedEvent.quantity.should.be.bignumber.equal(quantity);
             purchasedEvent.paymentToken.should.be.equal(tokenAddress);
 
-            extData.numNonFungibleTokens.should.be.equal(this.nonFungibleTokens.length);
+            let offset = 0;
+            toBN(rawExtData[offset++]).should.be.bignumber.equal(this.maxTokenAmount); // maxTokenAmount
+            toBN(rawExtData[offset++]).should.be.bignumber.equal(this.minConversionRate); // minConversionRate
+            hexToUtf8(rawExtData[offset++]).should.be.equal(extDataString); // extDataString
+            toBN(rawExtData[offset++]).should.be.bignumber.equal(this.totalPrice); // totalPrice
+            toBN(rawExtData[offset++]).should.be.bignumber.equal(this.totalDiscounts); // totalDiscounts;
 
-            for (let index = 0; index < extData.numNonFungibleTokens; index++) {
-                extData.nonFungibleTokens[index].should.be.bignumber.equal(
-                    this.nonFungibleTokens[index]);
-            }
-
-            extData.totalFungibleAmount.should.be.bignumber.equal(totalFungibleAmount);
-            extData.totalPrice.should.be.bignumber.equal(totalPrice);
-
+            // paymentTokensSent
             if (usingPayoutToken) {
-                extData.tokensSent.should.be.bignumber.equal(totalPrice);
+                toBN(rawExtData[offset++]).should.be.bignumber.equal(this.totalPrice);
             } else {
                 shouldBeEqualWithPercentPrecision(
-                    extData.tokensSent,
+                    toBN(rawExtData[offset++]),
                     this.priceInfo.totalPrice,
                     5);
             }
 
-            extData.tokensReceived.should.be.bignumber.equal(totalPrice);
-            extData.extDataString.should.be.equal(extDataString);
+            toBN(rawExtData[offset++]).should.be.bignumber.equal(this.totalPrice); // payoutTokensReceived
+            toBN(rawExtData[offset++]).toNumber().should.be.equal(this.nonFungibleTokens.length); // numNonFungibleTokens
+
+             // nonFungibleTokesn
+            for (let index = 0; index < this.nonFungibleTokens.length; index++) {
+                toBN(rawExtData[offset++]).should.be.bignumber.equal(this.nonFungibleTokens[index]);
+            }
+
+            toBN(rawExtData[offset++]).should.be.bignumber.equal(this.totalFungibleAmount); // totalFungibleAmount
         }
 
-        function testShouldEmitThePurchasedEventWhenNotUsingPayoutToken(lotId, quantity, tokenAddress) {
+        function testShouldEmitThePurchasedEventWhenNotUsingPayoutToken(tokenAddress) {
             it('should emit the Purchased event', async function () {
-                await testShouldEmitThePurchasedEvent.bind(this, lotId, quantity, tokenAddress, false)();
+                await testShouldEmitThePurchasedEvent.bind(this, tokenAddress, false)();
 
                 // expectEvent(
                 //     this.receipt,
@@ -2737,9 +2723,9 @@ contract('FixedSupplyLotSale', function ([
             });
         }
 
-        function testShouldEmitThePurchasedEventWhenUsingPayoutToken(lotId, quantity, tokenAddress) {
+        function testShouldEmitThePurchasedEventWhenUsingPayoutToken(tokenAddress) {
             it('should emit the Purchased event', async function () {
-                await testShouldEmitThePurchasedEvent.bind(this, lotId, quantity, tokenAddress, true)();
+                await testShouldEmitThePurchasedEvent.bind(this, tokenAddress, true)();
 
                 // expectEvent(
                 //     this.receipt,
@@ -2765,6 +2751,12 @@ contract('FixedSupplyLotSale', function ([
         }
 
         async function callUnderscoreNotifyPurchased(tokenAddress, maxTokenAmount, minConversionRate, totalPrice, totalDiscounts, value) {
+            this.maxTokenAmount = maxTokenAmount;
+            this.minConversionRate = minConversionRate;
+            this.totalPrice = totalPrice;
+            this.totalDiscounts = totalDiscounts;
+            this.value = value;
+
             const extData = [
                 maxTokenAmount,
                 minConversionRate,
@@ -2875,6 +2867,8 @@ contract('FixedSupplyLotSale', function ([
             this.lot = await this.sale._lots(lotId);
             (quantity.gt(Constants.Zero) && quantity.lte(this.lot.numAvailable)).should.be.true;
 
+            this.totalFungibleAmount = this.lot.fungibleAmount.mul(quantity);
+
             this.payoutPriceInfo = await this.sale.callUnderscoreGetPrice(
                 recipient,
                 lotId,
@@ -2908,8 +2902,6 @@ contract('FixedSupplyLotSale', function ([
 
                 testShouldEmitThePurchasedEventWhenNotUsingPayoutToken.bind(
                     this,
-                    lotId,
-                    quantity,
                     tokenAddress)();
             });
 
@@ -2927,8 +2919,6 @@ contract('FixedSupplyLotSale', function ([
 
                 testShouldEmitThePurchasedEventWhenNotUsingPayoutToken.bind(
                     this,
-                    lotId,
-                    quantity,
                     tokenAddress)();
             });
         });
@@ -2973,8 +2963,6 @@ contract('FixedSupplyLotSale', function ([
 
                     testShouldEmitThePurchasedEventWhenNotUsingPayoutToken.bind(
                         this,
-                        lotId,
-                        quantity,
                         tokenAddress)();
                 });
 
@@ -2992,8 +2980,6 @@ contract('FixedSupplyLotSale', function ([
 
                     testShouldEmitThePurchasedEventWhenNotUsingPayoutToken.bind(
                         this,
-                        lotId,
-                        quantity,
                         tokenAddress)();
                 });
             });
@@ -3035,8 +3021,6 @@ contract('FixedSupplyLotSale', function ([
 
                     testShouldEmitThePurchasedEventWhenUsingPayoutToken.bind(
                         this,
-                        lotId,
-                        quantity,
                         tokenAddress)();
                 });
 
@@ -3054,8 +3038,6 @@ contract('FixedSupplyLotSale', function ([
 
                     testShouldEmitThePurchasedEventWhenUsingPayoutToken.bind(
                         this,
-                        lotId,
-                        quantity,
                         tokenAddress)();
                 });
             });
