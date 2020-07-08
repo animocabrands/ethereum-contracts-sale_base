@@ -446,7 +446,9 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
      * @param *finalizeInfo* Implementation-specific purchase finalization
      *  information.
      * @return extData Implementation-specific extra data passed as the Purchased event
-     *  extData argument.
+     *  extData argument (0:num non-fungible tokens, 1-n:non-fungible tokens,
+     *  n+1:total fungible amount, n+2:total price, n+3:total discounts,
+     *  n+4:purchase tokens sent, n+5:payout tokens received).
      */
     function _getPurchasedEventExtData(
         Purchase memory purchase,
