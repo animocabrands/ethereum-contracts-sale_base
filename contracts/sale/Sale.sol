@@ -8,12 +8,15 @@ import "@animoca/ethereum-contracts-core_library/contracts/payment/PayoutWallet.
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
  * Abstract base contract which defines the events, members, and purchase
  * lifecycle methods for a sale contract.
  */
 abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   {
+
+    using SafeMath for uint256;
 
     // special address value to represent a payment in ETH
     IERC20 public constant ETH_ADDRESS = IERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
@@ -271,25 +274,58 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
     /**
      * Retrieves implementation-specific extra data passed as the Purchased
      *  event extData argument.
-     * @param *purchase* Purchase conditions.
-     * @param *priceInfo* Implementation-specific calculated purchase price
+     * @param purchase Purchase conditions.
+     * @param priceInfo Implementation-specific calculated purchase price
      *  information.
-     * @param *paymentInfo* Implementation-specific accepted purchase payment
+     * @param paymentInfo Implementation-specific accepted purchase payment
      *  information.
-     * @param *deliveryInfo* Implementation-specific purchase delivery
+     * @param deliveryInfo Implementation-specific purchase delivery
      *  information.
-     * @param *finalizeInfo* Implementation-specific purchase finalization
+     * @param finalizeInfo Implementation-specific purchase finalization
      *  information.
      * @return extData Implementation-specific extra data passed as the Purchased event
-     *  extData argument.
+     *  extData argument. By default, returns (in order) the purchase.extData,
+     *  _calculatePrice() result, _acceptPayment() result, _deliverGoods()
+     *  result, and _finalizePurchase() result.
      */
     function _getPurchasedEventExtData(
-        Purchase memory /* purchase */,
-        bytes32[] memory /* priceInfo */,
-        bytes32[] memory /* paymentInfo */,
-        bytes32[] memory /* deliveryInfo */,
-        bytes32[] memory /* finalizeInfo */
-    ) internal virtual view returns (bytes32[] memory extData) {}
+        Purchase memory purchase,
+        bytes32[] memory priceInfo,
+        bytes32[] memory paymentInfo,
+        bytes32[] memory deliveryInfo,
+        bytes32[] memory finalizeInfo
+    ) internal virtual view returns (bytes32[] memory extData) {
+        uint256 numItems = 0;
+        numItems = numItems.add(purchase.extData.length);
+        numItems = numItems.add(priceInfo.length);
+        numItems = numItems.add(paymentInfo.length);
+        numItems = numItems.add(deliveryInfo.length);
+        numItems = numItems.add(finalizeInfo.length);
+
+        extData = new bytes32[](numItems);
+
+        uint256 offset = 0;
+
+        for (uint256 index = 0; index < purchase.extData.length; index++) {
+            extData[offset++] = purchase.extData[index];
+        }
+
+        for (uint256 index = 0; index < priceInfo.length; index++) {
+            extData[offset++] = priceInfo[index];
+        }
+
+        for (uint256 index = 0; index < paymentInfo.length; index++) {
+            extData[offset++] = paymentInfo[index];
+        }
+
+        for (uint256 index = 0; index < deliveryInfo.length; index++) {
+            extData[offset++] = deliveryInfo[index];
+        }
+
+        for (uint256 index = 0; index < finalizeInfo.length; index++) {
+            extData[offset++] = finalizeInfo[index];
+        }
+    }
 
     /**
      * Sets the ERC20 token currency accepted by the payout wallet for purchase

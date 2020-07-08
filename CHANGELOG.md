@@ -11,6 +11,7 @@
  * `Sale.sol`: Added `virtual` modifier to `start()`, `pause()`, `unpause()`, and `setPayoutToken()` to be able to override the functions.
  * `Sale.sol`: Changed function visibility to `public` on `start()`, `pause()`, `unpause()`, and `setPayoutToken()` to allow internal invocation of the functions, especially for overrides.
  * `Sale.sol`: Removed `view` modifier from `_validatePurchase()` to allow state changes in the function.
+ * `Sale.sol`: By default, `_getPurchasedEventExtData()` supplies the `Purchased` event with the `purchaseFor()` extra data and the return values of `_calculatePrice()`, `_acceptPayment()`, `_deliverGoods()`, and `_finalizePurchase()`. 
  * `SimpleSale.sol`: Removed `view` modifier from `_validatePurchase()` to allow state changes in the function.
 
 ## 3.0.0 (03/07/2020)

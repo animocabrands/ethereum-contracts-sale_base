@@ -460,64 +460,6 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
     }
 
     /**
-     * Retrieves implementation-specific extra data passed as the Purchased
-     *  event extData argument.
-     * @param purchase Purchase conditions (extData[0]:max token amount,
-     *  extData[1]:min conversion rate).
-     * @param priceInfo Implementation-specific calculated purchase price
-     *  information (0:total price, 1:total discounts).
-     * @param paymentInfo Implementation-specific accepted purchase payment
-     *  information (0:purchase tokens sent, 1:payout tokens received).
-     * @param deliveryInfo Implementation-specific purchase delivery
-     *  information (0:num non-fungible tokens, 1-n:non-fungible tokens,
-     *  n+1:total fungible amount).
-     * @param finalizeInfo Implementation-specific purchase finalization
-     *  information.
-     * @return extData Implementation-specific extra data passed as the
-     *  Purchased event extData argument (0:max token amount, 1:min conversion
-     *  rate, 2:total price, 3:total discounts, 4:purchase tokens sent, 5:payout
-     *  tokens received, 4:num non-fungible tokens, 5-n:non-fungible tokens).
-     */
-    function _getPurchasedEventExtData(
-        Purchase memory purchase,
-        bytes32[] memory priceInfo,
-        bytes32[] memory paymentInfo,
-        bytes32[] memory deliveryInfo,
-        bytes32[] memory finalizeInfo
-    ) internal override virtual view returns (bytes32[] memory extData) {
-        uint256 numItems = 0;
-        numItems = numItems.add(purchase.extData.length);
-        numItems = numItems.add(priceInfo.length);
-        numItems = numItems.add(paymentInfo.length);
-        numItems = numItems.add(deliveryInfo.length);
-        numItems = numItems.add(finalizeInfo.length);
-
-        extData = new bytes32[](numItems);
-
-        uint256 offset = 0;
-
-        for (uint256 index = 0; index < purchase.extData.length; index++) {
-            extData[offset++] = purchase.extData[index];
-        }
-
-        for (uint256 index = 0; index < priceInfo.length; index++) {
-            extData[offset++] = priceInfo[index];
-        }
-
-        for (uint256 index = 0; index < paymentInfo.length; index++) {
-            extData[offset++] = paymentInfo[index];
-        }
-
-        for (uint256 index = 0; index < deliveryInfo.length; index++) {
-            extData[offset++] = deliveryInfo[index];
-        }
-
-        for (uint256 index = 0; index < finalizeInfo.length; index++) {
-            extData[offset++] = finalizeInfo[index];
-        }
-    }
-
-    /**
      * @dev Retrieves user payout price information for the given quantity of Lot items.
      * @dev @param recipient The user for whom the price information is being retrieved for.
      * @param lot Lot of the items from which the purchase price information will be retrieved.

@@ -236,31 +236,4 @@ abstract contract SimpleSale is Sale, GSNRecipient {
         }
     }
 
-    /**
-     * Retrieves implementation-specific extra data passed as the Purchased
-     *  event extData argument.
-     * @param *purchase* Purchase conditions.
-     * @param priceInfo Implementation-specific calculated purchase price
-     *  information.
-     * @param *paymentInfo* Implementation-specific accepted purchase payment
-     *  information.
-     * @param *deliveryInfo* Implementation-specific purchase delivery
-     *  information.
-     * @param *finalizeInfo* Implementation-specific purchase finalization
-     *  information.
-     * @return extData Implementation-specific extra data passed as the Purchased event
-     *  extData argument (0:total price, 1:unit price).
-     */
-    function _getPurchasedEventExtData(
-        Purchase memory /* purchase */,
-        bytes32[] memory priceInfo,
-        bytes32[] memory /* paymentInfo */,
-        bytes32[] memory /* deliveryInfo */,
-        bytes32[] memory /* finalizeInfo */
-    ) internal override virtual view returns (bytes32[] memory extData) {
-        extData = new bytes32[](2);
-        extData[0] = priceInfo[0];
-        extData[1] = priceInfo[1];
-    }
-
 }
