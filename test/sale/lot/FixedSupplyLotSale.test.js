@@ -2109,6 +2109,29 @@ contract('FixedSupplyLotSale', function ([
             });
         }
 
+        function testShouldReturnCorrectAcceptPaymentInfo(paymentToken) {
+            it('should return correct tokens sent accepted payment info', async function () {
+                if (paymentToken == EthAddress) {
+                    const paymentWalletTokenBalance = await balance.current(operator);
+                    const gasUsed = this.receipt.receipt.gasUsed;
+                    const gasPrice = await web3.eth.getGasPrice();
+                    const gasCost = new BN(gasPrice).muln(gasUsed);
+                    const tokensSent = this.paymentWalletTokenBalance.sub(paymentWalletTokenBalance).sub(gasCost);
+                    toBN(this.result.paymentInfo[0]).should.be.bignumber.equal(tokensSent);
+                } else {
+                    const paymentWalletTokenBalance = await this.erc20.balanceOf(operator);
+                    const tokensSent = this.paymentWalletTokenBalance.sub(paymentWalletTokenBalance);
+                    toBN(this.result.paymentInfo[0]).should.be.bignumber.equal(tokensSent);
+                }
+            });
+
+            it('should return correct tokens received accepted payment info', async function () {
+                const payoutWalletTokenBalance = await this.erc20Payout.balanceOf(payoutWallet);
+                const tokensReceived = payoutWalletTokenBalance.sub(this.payoutWalletTokenBalance);
+                toBN(this.result.paymentInfo[1]).should.be.bignumber.equal(tokensReceived);
+            });
+        }
+
         beforeEach(async function () {
             this.erc20Payout = await IERC20.at(PayoutTokenAddress);
         });
@@ -2141,6 +2164,7 @@ contract('FixedSupplyLotSale', function ([
                 beforeEach(async function () {
                     this.buyerEthBalance = await balance.current(operator);
 
+                    this.paymentWalletTokenBalance = this.buyerEthBalance;
                     this.payoutWalletTokenBalance = await this.erc20Payout.balanceOf(payoutWallet);
 
                     this.lot = await this.sale._lots(lotId);
@@ -2180,6 +2204,15 @@ contract('FixedSupplyLotSale', function ([
                                 from: operator,
                                 value: this.maxTokenAmount
                             });
+
+                        const acceptPaymentEvents = await this.sale.getPastEvents(
+                            'UnderscoreAcceptPaymentResult',
+                            {
+                                fromBlock: 0,
+                                toBlock: 'latest'
+                            });
+
+                        this.result = acceptPaymentEvents[0].args;
                     });
 
                     it('should transfer ETH to pay for the purchase', async function () {
@@ -2193,6 +2226,10 @@ contract('FixedSupplyLotSale', function ([
                     testShouldTransferPayoutTokens.bind(
                         this,
                         quantity)();
+
+                    testShouldReturnCorrectAcceptPaymentInfo.bind(
+                        this,
+                        tokenAddress)();
                 });
 
                 context('when spending the exact total price amount', function () {
@@ -2215,6 +2252,15 @@ contract('FixedSupplyLotSale', function ([
                                 from: operator,
                                 value: this.priceInfo.totalPrice
                             });
+
+                        const acceptPaymentEvents = await this.sale.getPastEvents(
+                            'UnderscoreAcceptPaymentResult',
+                            {
+                                fromBlock: 0,
+                                toBlock: 'latest'
+                            });
+
+                        this.result = acceptPaymentEvents[0].args;
                     });
 
                     it('should transfer ETH to pay for the purchase', async function () {
@@ -2228,6 +2274,10 @@ contract('FixedSupplyLotSale', function ([
                     testShouldTransferPayoutTokens.bind(
                         this,
                         quantity)();
+
+                    testShouldReturnCorrectAcceptPaymentInfo.bind(
+                        this,
+                        tokenAddress)();
                 });
             });
         });
@@ -2279,6 +2329,7 @@ contract('FixedSupplyLotSale', function ([
 
                         this.spenderPurchaseTokenAllowance = await this.erc20.allowance(operator, this.sale.address);
 
+                        this.paymentWalletTokenBalance = this.buyerPurchaseTokenBalance;
                         this.payoutWalletTokenBalance = await this.erc20Payout.balanceOf(payoutWallet);
 
                         this.lot = await this.sale._lots(lotId);
@@ -2321,6 +2372,15 @@ contract('FixedSupplyLotSale', function ([
                                     this.payoutPriceInfo.totalDiscounts
                                 ].map(item => toBytes32(item)),
                                 { from: operator });
+
+                            const acceptPaymentEvents = await this.sale.getPastEvents(
+                                'UnderscoreAcceptPaymentResult',
+                                {
+                                    fromBlock: 0,
+                                    toBlock: 'latest'
+                                });
+
+                            this.result = acceptPaymentEvents[0].args;
                         });
 
                         it('should transfer purchase tokens from the operator to the sale contract', async function () {
@@ -2373,6 +2433,10 @@ contract('FixedSupplyLotSale', function ([
                         testShouldTransferPayoutTokens.bind(
                             this,
                             quantity)();
+
+                        testShouldReturnCorrectAcceptPaymentInfo.bind(
+                            this,
+                            tokenAddress)();
                     });
 
                     context('when spending the exact total price amount', function () {
@@ -2392,6 +2456,15 @@ contract('FixedSupplyLotSale', function ([
                                     this.payoutPriceInfo.totalDiscounts
                                 ].map(item => toBytes32(item)),
                                 { from: operator });
+
+                            const acceptPaymentEvents = await this.sale.getPastEvents(
+                                'UnderscoreAcceptPaymentResult',
+                                {
+                                    fromBlock: 0,
+                                    toBlock: 'latest'
+                                });
+
+                            this.result = acceptPaymentEvents[0].args;
                         });
 
                         it('should transfer purchase tokens from the operator to the sale contract', async function () {
@@ -2421,6 +2494,10 @@ contract('FixedSupplyLotSale', function ([
                         testShouldTransferPayoutTokens.bind(
                             this,
                             quantity)();
+
+                        testShouldReturnCorrectAcceptPaymentInfo.bind(
+                            this,
+                            tokenAddress)();
                     });
                 });
             });
@@ -2477,6 +2554,7 @@ contract('FixedSupplyLotSale', function ([
 
                         this.spenderPurchaseTokenAllowance = await this.erc20.allowance(operator, this.sale.address);
 
+                        this.paymentWalletTokenBalance = this.buyerPurchaseTokenBalance;
                         this.payoutWalletTokenBalance = await this.erc20Payout.balanceOf(payoutWallet);
 
                         this.lot = await this.sale._lots(lotId);
@@ -2519,6 +2597,15 @@ contract('FixedSupplyLotSale', function ([
                                     this.payoutPriceInfo.totalDiscounts
                                 ].map(item => toBytes32(item)),
                                 { from: operator });
+
+                            const acceptPaymentEvents = await this.sale.getPastEvents(
+                                'UnderscoreAcceptPaymentResult',
+                                {
+                                    fromBlock: 0,
+                                    toBlock: 'latest'
+                                });
+
+                            this.result = acceptPaymentEvents[0].args;
                         });
 
                         testShouldTransferPurchaseTokensToSaleContractWhenPayoutToken.bind(
@@ -2527,6 +2614,10 @@ contract('FixedSupplyLotSale', function ([
                         testShouldTransferPayoutTokens.bind(
                             this,
                             quantity)();
+
+                        testShouldReturnCorrectAcceptPaymentInfo.bind(
+                            this,
+                            tokenAddress)();
                     });
 
                     context('when spending the exact total price amount', function () {
@@ -2546,6 +2637,15 @@ contract('FixedSupplyLotSale', function ([
                                     this.payoutPriceInfo.totalDiscounts
                                 ].map(item => toBytes32(item)),
                                 { from: operator });
+
+                            const acceptPaymentEvents = await this.sale.getPastEvents(
+                                'UnderscoreAcceptPaymentResult',
+                                {
+                                    fromBlock: 0,
+                                    toBlock: 'latest'
+                                });
+
+                            this.result = acceptPaymentEvents[0].args;
                         });
 
                         testShouldTransferPurchaseTokensToSaleContractWhenPayoutToken.bind(
@@ -2554,9 +2654,66 @@ contract('FixedSupplyLotSale', function ([
                         testShouldTransferPayoutTokens.bind(
                             this,
                             quantity)();
+
+                        testShouldReturnCorrectAcceptPaymentInfo.bind(
+                            this,
+                            tokenAddress)();
                     });
                 });
             });
+        });
+    });
+
+    describe('_deliverGoods()', function () {
+        const quantity = Constants.One;
+        const tokenAddress = EthAddress;
+
+        beforeEach(async function () {
+            this.lot = await this.sale._lots(lotId);
+
+            this.nonFungibleSupply = await this.sale.peekLotAvailableNonFungibleSupply(lotId, quantity);
+
+            const priceInfo = await this.sale.getPrice(
+                recipient,
+                lotId,
+                quantity,
+                tokenAddress);
+
+            const extData = [
+                priceInfo.totalPrice,
+                priceInfo.minConversionRate,
+                extDataString
+            ].map(item => toBytes32(item));
+
+            await this.sale.callUnderscoreDeliverGoods(
+                recipient,
+                sku,
+                quantity,
+                tokenAddress,
+                extData);
+
+            const deliverGoodsEvents = await this.sale.getPastEvents(
+                'UnderscoreDeliverGoodsResult',
+                {
+                    fromBlock: 0,
+                    toBlock: 'latest'
+                });
+
+            this.result = deliverGoodsEvents[0].args;
+        });
+
+        it('should return correct number of non-fungible tokens delivery info', async function () {
+            toBN(this.result.deliveryInfo[0]).should.be.bignumber.equal(quantity);
+        });
+
+        it('should return correct non-fungible tokens delivery info', async function () {
+            for (let index = 0; index < quantity.toNumber(); index++) {
+                toBN(this.result.deliveryInfo[index + 1]).should.be.bignumber.equal(this.nonFungibleSupply[index]);
+            }
+        });
+
+        it('should return correct total fungible amount delivery info', async function () {
+            toBN(this.result.deliveryInfo[quantity.toNumber() + 1]).should.be.bignumber.equal(quantity.mul(this.lot.fungibleAmount));
         });
     });
 
@@ -2635,12 +2792,25 @@ contract('FixedSupplyLotSale', function ([
                 {
                     from: operator
                 });
+
+            const finalizePurchaseEvents = await this.sale.getPastEvents(
+                'UnderscoreFinalizePurchaseResult',
+                {
+                    fromBlock: 0,
+                    toBlock: 'latest'
+                });
+
+            this.result = finalizePurchaseEvents[0].args;
         });
 
         it('should update the number of lot items available for sale', async function () {
             const lot = await this.sale._lots(lotId);
             lot.numAvailable.should.be.bignumber.equals(
                 this.lot.numAvailable.sub(quantity));
+        });
+
+        it('should return correct finalize info', async function () {
+            this.result.finalizeInfo.length.should.equal(0);
         });
     });
 
