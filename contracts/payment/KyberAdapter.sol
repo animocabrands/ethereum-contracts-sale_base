@@ -30,7 +30,7 @@ contract KyberAdapter {
         return _token != KYBER_ETH_ADDRESS ? _token.balanceOf(_account) : _account.balance;
     }
 
-    function ceilingDiv(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    function _ceilingDiv(uint256 a, uint256 b) internal pure returns (uint256 c) {
         return a.div(b).add(a.mod(b) > 0 ? 1 : 0);
     }
 
@@ -50,7 +50,7 @@ contract KyberAdapter {
         if (_unfixedDecimals > _decimals) {
             // Divide token amount by 10^(_unfixedDecimals - _decimals) to reduce decimals.
             if (_ceiling) {
-                return ceilingDiv(_unfixedDestAmount, (10 ** (_unfixedDecimals - _decimals)));
+                return _ceilingDiv(_unfixedDestAmount, (10 ** (_unfixedDecimals - _decimals)));
             } else {
                 return _unfixedDestAmount.div(10 ** (_unfixedDecimals - _decimals));
             }
