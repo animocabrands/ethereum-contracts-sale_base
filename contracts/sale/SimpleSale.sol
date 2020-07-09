@@ -3,18 +3,12 @@
 pragma solidity 0.6.8;
 
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/GSN/GSNRecipient.sol";
 import "./Sale.sol";
 
 /**
  * @title SimpleSale
  */
-abstract contract SimpleSale is Sale, GSNRecipient {
-
-    // enum ErrorCodes {
-    //     RESTRICTED_METHOD,
-    //     INSUFFICIENT_BALANCE
-    // }
+abstract contract SimpleSale is Sale {
 
     event PriceUpdated(
         bytes32 sku,
@@ -61,88 +55,6 @@ abstract contract SimpleSale is Sale, GSNRecipient {
     function setPrice(bytes32 sku, uint256 ethPrice, uint256 erc20Price) public onlyOwner {
         prices[sku] = Price(ethPrice, erc20Price);
         emit PriceUpdated(sku, ethPrice, erc20Price);
-    }
-
-    /////////////////////////////////////////// GSNRecipient implementation ///////////////////////////////////
-
-    /**
-     * @dev Ensures that only users with enough gas payment token balance can have transactions relayed through the GSN.
-     */
-    function acceptRelayedCall(
-        address /* relay */,
-        address /* from */,
-        bytes calldata encodedFunction,
-        uint256 /* transactionFee */,
-        uint256 /* gasPrice */,
-        uint256 /* gasLimit */,
-        uint256 /* nonce */,
-        bytes calldata /* approvalData */,
-        uint256 /* maxPossibleCharge */
-    )
-        external
-        view
-        override
-        returns (uint256, bytes memory mem)
-    {
-        // restrict to burn function only
-        // load methodId stored in first 4 bytes https://solidity.readthedocs.io/en/v0.5.16/abi-spec.html#function-selector-and-argument-encoding
-        // load amount stored in the next 32 bytes https://solidity.readthedocs.io/en/v0.5.16/abi-spec.html#function-selector-and-argument-encoding
-        // 32 bytes offset is required to skip array length
-        bytes4 methodId;
-        address purchaser;
-        string memory sku;
-        uint256 quantity;
-        address paymentToken;
-        mem = encodedFunction;
-        assembly {
-            let dest := add(mem, 32)
-            methodId := mload(dest)
-            dest := add(dest, 4)
-            purchaser := mload(dest)
-            dest := add(dest, 32)
-            sku := mload(dest)
-            dest := add(dest, 32)
-            quantity := mload(dest)
-            dest := add(dest, 32)
-            paymentToken := mload(dest)
-        }
-
-        // bytes4(keccak256("purchaseFor(address,string,uint256,address)")) == 0xwwwwww
-        // if (methodId != 0xwwwwww) {
-            // return _rejectRelayedCall(uint256(ErrorCodes.RESTRICTED_METHOD));
-        // }
-
-        // Check that user has enough balance
-        // if (balanceOf(from) < amountParam) {
-        //     return _rejectRelayedCall(uint256(ErrorCodes.INSUFFICIENT_BALANCE));
-        // }
-
-        //TODO restrict to purchaseFor() and add validation checks
-
-        return _approveRelayedCall();
-    }
-
-    function _preRelayedCall(bytes memory) internal override returns (bytes32) {
-        // solhint-disable-previous-line no-empty-blocks
-    }
-
-    function _postRelayedCall(bytes memory, bool, uint256, bytes32) internal override {
-        // solhint-disable-previous-line no-empty-blocks
-    }
-
-    function _msgSender() internal view override (GSNRecipient, Context) returns (address payable) {
-        return Context._msgSender();
-    }
-
-    function _msgData() internal view override (GSNRecipient, Context) returns (bytes memory) {
-        return Context._msgData();
-    }
-
-    /**
-     * @dev Withdraws the purchaser's deposits in `RelayHub`.
-     */
-    function withdrawDeposits(uint256 amount, address payable payee) external onlyOwner {
-        _withdrawDeposits(amount, payee);
     }
 
     /////////////////////////////////////////// internal hooks ///////////////////////////////////
