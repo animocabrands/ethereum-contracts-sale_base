@@ -1473,10 +1473,10 @@ contract('FixedSupplyLotSale', function ([
                     'UnderscoreCalculatePriceCalled');
             });
 
-            it('should successfully call _acceptPayment()', async function () {
+            it('should successfully call _transferFunds()', async function () {
                 expectEvent(
                     this.receipt,
-                    'UnderscoreAcceptPaymentCalled');
+                    'UnderscoreTransferFundsCalled');
             });
 
             it('should successfully call _deliverGoods()', async function () {
@@ -1979,7 +1979,7 @@ contract('FixedSupplyLotSale', function ([
         });
     });
 
-    describe('_acceptPayment()', function () {
+    describe('_transferFunds()', function () {
         const quantity = Constants.One;
 
         async function shouldRevert(recipient, lotId, quantity, tokenAddress, priceInfo, txParams = {}) {
@@ -1997,7 +1997,7 @@ contract('FixedSupplyLotSale', function ([
                 quantity);
 
             await expectRevert.unspecified(
-                this.sale.callUnderscoreAcceptPayment(
+                this.sale.callUnderscoreTransferFunds(
                     recipient,
                     sku,
                     quantity,
@@ -2109,7 +2109,7 @@ contract('FixedSupplyLotSale', function ([
             });
         }
 
-        function testShouldReturnCorrectAcceptPaymentInfo(paymentToken) {
+        function testShouldReturnCorrectTransferFundsInfo(paymentToken) {
             it('should return correct tokens sent accepted payment info', async function () {
                 if (paymentToken == EthAddress) {
                     const paymentWalletTokenBalance = await balance.current(operator);
@@ -2186,7 +2186,7 @@ contract('FixedSupplyLotSale', function ([
                     beforeEach(async function () {
                         this.maxTokenAmount = this.priceInfo.totalPrice.muln(2);
 
-                        this.receipt = await this.sale.callUnderscoreAcceptPayment(
+                        this.receipt = await this.sale.callUnderscoreTransferFunds(
                             recipient,
                             sku,
                             quantity,
@@ -2205,14 +2205,14 @@ contract('FixedSupplyLotSale', function ([
                                 value: this.maxTokenAmount
                             });
 
-                        const acceptPaymentEvents = await this.sale.getPastEvents(
-                            'UnderscoreAcceptPaymentResult',
+                        const transferFundsEvents = await this.sale.getPastEvents(
+                            'UnderscoreTransferFundsResult',
                             {
                                 fromBlock: 0,
                                 toBlock: 'latest'
                             });
 
-                        this.result = acceptPaymentEvents[0].args;
+                        this.result = transferFundsEvents[0].args;
                     });
 
                     it('should transfer ETH to pay for the purchase', async function () {
@@ -2227,14 +2227,14 @@ contract('FixedSupplyLotSale', function ([
                         this,
                         quantity)();
 
-                    testShouldReturnCorrectAcceptPaymentInfo.bind(
+                    testShouldReturnCorrectTransferFundsInfo.bind(
                         this,
                         tokenAddress)();
                 });
 
                 context('when spending the exact total price amount', function () {
                     beforeEach(async function () {
-                        this.receipt = await this.sale.callUnderscoreAcceptPayment(
+                        this.receipt = await this.sale.callUnderscoreTransferFunds(
                             recipient,
                             sku,
                             quantity,
@@ -2253,14 +2253,14 @@ contract('FixedSupplyLotSale', function ([
                                 value: this.priceInfo.totalPrice
                             });
 
-                        const acceptPaymentEvents = await this.sale.getPastEvents(
-                            'UnderscoreAcceptPaymentResult',
+                        const transferFundsEvents = await this.sale.getPastEvents(
+                            'UnderscoreTransferFundsResult',
                             {
                                 fromBlock: 0,
                                 toBlock: 'latest'
                             });
 
-                        this.result = acceptPaymentEvents[0].args;
+                        this.result = transferFundsEvents[0].args;
                     });
 
                     it('should transfer ETH to pay for the purchase', async function () {
@@ -2275,7 +2275,7 @@ contract('FixedSupplyLotSale', function ([
                         this,
                         quantity)();
 
-                    testShouldReturnCorrectAcceptPaymentInfo.bind(
+                    testShouldReturnCorrectTransferFundsInfo.bind(
                         this,
                         tokenAddress)();
                 });
@@ -2357,7 +2357,7 @@ contract('FixedSupplyLotSale', function ([
                         beforeEach(async function () {
                             this.maxTokenAmount = this.priceInfo.totalPrice.muln(2);
 
-                            this.receipt = await this.sale.callUnderscoreAcceptPayment(
+                            this.receipt = await this.sale.callUnderscoreTransferFunds(
                                 recipient,
                                 sku,
                                 quantity,
@@ -2373,14 +2373,14 @@ contract('FixedSupplyLotSale', function ([
                                 ].map(item => toBytes32(item)),
                                 { from: operator });
 
-                            const acceptPaymentEvents = await this.sale.getPastEvents(
-                                'UnderscoreAcceptPaymentResult',
+                            const transferFundsEvents = await this.sale.getPastEvents(
+                                'UnderscoreTransferFundsResult',
                                 {
                                     fromBlock: 0,
                                     toBlock: 'latest'
                                 });
 
-                            this.result = acceptPaymentEvents[0].args;
+                            this.result = transferFundsEvents[0].args;
                         });
 
                         it('should transfer purchase tokens from the operator to the sale contract', async function () {
@@ -2434,14 +2434,14 @@ contract('FixedSupplyLotSale', function ([
                             this,
                             quantity)();
 
-                        testShouldReturnCorrectAcceptPaymentInfo.bind(
+                        testShouldReturnCorrectTransferFundsInfo.bind(
                             this,
                             tokenAddress)();
                     });
 
                     context('when spending the exact total price amount', function () {
                         beforeEach(async function () {
-                            this.receipt = await this.sale.callUnderscoreAcceptPayment(
+                            this.receipt = await this.sale.callUnderscoreTransferFunds(
                                 recipient,
                                 sku,
                                 quantity,
@@ -2457,14 +2457,14 @@ contract('FixedSupplyLotSale', function ([
                                 ].map(item => toBytes32(item)),
                                 { from: operator });
 
-                            const acceptPaymentEvents = await this.sale.getPastEvents(
-                                'UnderscoreAcceptPaymentResult',
+                            const transferFundsEvents = await this.sale.getPastEvents(
+                                'UnderscoreTransferFundsResult',
                                 {
                                     fromBlock: 0,
                                     toBlock: 'latest'
                                 });
 
-                            this.result = acceptPaymentEvents[0].args;
+                            this.result = transferFundsEvents[0].args;
                         });
 
                         it('should transfer purchase tokens from the operator to the sale contract', async function () {
@@ -2495,7 +2495,7 @@ contract('FixedSupplyLotSale', function ([
                             this,
                             quantity)();
 
-                        testShouldReturnCorrectAcceptPaymentInfo.bind(
+                        testShouldReturnCorrectTransferFundsInfo.bind(
                             this,
                             tokenAddress)();
                     });
@@ -2582,7 +2582,7 @@ contract('FixedSupplyLotSale', function ([
                         beforeEach(async function () {
                             this.maxTokenAmount = this.priceInfo.totalPrice.muln(2);
 
-                            this.receipt = await this.sale.callUnderscoreAcceptPayment(
+                            this.receipt = await this.sale.callUnderscoreTransferFunds(
                                 recipient,
                                 sku,
                                 quantity,
@@ -2598,14 +2598,14 @@ contract('FixedSupplyLotSale', function ([
                                 ].map(item => toBytes32(item)),
                                 { from: operator });
 
-                            const acceptPaymentEvents = await this.sale.getPastEvents(
-                                'UnderscoreAcceptPaymentResult',
+                            const transferFundsEvents = await this.sale.getPastEvents(
+                                'UnderscoreTransferFundsResult',
                                 {
                                     fromBlock: 0,
                                     toBlock: 'latest'
                                 });
 
-                            this.result = acceptPaymentEvents[0].args;
+                            this.result = transferFundsEvents[0].args;
                         });
 
                         testShouldTransferPurchaseTokensToSaleContractWhenPayoutToken.bind(
@@ -2615,14 +2615,14 @@ contract('FixedSupplyLotSale', function ([
                             this,
                             quantity)();
 
-                        testShouldReturnCorrectAcceptPaymentInfo.bind(
+                        testShouldReturnCorrectTransferFundsInfo.bind(
                             this,
                             tokenAddress)();
                     });
 
                     context('when spending the exact total price amount', function () {
                         beforeEach(async function () {
-                            this.receipt = await this.sale.callUnderscoreAcceptPayment(
+                            this.receipt = await this.sale.callUnderscoreTransferFunds(
                                 recipient,
                                 sku,
                                 quantity,
@@ -2638,14 +2638,14 @@ contract('FixedSupplyLotSale', function ([
                                 ].map(item => toBytes32(item)),
                                 { from: operator });
 
-                            const acceptPaymentEvents = await this.sale.getPastEvents(
-                                'UnderscoreAcceptPaymentResult',
+                            const transferFundsEvents = await this.sale.getPastEvents(
+                                'UnderscoreTransferFundsResult',
                                 {
                                     fromBlock: 0,
                                     toBlock: 'latest'
                                 });
 
-                            this.result = acceptPaymentEvents[0].args;
+                            this.result = transferFundsEvents[0].args;
                         });
 
                         testShouldTransferPurchaseTokensToSaleContractWhenPayoutToken.bind(
@@ -2655,7 +2655,7 @@ contract('FixedSupplyLotSale', function ([
                             this,
                             quantity)();
 
-                        testShouldReturnCorrectAcceptPaymentInfo.bind(
+                        testShouldReturnCorrectTransferFundsInfo.bind(
                             this,
                             tokenAddress)();
                     });
@@ -2741,7 +2741,7 @@ contract('FixedSupplyLotSale', function ([
                 priceInfo_.totalDiscounts
             ].map(item => toBytes32(item));
 
-            await this.sale.callUnderscoreAcceptPayment(
+            await this.sale.callUnderscoreTransferFunds(
                 recipient,
                 sku,
                 quantity,
@@ -2753,15 +2753,15 @@ contract('FixedSupplyLotSale', function ([
                     value: priceInfo_.totalPrice
                 });
 
-            const acceptPaymentEvents = await this.sale.getPastEvents(
-                'UnderscoreAcceptPaymentResult',
+            const transferFundsEvents = await this.sale.getPastEvents(
+                'UnderscoreTransferFundsResult',
                 {
                     fromBlock: 0,
                     toBlock: 'latest'
                 });
 
-            const acceptPaymentResult = acceptPaymentEvents[0].args;
-            const paymentInfo = acceptPaymentResult.paymentInfo;
+            const transferFundsResult = transferFundsEvents[0].args;
+            const paymentInfo = transferFundsResult.paymentInfo;
 
             await this.sale.callUnderscoreDeliverGoods(
                 recipient,
@@ -2938,7 +2938,7 @@ contract('FixedSupplyLotSale', function ([
                 totalDiscounts
             ].map(item => toBytes32(item));
 
-            await this.sale.callUnderscoreAcceptPayment(
+            await this.sale.callUnderscoreTransferFunds(
                 recipient,
                 sku,
                 quantity,
@@ -2950,15 +2950,15 @@ contract('FixedSupplyLotSale', function ([
                     value: value
                 });
 
-            const acceptPaymentEvents = await this.sale.getPastEvents(
-                'UnderscoreAcceptPaymentResult',
+            const transferFundsEvents = await this.sale.getPastEvents(
+                'UnderscoreTransferFundsResult',
                 {
                     fromBlock: 0,
                     toBlock: 'latest'
                 });
 
-            const acceptPaymentResult = acceptPaymentEvents[0].args;
-            const paymentInfo = acceptPaymentResult.paymentInfo;
+            const transferFundsResult = transferFundsEvents[0].args;
+            const paymentInfo = transferFundsResult.paymentInfo;
 
             await this.sale.callUnderscoreDeliverGoods(
                 recipient,

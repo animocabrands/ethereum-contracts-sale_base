@@ -372,15 +372,16 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
     }
 
     /**
-     * Accepts payment for a purchase.
+     * Transfers the funds of a purchase payment from the purchaser to the
+     * payout wallet.
      * @param purchase Purchase conditions (extData[0]:max token amount,
      *  extData[1]:min conversion rate).
      * @param priceInfo Implementation-specific calculated purchase price
      *  information (0:total price, 1:total discounts).
-     * @return paymentInfo Implementation-specific accepted purchase payment
-     *  information (0:purchase tokens sent, 1:payout tokens received).
+     * @return paymentInfo Implementation-specific purchase payment funds
+     *  transfer information (0:purchase tokens sent, 1:payout tokens received).
      */
-    function _acceptPayment(
+    function _transferFunds(
         Purchase memory purchase,
         bytes32[] memory priceInfo
     ) internal override virtual returns (bytes32[] memory paymentInfo) {

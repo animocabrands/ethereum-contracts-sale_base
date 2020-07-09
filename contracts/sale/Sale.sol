@@ -160,7 +160,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
             _calculatePrice(purchase);
 
         bytes32[] memory paymentInfo =
-            _acceptPayment(purchase, priceInfo);
+            _transferFunds(purchase, priceInfo);
 
         bytes32[] memory deliveryInfo =
             _deliverGoods(purchase);
@@ -195,14 +195,15 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
     ) internal virtual returns (bytes32[] memory priceInfo);
 
     /**
-     * Accepts payment for a purchase.
+     * Transfers the funds of a purchase payment from the purchaser to the
+     * payout wallet.
      * @param purchase Purchase conditions.
      * @param priceInfo Implementation-specific calculated purchase price
      *  information.
-     * @return paymentInfo Implementation-specific accepted purchase payment
-     *  information.
+     * @return paymentInfo Implementation-specific purchase payment funds
+     *  transfer information.
      */
-    function _acceptPayment(
+    function _transferFunds(
         Purchase memory purchase,
         bytes32[] memory priceInfo
     ) internal virtual returns (bytes32[] memory paymentInfo);
@@ -223,8 +224,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param purchase Purchase conditions.
      * @param priceInfo Implementation-specific calculated purchase price
      *  information.
-     * @param paymentInfo Implementation-specific accepted purchase payment
-     *  information.
+     * @param paymentInfo Implementation-specific purchase payment funds
+     *  transfer information.
      * @param deliveryInfo Implementation-specific purchase delivery
      *  information.
      * @return finalizeInfo Implementation-specific purchase finalization
@@ -243,8 +244,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param purchase Purchase conditions.
      * @param priceInfo Implementation-specific calculated purchase price
      *  information.
-     * @param paymentInfo Implementation-specific accepted purchase payment
-     *  information.
+     * @param paymentInfo Implementation-specific purchase payment funds
+     *  transfer information.
      * @param deliveryInfo Implementation-specific purchase delivery
      *  information.
      * @param finalizeInfo Implementation-specific purchase finalization
@@ -277,15 +278,15 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      * @param purchase Purchase conditions.
      * @param priceInfo Implementation-specific calculated purchase price
      *  information.
-     * @param paymentInfo Implementation-specific accepted purchase payment
-     *  information.
+     * @param paymentInfo Implementation-specific purchase payment funds
+     *  transfer information.
      * @param deliveryInfo Implementation-specific purchase delivery
      *  information.
      * @param finalizeInfo Implementation-specific purchase finalization
      *  information.
      * @return extData Implementation-specific extra data passed as the Purchased event
      *  extData argument. By default, returns (in order) the purchase.extData,
-     *  _calculatePrice() result, _acceptPayment() result, _deliverGoods()
+     *  _calculatePrice() result, _transferFunds() result, _deliverGoods()
      *  result, and _finalizePurchase() result.
      */
     function _getPurchasedEventExtData(

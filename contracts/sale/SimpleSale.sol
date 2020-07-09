@@ -204,14 +204,15 @@ abstract contract SimpleSale is Sale, GSNRecipient {
     }
 
     /**
-     * Accepts payment for a purchase.
+     * Transfers the funds of a purchase payment from the purchaser to the
+     * payout wallet.
      * @param purchase Purchase conditions.
      * @param priceInfo Implementation-specific calculated purchase price
      *  information.
-     * @return paymentInfo Implementation-specific accepted purchase payment
-     *  information.
+     * @return paymentInfo Implementation-specific purchase payment funds
+     *  transfer information.
      */
-    function _acceptPayment(
+    function _transferFunds(
         Purchase memory purchase,
         bytes32[] memory priceInfo
     ) internal override virtual returns (bytes32[] memory /* paymentInfo */) {

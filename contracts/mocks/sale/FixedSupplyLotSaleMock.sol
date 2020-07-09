@@ -13,7 +13,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
 
     event UnderscoreCalculatePriceCalled();
 
-    event UnderscoreAcceptPaymentCalled();
+    event UnderscoreTransferFundsCalled();
 
     event UnderscoreDeliverGoodsCalled();
 
@@ -25,7 +25,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
         bytes32[] priceInfo
     );
 
-    event UnderscoreAcceptPaymentResult(
+    event UnderscoreTransferFundsResult(
         bytes32[] paymentInfo
     );
 
@@ -144,7 +144,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
         emit UnderscoreCalculatePriceResult(priceInfo);
     }
 
-    function callUnderscoreAcceptPayment(
+    function callUnderscoreTransferFunds(
         address payable purchaser,
         bytes32 sku,
         uint256 quantity,
@@ -163,9 +163,9 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
                 paymentToken,
                 extData);
 
-        bytes32[] memory paymentInfo = _acceptPayment(purchase, priceInfo);
+        bytes32[] memory paymentInfo = _transferFunds(purchase, priceInfo);
 
-        emit UnderscoreAcceptPaymentResult(paymentInfo);
+        emit UnderscoreTransferFundsResult(paymentInfo);
     }
 
     function callUnderscoreDeliverGoods(
@@ -304,12 +304,12 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
         emit UnderscoreCalculatePriceCalled();
     }
 
-    function _acceptPayment(
+    function _transferFunds(
         Purchase memory purchase,
         bytes32[] memory priceInfo
     ) internal override returns (bytes32[] memory paymentInfo) {
-        paymentInfo = super._acceptPayment(purchase, priceInfo);
-        emit UnderscoreAcceptPaymentCalled();
+        paymentInfo = super._transferFunds(purchase, priceInfo);
+        emit UnderscoreTransferFundsCalled();
     }
 
     function _deliverGoods(
