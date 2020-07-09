@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity = 0.6.8;
+pragma solidity 0.6.8;
 
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/GSN/GSNRecipient.sol";
 import "./Sale.sol";
 
@@ -11,7 +10,6 @@ import "./Sale.sol";
  * @title SimpleSale
  */
 abstract contract SimpleSale is Sale, GSNRecipient {
-    using SafeMath for uint256;
 
     // enum ErrorCodes {
     //     RESTRICTED_METHOD,

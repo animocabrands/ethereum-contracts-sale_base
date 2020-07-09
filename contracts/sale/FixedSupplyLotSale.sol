@@ -3,13 +3,11 @@
 pragma solidity 0.6.8;
 
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
 
 import "./Sale.sol";
 import "../payment/KyberAdapter.sol";
 
 abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
-    using SafeMath for uint256;
 
     // a Lot is a class of purchasable sale items.
     struct Lot {
