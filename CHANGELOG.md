@@ -6,22 +6,22 @@
  * `KyberLotSale.sol`: A new lot sale contract that derives from `FixedSupplyLotSale.sol` and `KyberAdapter.sol`, which implements Kyber-related sale behaviors.
 
 ### Breaking changes
- * `Sale.sol`: Added `whenStarted` and `whenNotPaused` modifiers to `purchaseFor()` to restrict when it can be called.
- * `SimpleSale.sol`: Revert sub-messages refactored to lowercase.
- * `KyberAdapter.sol`: Renamed `ETH_ADDRESS` constant to `KYBER_ETH_ADDRESS`.
- * `KyberAdapter.sol`: Renamed `ceilingDiv()` to `_ceilingDiv()` to conform with internal function naming conventions.
  * `FixedSupplyLotSale.sol`: Derives from `Sale.sol`.
  * `FixedSupplyLotSale.sol`: No longer derives from `KyberAdapter.sol`.
+ * `KyberAdapter.sol`: Renamed `ETH_ADDRESS` constant to `KYBER_ETH_ADDRESS`.
+ * `KyberAdapter.sol`: Renamed `ceilingDiv()` to `_ceilingDiv()` to conform with internal function naming conventions.
+ * `Sale.sol`: Added `whenStarted` and `whenNotPaused` modifiers to `purchaseFor()` to restrict when it can be called.
+ * `SimpleSale.sol`: Revert sub-messages refactored to lowercase.
 
 ### Improvements
+ * `FixedSupplyLotSale.sol`: All `require()` function calls are provided with appropriate error messages.
+ * `KyberAdapter.sol`: Added `_getMinConversionRate()` to be able to retrieve the minimum conversion rate from a source token currency to a destination token currency.
+ * `KyberAdapter.sol`: Added `_convertToken()` overload to perform a source token currency amount conversion for a given minimum conversion rate.
  * `Sale.sol`: Added `virtual` modifier to `start()`, `pause()`, `unpause()`, and `setPayoutToken()` to be able to override the functions.
  * `Sale.sol`: Changed function visibility to `public` on `start()`, `pause()`, `unpause()`, and `setPayoutToken()` to allow internal invocation of the functions, especially for overrides.
  * `Sale.sol`: Removed `view` modifier from `_validatePurchase()` to allow state changes in the function.
  * `Sale.sol`: By default, `_getPurchasedEventExtData()` supplies the `Purchased` event with the `purchaseFor()` extra data and the return values of `_calculatePrice()`, `_acceptPayment()`, `_deliverGoods()`, and `_finalizePurchase()`.
  * `SimpleSale.sol`: Removed `view` modifier from `_validatePurchase()` to allow state changes in the function.
- * `FixedSupplyLotSale.sol`: All `require()` function calls are provided with appropriate error messages.
- * `KyberAdapter.sol`: Added `_getMinConversionRate()` to be able to retrieve the minimum conversion rate from a source token currency to a destination token currency.
- * `KyberAdapter.sol`: Added `_convertToken()` overload to perform a source token currency amount conversion for a given minimum conversion rate.
 
 ## 3.0.0 (03/07/2020)
 
