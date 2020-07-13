@@ -84,7 +84,7 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
      *  wallet for purchase payments.
      */
      function setPayoutToken(IERC20 payoutToken_) public override virtual onlyOwner whenPaused {
-        require(payoutToken_ != IERC20(0));
+        require(payoutToken_ != IERC20(0), "FixedSupplyLotSale: zero address payout token");
         super.setPayoutToken(payoutToken_);
     }
 
@@ -99,8 +99,8 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
         onlyOwner
         whenNotStarted
     {
-        require(fungibleTokenId != 0);
-        require(fungibleTokenId != _fungibleTokenId);
+        require(fungibleTokenId != 0, "FixedSupplyLotSale: zero fungible token ID");
+        require(fungibleTokenId != _fungibleTokenId, "FixedSupplyLotSale: duplicate assignment");
 
         _fungibleTokenId = fungibleTokenId;
     }
@@ -116,8 +116,8 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
         onlyOwner
         whenNotStarted
     {
-        require(inventoryContract != IInventoryContract(0));
-        require(inventoryContract != _inventoryContract);
+        require(inventoryContract != IInventoryContract(0), "FixedSupplyLotSale: zero inventory contract");
+        require(inventoryContract != _inventoryContract, "FixedSupplyLotSale: duplicate assignment");
 
         _inventoryContract = inventoryContract;
     }
@@ -141,7 +141,7 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
         onlyOwner
         whenNotStarted
     {
-        require(!_lots[lotId].exists);
+        require(!_lots[lotId].exists, "FixedSupplyLotSale: lot exists");
 
         Lot memory lot;
         lot.exists = true;
@@ -169,11 +169,11 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
         onlyOwner
         whenNotStarted
     {
-        require(nonFungibleTokens.length != 0);
+        require(nonFungibleTokens.length != 0, "FixedSupplyLotSale: zero length non-fungible supply");
 
         Lot memory lot = _lots[lotId];
 
-        require(lot.exists);
+        require(lot.exists, "FixedSupplyLotSale: non-existent lot");
 
         uint256 newSupplySize = lot.nonFungibleSupply.length.add(nonFungibleTokens.length);
         uint256[] memory newNonFungibleSupply = new uint256[](newSupplySize);
@@ -208,8 +208,8 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
         onlyOwner
         whenPaused
     {
-        require(_lots[lotId].exists);
-        require(_lots[lotId].fungibleAmount != fungibleAmount);
+        require(_lots[lotId].exists, "FixedSupplyLotSale: non-existent lot");
+        require(_lots[lotId].fungibleAmount != fungibleAmount, "FixedSupplyLotSale: duplicate assignment");
 
         _lots[lotId].fungibleAmount = fungibleAmount;
 
@@ -229,8 +229,8 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
         onlyOwner
         whenPaused
     {
-        require(_lots[lotId].exists);
-        require(_lots[lotId].price != price);
+        require(_lots[lotId].exists, "FixedSupplyLotSale: non-existent lot");
+        require(_lots[lotId].price != price, "FixedSupplyLotSale: duplicate assignment");
 
         _lots[lotId].price = price;
 
@@ -257,7 +257,7 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
     {
         Lot memory lot = _lots[lotId];
 
-        require(lot.exists);
+        require(lot.exists, "FixedSupplyLotSale: non-existent lot");
 
         if (count > lot.numAvailable) {
             count = lot.numAvailable;
@@ -333,15 +333,15 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
     function _validatePurchase(
         Purchase memory purchase
     ) internal override virtual {
-        require(purchase.purchaser != address(0));
-        require(purchase.purchaser != address(uint160(address(this))));
-        require (purchase.quantity > 0);
-        require(purchase.paymentToken != IERC20(0));
+        require(purchase.purchaser != address(0), "FixedSupplyLotSale: zero address purchaser");
+        require(purchase.purchaser != address(uint160(address(this))), "FixedSupplyLotSale: contract address purchaser");
+        require (purchase.quantity > 0, "FixedSupplyLotSale: zero quantity purchase");
+        require(purchase.paymentToken != IERC20(0), "FixedSupplyLotSale: zero address payment token");
 
         uint256 lotId = uint256(purchase.sku);
 
-        require(_lots[lotId].exists);
-        require(purchase.quantity <= _lots[lotId].numAvailable);
+        require(_lots[lotId].exists, "FixedSupplyLotSale: non-existent lot");
+        require(purchase.quantity <= _lots[lotId].numAvailable, "FixedSupplyLotSale: insufficient available lot supply");
     }
 
     /**
@@ -362,7 +362,7 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
                 _lots[lotId],
                 purchase.quantity);
 
-        require(totalDiscounts <= totalPrice);
+        require(totalDiscounts <= totalPrice, "FixedSupplyLotSale: discount exceeds price");
 
         priceInfo = new bytes32[](2);
         priceInfo[0] = bytes32(totalPrice);
