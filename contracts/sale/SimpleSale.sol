@@ -68,19 +68,19 @@ abstract contract SimpleSale is Sale {
     ) internal override virtual {
         require(
             purchase.purchaser != address(0),
-            "SimpleSale: Purchaser cannot be the zero address");
+            "SimpleSale: purchaser cannot be the zero address");
 
         require(
             purchase.purchaser != address(uint160(address(this))),
-            "SimpleSale: Purchaser cannot be the contract address");
+            "SimpleSale: purchaser cannot be the contract address");
 
         require(
             purchase.quantity != 0,
-            "SimpleSale: Quantity cannot be zero");
+            "SimpleSale: quantity cannot be zero");
 
         require(
             (purchase.paymentToken == ETH_ADDRESS) || (purchase.paymentToken == payoutToken),
-            "SimpleSale: Payment token is unsupported");
+            "SimpleSale: payment token is unsupported");
     }
 
     /**
@@ -104,7 +104,7 @@ abstract contract SimpleSale is Sale {
             unitPrice = prices[purchase.sku].erc20Price;
         }
 
-        require(unitPrice != 0, "SimpleSale: Invalid SKU");
+        require(unitPrice != 0, "SimpleSale: invalid SKU");
 
         uint256 totalPrice = unitPrice.mul(purchase.quantity);
 
@@ -131,7 +131,7 @@ abstract contract SimpleSale is Sale {
         if (purchase.paymentToken == ETH_ADDRESS) {
             require(
                 msg.value >= totalPrice,
-                "SimpleSale: Insufficient ETH provided");
+                "SimpleSale: insufficient ETH provided");
 
             payoutWallet.transfer(totalPrice);
 
@@ -143,7 +143,7 @@ abstract contract SimpleSale is Sale {
         } else {
             require(
                 payoutToken.transferFrom(purchase.operator, payoutWallet, totalPrice),
-                "SimpleSale: Failure in transferring ERC20 payment");
+                "SimpleSale: failure in transferring ERC20 payment");
         }
     }
 

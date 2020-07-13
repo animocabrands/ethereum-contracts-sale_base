@@ -4,6 +4,7 @@
 
 ### Breaking changes
  * `Sale.sol`: Added `whenStarted` and `whenNotPaused` modifiers to `purchaseFor()` to restrict when it can be called.
+ * `SimpleSale.sol`: Revert sub-messages refactored to lowercase.
  * `KyberAdapter.sol`: Renamed `ETH_ADDRESS` constant to `KYBER_ETH_ADDRESS`.
  * `KyberAdapter.sol`: Renamed `ceilingDiv()` to `_ceilingDiv()` to conform with internal function naming conventions.
  * `FixedSupplyLotSale.sol`: Derives from `Sale.sol`.
