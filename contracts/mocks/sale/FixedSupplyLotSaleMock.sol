@@ -2,31 +2,12 @@
 
 pragma solidity 0.6.8;
 
-import "@animoca/ethereum-contracts-assets_inventory/contracts/mocks/token/ERC1155721/AssetsInventoryMock.sol";
 import "../../sale/FixedSupplyLotSale.sol";
 
 contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
 
-    event UnderscorePurchaseForCalled();
-
-    event UnderscoreValidatePurchaseCalled();
-
-    event UnderscoreCalculatePriceCalled();
-
-    event UnderscoreTransferFundsCalled();
-
-    event UnderscoreDeliverGoodsCalled();
-
-    event UnderscoreFinalizePurchaseCalled();
-
-    event UnderscoreNotifyPurchasedCalled();
-
     event UnderscoreCalculatePriceResult(
         bytes32[] priceInfo
-    );
-
-    event UnderscoreTransferFundsResult(
-        bytes32[] paymentInfo
     );
 
     event UnderscoreDeliverGoodsResult(
@@ -38,14 +19,12 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
     );
 
     constructor(
-        address kyberProxy,
         address payable payoutWallet_,
         IERC20 payoutToken_,
         uint256 fungibleTokenId,
         IInventoryContract inventoryContract
     )
         FixedSupplyLotSale(
-            kyberProxy,
             payoutWallet_,
             payoutToken_,
             fungibleTokenId,
@@ -79,27 +58,6 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
         _lots[lotId].numAvailable = numAvailable;
     }
 
-    function callUnderscorePurchaseFor(
-        address payable purchaser,
-        bytes32 sku,
-        uint256 quantity,
-        IERC20 paymentToken,
-        bytes32[] calldata extData
-    )
-        external
-        payable
-    {
-        FixedSupplyLotSale.Purchase memory purchase =
-            _getPurchaseStruct(
-                purchaser,
-                sku,
-                quantity,
-                paymentToken,
-                extData);
-
-        _purchaseFor(purchase);
-    }
-
     function callUnderscoreValidatePurchase(
         address payable purchaser,
         bytes32 sku,
@@ -110,7 +68,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
         external
         payable
     {
-        FixedSupplyLotSale.Purchase memory purchase =
+        Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
                 sku,
@@ -131,7 +89,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
         external
         payable
     {
-        FixedSupplyLotSale.Purchase memory purchase =
+        Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
                 sku,
@@ -144,30 +102,6 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
         emit UnderscoreCalculatePriceResult(priceInfo);
     }
 
-    function callUnderscoreTransferFunds(
-        address payable purchaser,
-        bytes32 sku,
-        uint256 quantity,
-        IERC20 paymentToken,
-        bytes32[] calldata extData,
-        bytes32[] calldata priceInfo
-    )
-        external
-        payable
-    {
-        FixedSupplyLotSale.Purchase memory purchase =
-            _getPurchaseStruct(
-                purchaser,
-                sku,
-                quantity,
-                paymentToken,
-                extData);
-
-        bytes32[] memory paymentInfo = _transferFunds(purchase, priceInfo);
-
-        emit UnderscoreTransferFundsResult(paymentInfo);
-    }
-
     function callUnderscoreDeliverGoods(
         address payable purchaser,
         bytes32 sku,
@@ -178,7 +112,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
         external
         payable
     {
-        FixedSupplyLotSale.Purchase memory purchase =
+        Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
                 sku,
@@ -204,7 +138,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
         external
         payable
     {
-        FixedSupplyLotSale.Purchase memory purchase =
+        Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
                 sku,
@@ -216,36 +150,6 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
             _finalizePurchase(purchase, priceInfo, paymentInfo, deliveryInfo);
 
         emit UnderscoreFinalizePurchaseResult(finalizeInfo);
-    }
-
-    function callUnderscoreNotifyPurchased(
-        address payable purchaser,
-        bytes32 sku,
-        uint256 quantity,
-        IERC20 paymentToken,
-        bytes32[] calldata extData,
-        bytes32[] calldata priceInfo,
-        bytes32[] calldata paymentInfo,
-        bytes32[] calldata deliveryInfo,
-        bytes32[] calldata finalizeInfo
-    )
-        external
-        payable
-    {
-        FixedSupplyLotSale.Purchase memory purchase =
-            _getPurchaseStruct(
-                purchaser,
-                sku,
-                quantity,
-                paymentToken,
-                extData);
-
-        _notifyPurchased(
-            purchase,
-            priceInfo,
-            paymentInfo,
-            deliveryInfo,
-            finalizeInfo);
     }
 
     function callUnderscoreGetPrice(
@@ -280,73 +184,10 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale {
         purchase.extData = extData;
     }
 
-    function _purchaseFor(
-        Purchase memory purchase
-    )
-        internal
-        override
-    {
-        super._purchaseFor(purchase);
-        emit UnderscorePurchaseForCalled();
-    }
-
-    function _validatePurchase(
-        Purchase memory purchase
-    ) internal override {
-        super._validatePurchase(purchase);
-        emit UnderscoreValidatePurchaseCalled();
-    }
-
-    function _calculatePrice(
-        Purchase memory purchase
-    ) internal override returns (bytes32[] memory priceInfo) {
-        priceInfo = super._calculatePrice(purchase);
-        emit UnderscoreCalculatePriceCalled();
-    }
-
     function _transferFunds(
         Purchase memory purchase,
         bytes32[] memory priceInfo
     ) internal override returns (bytes32[] memory paymentInfo) {
-        paymentInfo = super._transferFunds(purchase, priceInfo);
-        emit UnderscoreTransferFundsCalled();
-    }
-
-    function _deliverGoods(
-        Purchase memory purchase
-    ) internal override returns (bytes32[] memory deliveryInfo) {
-        deliveryInfo = super._deliverGoods(purchase);
-        emit UnderscoreDeliverGoodsCalled();
-    }
-
-    function _finalizePurchase(
-        Purchase memory purchase,
-        bytes32[] memory priceInfo,
-        bytes32[] memory paymentInfo,
-        bytes32[] memory deliveryInfo
-    ) internal override returns (bytes32[] memory finalizeInfo) {
-        finalizeInfo = super._finalizePurchase(
-            purchase,
-            priceInfo,
-            paymentInfo,
-            deliveryInfo);
-        emit UnderscoreFinalizePurchaseCalled();
-    }
-
-    function _notifyPurchased(
-        Purchase memory purchase,
-        bytes32[] memory priceInfo,
-        bytes32[] memory paymentInfo,
-        bytes32[] memory deliveryInfo,
-        bytes32[] memory finalizeInfo
-    ) internal override {
-        super._notifyPurchased(
-            purchase,
-            priceInfo,
-            paymentInfo,
-            deliveryInfo,
-            finalizeInfo);
-        emit UnderscoreNotifyPurchasedCalled();
     }
 
 }
