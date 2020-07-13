@@ -2,6 +2,9 @@
 
 ## 4.0.0 (UNRELEASED)
 
+### New Features
+ * `KyberLotSale.sol`: A new lot sale contract that derives from `FixedSupplyLotSale.sol` and `KyberAdapter.sol`, which implements Kyber-related sale behaviors.
+
 ### Breaking changes
  * `Sale.sol`: Added `whenStarted` and `whenNotPaused` modifiers to `purchaseFor()` to restrict when it can be called.
  * `SimpleSale.sol`: Revert sub-messages refactored to lowercase.
