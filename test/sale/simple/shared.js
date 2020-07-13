@@ -24,20 +24,20 @@ const prices = {
 const purchaseData = asciiToHex('some data');
 
 async function doFreshDeploy(params) {
-    let payoutTokenAddress;
+    let payoutToken;
 
     if (params.useErc20) {
         const erc20Token = await ERC20.new(ether('1000000000'), { from: params.owner });
         await erc20Token.transfer(params.operator, ether('100000'), { from: params.owner });
         await erc20Token.transfer(params.purchaser, ether('100000'), { from: params.owner });
-        payoutTokenAddress = erc20Token.address;
-        this.payoutTokenAddress = payoutTokenAddress;
+        payoutToken = erc20Token.address;
+        this.payoutToken = payoutToken;
     } else {
-        payoutTokenAddress = ZeroAddress;
-        this.payoutTokenAddress = EthAddress;
+        payoutToken = ZeroAddress;
+        this.payoutToken = EthAddress;
     }
 
-    this.contract = await Sale.new(params.payout, payoutTokenAddress, { from: params.owner });
+    this.contract = await Sale.new(params.payout, payoutToken, { from: params.owner });
 
     if (params.setPrices) {
         for (const [purchaseId, { ethPrice, erc20Price }] of Object.entries(prices)) {

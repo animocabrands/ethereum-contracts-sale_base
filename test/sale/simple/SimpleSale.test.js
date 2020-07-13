@@ -1,40 +1,11 @@
 const { BN, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const { asciiToHex } = require('web3-utils');
-const { ZeroAddress } = require('@animoca/ethereum-contracts-core_library').constants;
 
 const simplePurchase = require('./behaviours/SimplePurchase.behaviour');
 const { doFreshDeploy, prices } = require('./shared');
 
 contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
     describe('Purchase IDs Management', function () {
-        describe('setPayoutToken', function () {
-            const newPayoutToken = '0xe19Ec968c15f487E96f631Ad9AA54fAE09A67C8c';
-
-            beforeEach(async function () {
-                await doFreshDeploy.bind(this)({
-                    payout: payout,
-                    owner: owner,
-                    operator: operator,
-                    purchaser: purchaser,
-                    useErc20: true,
-                    setPrices: false});
-            });
-
-            it('should fail if not sent by the owner', async function () {
-                await expectRevert.unspecified(
-                    this.contract.setPayoutToken(newPayoutToken, { from: purchaser })
-                );
-            });
-
-            it('should update the ERC20 payout token used by the contract', async function () {
-                const initialPayoutToken = await this.contract.payoutToken();
-                initialPayoutToken.should.not.equal(newPayoutToken);
-                await this.contract.setPayoutToken(newPayoutToken, { from: owner });
-                const updatedPayoutToken = await this.contract.payoutToken();
-                updatedPayoutToken.should.equal(newPayoutToken);
-            });
-        });
-
         describe('setPrice()', function () {
             beforeEach(async function () {
                 await doFreshDeploy.bind(this)({
