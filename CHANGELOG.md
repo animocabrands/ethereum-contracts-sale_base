@@ -8,7 +8,6 @@
  * `KyberAdapter.sol`: Renamed `ETH_ADDRESS` constant to `KYBER_ETH_ADDRESS`.
  * `KyberAdapter.sol`: Renamed `ceilingDiv()` to `_ceilingDiv()` to conform with internal function naming conventions.
  * `FixedSupplyLotSale.sol`: Derives from `Sale.sol`.
- * `FixedSupplyLotSale.sol`: Type change of `_inventoryContract` to `IInventoryContract` to ensure API compliance.
  * `FixedSupplyLotSale.sol`: No longer derives from `KyberAdapter.sol`.
 
 ### Improvements
