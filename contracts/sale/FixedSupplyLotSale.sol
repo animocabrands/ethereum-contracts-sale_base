@@ -66,7 +66,7 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
             payoutToken_
         )
         KyberAdapter(kyberProxy)
-        public
+        internal
     {
         setFungibleTokenId(fungibleTokenId);
         setInventoryContract(inventoryContract);
