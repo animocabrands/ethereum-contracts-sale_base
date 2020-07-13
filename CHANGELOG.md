@@ -9,6 +9,7 @@
  * `KyberAdapter.sol`: Renamed `ceilingDiv()` to `_ceilingDiv()` to conform with internal function naming conventions.
  * `FixedSupplyLotSale.sol`: Derives from `Sale.sol`.
  * `FixedSupplyLotSale.sol`: Type change of `_inventoryContract` to `IInventoryContract` to ensure API compliance.
+ * `FixedSupplyLotSale.sol`: No longer derives from `KyberAdapter.sol`.
 
 ### Improvements
  * `Sale.sol`: Added `virtual` modifier to `start()`, `pause()`, `unpause()`, and `setPayoutToken()` to be able to override the functions.
