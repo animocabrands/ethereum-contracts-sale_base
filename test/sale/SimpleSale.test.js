@@ -23,7 +23,7 @@ const prices = {
 
 const purchaseData = asciiToHex('some data');
 
-contract.only('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
+contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
     async function doFreshDeploy(params) {
         let payoutToken;
 
