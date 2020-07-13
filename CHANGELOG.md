@@ -16,6 +16,8 @@
  * `Sale.sol`: Removed `view` modifier from `_validatePurchase()` to allow state changes in the function.
  * `Sale.sol`: By default, `_getPurchasedEventExtData()` supplies the `Purchased` event with the `purchaseFor()` extra data and the return values of `_calculatePrice()`, `_acceptPayment()`, `_deliverGoods()`, and `_finalizePurchase()`.
  * `SimpleSale.sol`: Removed `view` modifier from `_validatePurchase()` to allow state changes in the function.
+ * `KyberAdapter.sol`: Added `_getMinConversionRate()` to be able to retrieve the minimum conversion rate from a source token currency to a destination token currency.
+ * `KyberAdapter.sol`: Added `_convertToken()` overload to perform a source token currency amount conversion for a given minimum conversion rate.
 
 ## 3.0.0 (03/07/2020)
 
