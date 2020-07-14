@@ -4,6 +4,7 @@
 
 ### New Features
  * `KyberLotSale.sol`: A new lot sale contract that derives from `FixedSupplyLotSale.sol` and `KyberAdapter.sol`, which implements Kyber-related sale behaviors.
+ * `PayoutToken.sol`: A new payment contract module that adds support for a payment token to a sale contract.
 
 ### Breaking changes
  * `FixedSupplyLotSale.sol`: Derives from `Sale.sol`.

@@ -140,49 +140,6 @@ contract('Sale', function ([
         });
     });
 
-    describe('setPayoutToken()', function () {
-        const [ notOwner ] = accounts;
-        const newPayoutToken = Erc20TokenAddress;
-
-        it('should revert if not called by the owner', async function () {
-            await expectRevert(
-                this.contract.setPayoutToken(
-                    newPayoutToken,
-                    { from: notOwner }),
-                'Ownable: caller is not the owner');
-        });
-
-        it('should revert if set with the current payout token address', async function () {
-            const currentPayoutTokenAddress = await this.contract.payoutToken();
-
-            await expectRevert(
-                this.contract.setPayoutToken(
-                    currentPayoutTokenAddress,
-                    { from: owner }),
-                'Sale: identical payout token re-assignment');
-        });
-
-        it('should update the payout token used by the contract', async function () {
-            const initialPayoutToken = await this.contract.payoutToken();
-            initialPayoutToken.should.not.equal(newPayoutToken);
-
-            await this.contract.setPayoutToken(newPayoutToken, { from: owner });
-
-            const updatedPayoutToken = await this.contract.payoutToken();
-            updatedPayoutToken.should.equal(newPayoutToken);
-        });
-
-        it('should call _setPayoutToken', async function () {
-            const receipt = await this.contract.setPayoutToken(
-                newPayoutToken,
-                { from: owner });
-
-            expectEvent(
-                receipt,
-                'PayoutTokenSet');
-        });
-    });
-
     describe('purchaseFor()', function () {
         const quantity = Constants.One;
         const paymentToken = EthAddress;
@@ -461,33 +418,6 @@ contract('Sale', function ([
             for (let index = 0; index < 10; index++) {
                 purchasedEventExtData[++offset].should.be.equal(toBytes32(index));
             }
-        });
-    });
-
-    describe('_setPayoutToken()', function () {
-        const newPayoutToken = Erc20TokenAddress;
-
-        it('should set the payout token address', async function () {
-            const beforePayoutTokenAddress = await this.contract.payoutToken();
-            beforePayoutTokenAddress.should.not.be.equal(newPayoutToken);
-
-            await this.contract.callUnderscoreSetPayoutToken(
-                newPayoutToken,
-                { from: owner });
-
-            const afterPayoutTokenAddress = await this.contract.payoutToken();
-            afterPayoutTokenAddress.should.be.equal(newPayoutToken);
-        });
-
-        it('should emit the PayoutTokenSet event', async function () {
-            const receipt = await this.contract.callUnderscoreSetPayoutToken(
-                newPayoutToken,
-                { from: owner });
-
-            expectEvent(
-                receipt,
-                'PayoutTokenSet',
-                { payoutToken: newPayoutToken });
         });
     });
 });

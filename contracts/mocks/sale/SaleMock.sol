@@ -257,12 +257,6 @@ contract SaleMock is Sale {
             finalizeInfo);
     }
 
-    function callUnderscoreSetPayoutToken(
-        IERC20 payoutToken_
-    ) external {
-        _setPayoutToken(payoutToken_);
-    }
-
     function _getPurchaseStruct(
         address payable purchaser,
         bytes32 sku,

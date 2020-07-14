@@ -9,12 +9,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "../payment/PayoutToken.sol";
 
 /**
  * Abstract base contract which defines the events, members, and purchase
  * lifecycle methods for a sale contract.
  */
-abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   {
+abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet, PayoutToken   {
 
     using SafeMath for uint256;
 
@@ -30,8 +31,6 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         bytes32[] extData
     );
 
-    event PayoutTokenSet(IERC20 payoutToken);
-
     /**
      * Used to wrap the purchase conditions passed to the purchase lifecycle
      * functions.
@@ -44,8 +43,6 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         IERC20 paymentToken;
         bytes32[] extData;
     }
-
-    IERC20 public payoutToken;
 
     /**
      * Constructor.
@@ -62,9 +59,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         IERC20 payoutToken_
     )
         PayoutWallet(payoutWallet_)
+        PayoutToken(payoutToken_)
         internal
     {
-        _setPayoutToken(payoutToken_);
         _pause();
     }
 
@@ -101,20 +98,6 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
      */
     function unpause() public virtual onlyOwner whenStarted {
         _unpause();
-    }
-
-    /**
-     * Sets the ERC20 token currency accepted by the payout wallet for purchase
-     *  payments.
-     * @dev Emits the PayoutTokenSet event.
-     * @dev Reverts if called by any other than the contract owner.
-     * @dev Reverts if the payout token is the same as the current value.
-     * @param payoutToken_ The new ERC20 token currency accepted by the payout
-     *  wallet for purchase payments.
-     */
-    function setPayoutToken(IERC20 payoutToken_) public virtual onlyOwner {
-        require(payoutToken_ != payoutToken, "Sale: identical payout token re-assignment");
-        _setPayoutToken(payoutToken_);
     }
 
     /**
@@ -326,18 +309,6 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet   
         for (uint256 index = 0; index < finalizeInfo.length; index++) {
             extData[offset++] = finalizeInfo[index];
         }
-    }
-
-    /**
-     * Sets the ERC20 token currency accepted by the payout wallet for purchase
-     *  payments.
-     * @dev Emits the PayoutTokenSet event.
-     * @param payoutToken_ The new ERC20 token currency accepted by the payout
-     *  wallet for purchase payments.
-     */
-    function _setPayoutToken(IERC20 payoutToken_) internal {
-        payoutToken = payoutToken_;
-        emit PayoutTokenSet(payoutToken_);
     }
 
 }
