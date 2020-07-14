@@ -92,10 +92,11 @@ contract('FixedSupplyLotSale', function ([
         const newFungibleTokenId = new BN(InventoryIds.makeNonFungibleCollectionId(2, NF_MASK_LENGTH));
 
         it('should revert if not called by the owner', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.setFungibleTokenId(
                     newFungibleTokenId,
-                    { from: notOwner }));
+                    { from: notOwner }),
+                'Ownable: caller is not the owner');
         });
 
         it('should revert if the lot sale has started', async function () {
@@ -103,25 +104,28 @@ contract('FixedSupplyLotSale', function ([
 
             await shouldHaveStartedTheSale.bind(this, true)();
 
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.setFungibleTokenId(
                     newFungibleTokenId,
-                    { from: owner }));
+                    { from: owner }),
+                'Startable: started');
         });
 
         it('should revert if set with the zero-address', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.setFungibleTokenId(
                     Constants.ZeroAddress,
-                    { from: owner }));
+                    { from: owner }),
+                'FixedSupplyLotSale: zero fungible token ID');
         });
 
         it('should revert if set with the current fungible token id', async function () {
             const currentFungibleTokenId = await this.sale._fungibleTokenId();
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.setFungibleTokenId(
                     currentFungibleTokenId,
-                    { from: owner }));
+                    { from: owner }),
+                'FixedSupplyLotSale: duplicate assignment');
         });
 
         it('should set the fungible token id', async function () {
@@ -144,10 +148,11 @@ contract('FixedSupplyLotSale', function ([
         });
 
         it('should revert if not called by the owner', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.setInventoryContract(
                     this.newMintableInventoryContract,
-                    { from: notOwner }));
+                    { from: notOwner }),
+                'Ownable: caller is not the owner');
         });
 
         it('should revert if the lot sale has started', async function () {
@@ -155,25 +160,28 @@ contract('FixedSupplyLotSale', function ([
 
             await shouldHaveStartedTheSale.bind(this, true)();
 
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.setInventoryContract(
                     this.newMintableInventoryContract,
-                    { from: owner }));
+                    { from: owner }),
+                'Startable: started');
         });
 
         it('should revert if set with the zero-address', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.setInventoryContract(
                     Constants.ZeroAddress,
-                    { from: owner }));
+                    { from: owner }),
+                'FixedSupplyLotSale: zero inventory contract');
         });
 
         it('should revert if set with the current mintable inventory contract', async function () {
             const currentMintableInventoryContract = await this.sale._inventoryContract();
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.setInventoryContract(
                     currentMintableInventoryContract,
-                    { from: owner }));
+                    { from: owner }),
+                'FixedSupplyLotSale: duplicate assignment');
         });
 
         it('should set the mintable inventory contract', async function () {
@@ -199,13 +207,14 @@ contract('FixedSupplyLotSale', function ([
         const newLotPrice = lotPrice.muln(2);
 
         it('should revert if not called by the owner', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.createLot(
                     newLotId,
                     newLotNonFungibleSupply,
                     newLotFungibleAmount,
                     newLotPrice,
-                    { from: notOwner }));
+                    { from: notOwner }),
+                'Ownable: caller is not the owner');
         });
 
         it('should revert if the lot sale has started', async function () {
@@ -213,33 +222,36 @@ contract('FixedSupplyLotSale', function ([
 
             await shouldHaveStartedTheSale.bind(this, true)();
 
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.createLot(
                     newLotId,
                     newLotNonFungibleSupply,
                     newLotFungibleAmount,
                     newLotPrice,
-                    { from: owner }));
+                    { from: owner }),
+                'Startable: started');
         });
 
         it('should revert if the lot id is zero', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.createLot(
                     '0',
                     newLotNonFungibleSupply,
                     newLotFungibleAmount,
                     newLotPrice,
-                    { from: owner }));
+                    { from: owner }),
+                'FixedSupplyLotSale: lot exists');
         });
 
         it('should revert if the lot already exists', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.createLot(
                     lotId,
                     newLotNonFungibleSupply,
                     newLotFungibleAmount,
                     newLotPrice,
-                    { from: owner }));
+                    { from: owner }),
+                'FixedSupplyLotSale: lot exists');
         });
 
         it('should create the lot', async function () {
@@ -308,11 +320,12 @@ contract('FixedSupplyLotSale', function ([
         ];
 
         it('should revert if not called by the owner', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.updateLotNonFungibleSupply(
                     lotId,
                     newLotNonFungibleSupply,
-                    { from: notOwner }));
+                    { from: notOwner }),
+                'Ownable: caller is not the owner');
         });
 
         it('should revert if the lot sale has started', async function () {
@@ -320,27 +333,30 @@ contract('FixedSupplyLotSale', function ([
 
             await shouldHaveStartedTheSale.bind(this, true)();
 
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.updateLotNonFungibleSupply(
                     lotId,
                     newLotNonFungibleSupply,
-                    { from: owner }));
+                    { from: owner }),
+                'Startable: started');
         });
 
         it('should revert if the lot doesnt exist', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.updateLotNonFungibleSupply(
                     unknownLotId,
                     newLotNonFungibleSupply,
-                    { from: owner }));
+                    { from: owner }),
+                'FixedSupplyLotSale: non-existent lot');
         });
 
         it('should revert if the new lot supply is empty', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.updateLotNonFungibleSupply(
                     lotId,
                     [],
-                    { from: owner }));
+                    { from: owner }),
+                'FixedSupplyLotSale: zero length non-fungible supply');
         });
 
         it('should update the lot non-fungible supply', async function () {
@@ -396,11 +412,12 @@ contract('FixedSupplyLotSale', function ([
         const newLotFungibleAmount = lotFungibleAmount.muln(2);
 
         it('should revert if not called by the owner', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.updateLotFungibleAmount(
                     lotId,
                     newLotFungibleAmount,
-                    { from: notOwner }));
+                    { from: notOwner }),
+                'Ownable: caller is not the owner');
         });
 
         it('should revert if the sale is not paused', async function () {
@@ -408,29 +425,32 @@ contract('FixedSupplyLotSale', function ([
 
             await shouldHavePausedTheSale.bind(this, false)();
 
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.updateLotFungibleAmount(
                     lotId,
                     newLotFungibleAmount,
-                    { from: owner }));
+                    { from: owner }),
+                'Pausable: not paused');
         });
 
         it('should revert if the lot doesnt exist', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.updateLotFungibleAmount(
                     unknownLotId,
                     newLotFungibleAmount,
-                    { from: owner }));
+                    { from: owner }),
+                'FixedSupplyLotSale: non-existent lot');
         });
 
         it('should revert if set with the current lot fungible amount', async function () {
             const lot = await this.sale._lots(lotId);
             const currentLotFungibleAmount = lot.fungibleAmount;
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.updateLotFungibleAmount(
                     lotId,
                     currentLotFungibleAmount,
-                    { from: owner }));
+                    { from: owner }),
+                'FixedSupplyLotSale: duplicate assignment');
         });
 
         it('should update the lot fungible amount', async function () {
@@ -469,11 +489,12 @@ contract('FixedSupplyLotSale', function ([
         const newLotPrice = lotPrice.muln(2);
 
         it('should revert if not called by the owner', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.updateLotPrice(
                     lotId,
                     newLotPrice,
-                    { from: notOwner }));
+                    { from: notOwner }),
+                'Ownable: caller is not the owner');
         });
 
         it('should revert if the sale is not paused', async function () {
@@ -481,29 +502,32 @@ contract('FixedSupplyLotSale', function ([
 
             await shouldHavePausedTheSale.bind(this, false)();
 
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.updateLotPrice(
                     lotId,
                     newLotPrice,
-                    { from: owner }));
+                    { from: owner }),
+                'Pausable: not paused');
         });
 
         it('should revert if the lot doesnt exist', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.updateLotPrice(
                     unknownLotId,
                     newLotPrice,
-                    { from: owner }));
+                    { from: owner }),
+                'FixedSupplyLotSale: non-existent lot');
         });
 
         it('should revert if set with the current lot price', async function () {
             const lot = await this.sale._lots(lotId);
             const currentLotPrice = lot.price;
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.updateLotPrice(
                     lotId,
                     currentLotPrice,
-                    { from: owner }));
+                    { from: owner }),
+                'FixedSupplyLotSale: duplicate assignment');
         });
 
         it('should update the lot price', async function () {
@@ -559,10 +583,11 @@ contract('FixedSupplyLotSale', function ([
         }
 
         it('should revert if the lot doesnt exist', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.peekLotAvailableNonFungibleSupply(
                     unknownLotId,
-                    Constants.One));
+                    Constants.One),
+                'FixedSupplyLotSale: non-existent lot');
         });
 
         context('when available supply == 0', function () {

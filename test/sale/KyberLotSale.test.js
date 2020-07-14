@@ -111,21 +111,23 @@ contract('KyberLotSale', function ([
         });
 
         it('should revert if the lot doesnt exist', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.getPrice(
                     recipient,
                     unknownLotId,
                     quantity,
-                    tokenAddress));
+                    tokenAddress),
+                'KyberLotSale: non-existent lot');
         });
 
         it('should revert if the token address is the zero-address', async function () {
-            await expectRevert.unspecified(
+            await expectRevert(
                 this.sale.getPrice(
                     recipient,
                     lotId,
                     quantity,
-                    Constants.ZeroAddress));
+                    Constants.ZeroAddress),
+                'zero address payment token');
         });
 
         context('when the purchase token currency is ETH', function () {

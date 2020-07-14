@@ -65,9 +65,13 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
             it('should fail if not sent by the owner', async function () {
                 const purchaseId = 'both';
                 const sku = asciiToHex(purchaseId);
-                await expectRevert.unspecified(
-                    this.contract.setPrice(sku, prices[purchaseId].ethPrice, prices[purchaseId].erc20Price, { from: purchaser })
-                );
+                await expectRevert(
+                    this.contract.setPrice(
+                        sku,
+                        prices[purchaseId].ethPrice,
+                        prices[purchaseId].erc20Price,
+                        { from: purchaser }),
+                    'Ownable: caller is not the owner');
             });
 
             it('should update the prices and emit a PriceUpdated event', async function () {
@@ -177,9 +181,15 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                             priceFromContract.should.be.bignumber.equal(totalPrice);
 
                             if (totalPrice.eq(Zero)) {
-                                await expectRevert.unspecified(
-                                    purchaseFor(this.contract, purchaser, purchaseId, quantity, this.payoutToken, operator)
-                                );
+                                await expectRevert(
+                                    purchaseFor(
+                                        this.contract,
+                                        purchaser,
+                                        purchaseId,
+                                        quantity,
+                                        this.payoutToken,
+                                        operator),
+                                    'SimpleSale: invalid SKU');
                             } else {
                                 const balanceBefore =
                                     this.payoutToken == EthAddress ?
