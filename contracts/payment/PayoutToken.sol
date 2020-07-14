@@ -7,7 +7,7 @@ import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol"
 
 /**
  * @title PayoutToken
- * @dev Adds support for a payout token.
+ * Contract modules that adds support for a payout token to sale contacts.
  */
 contract PayoutToken is Ownable
 {

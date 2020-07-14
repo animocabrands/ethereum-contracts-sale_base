@@ -6,10 +6,11 @@ import "../payment/KyberAdapter.sol";
 import "./FixedSupplyLotSale.sol";
 
 /**
- * Kyber lot sale contract. A fixed supply lot sale that uses Kyber token swaps
- * to accept supported ERC20 tokens as purchase payments.
+ * @title KyberLotSale
+ * An abstract fixed supply lot sale contract that uses Kyber token swaps to
+ * accept supported ERC20 tokens as purchase payments.
  */
-contract KyberLotSale is FixedSupplyLotSale, KyberAdapter {
+abstract contract KyberLotSale is FixedSupplyLotSale, KyberAdapter {
 
     /**
      * @dev Constructor.

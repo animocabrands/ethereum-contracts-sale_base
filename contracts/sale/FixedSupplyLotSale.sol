@@ -6,6 +6,11 @@ import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol"
 
 import "./Sale.sol";
 
+/**
+ * @title FixedSupplyLotSale
+ * An abstract sale contract for fixed supply lots, where each instance of a lot
+ * is composed of a non-fungible token and some quantity of a fungible token.
+ */
 abstract contract FixedSupplyLotSale is Sale {
 
     // a Lot is a class of purchasable sale items.

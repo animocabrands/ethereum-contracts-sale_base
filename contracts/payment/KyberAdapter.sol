@@ -7,6 +7,11 @@ import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol"
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20Detailed.sol";
 import "./IKyber.sol";
 
+/**
+ * @title KyberAdapter
+ * Contract module that invokes the Kyber Proxy Network contract in order to
+ * provide utility functions for performing Kyber token swaps.
+ */
 contract KyberAdapter {
     using SafeMath for uint256;
 

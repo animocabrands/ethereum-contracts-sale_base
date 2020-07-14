@@ -7,6 +7,8 @@ import "./Sale.sol";
 
 /**
  * @title SimpleSale
+ * An abstract sale contract that supports purchases made by ETH and/or an
+ * ERC20-compatible token.
  */
 abstract contract SimpleSale is Sale {
 

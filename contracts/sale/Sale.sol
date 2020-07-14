@@ -12,7 +12,8 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../payment/PayoutToken.sol";
 
 /**
- * Abstract base contract which defines the events, members, and purchase
+ * @title Sale
+ * An abstract base contract which defines the events, members, and purchase
  * lifecycle methods for a sale contract.
  */
 abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet, PayoutToken   {
