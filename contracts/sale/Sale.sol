@@ -166,7 +166,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet, P
      */
     function _validatePurchase(
         Purchase memory purchase
-    ) internal virtual {}
+    ) internal virtual view {}
 
     /**
      * Calculates the purchase price.
@@ -176,7 +176,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet, P
      */
     function _calculatePrice(
         Purchase memory purchase
-    ) internal virtual returns (bytes32[] memory priceInfo);
+    ) internal virtual view returns (bytes32[] memory priceInfo);
 
     /**
      * Transfers the funds of a purchase payment from the purchaser to the

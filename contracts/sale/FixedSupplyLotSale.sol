@@ -283,7 +283,7 @@ abstract contract FixedSupplyLotSale is Sale {
      */
     function _validatePurchase(
         Purchase memory purchase
-    ) internal override virtual {
+    ) internal override virtual view {
         require(purchase.purchaser != address(0), "FixedSupplyLotSale: zero address purchaser");
         require(purchase.purchaser != address(uint160(address(this))), "FixedSupplyLotSale: contract address purchaser");
         require (purchase.quantity > 0, "FixedSupplyLotSale: zero quantity purchase");
@@ -304,7 +304,7 @@ abstract contract FixedSupplyLotSale is Sale {
      */
     function _calculatePrice(
         Purchase memory purchase
-    ) internal override virtual returns (bytes32[] memory priceInfo) {
+    ) internal override virtual view returns (bytes32[] memory priceInfo) {
         uint256 lotId = uint256(purchase.sku);
 
         (uint256 totalPrice, uint256 totalDiscounts) =

@@ -208,40 +208,10 @@ contract('Sale', function ([
                 { value: quantity });
         });
 
-        it('should call _validatePurchase()', async function () {
+        it('should call all of the lifecycle functions', async function () {
             expectEvent(
                 this.receipt,
-                'UnderscoreValidatePurchaseCalled');
-        });
-
-        it('should call _calculatePrice()', async function () {
-            expectEvent(
-                this.receipt,
-                'UnderscoreCalculatePriceCalled');
-        });
-
-        it('should call _transferFunds()', async function () {
-            expectEvent(
-                this.receipt,
-                'UnderscoreTransferFundsCalled');
-        });
-
-        it('should call _deliverGoods()', async function () {
-            expectEvent(
-                this.receipt,
-                'UnderscoreDeliverGoodsCalled');
-        });
-
-        it('should call _finalizePurchase()', async function () {
-            expectEvent(
-                this.receipt,
-                'UnderscoreFinalizePurchaseCalled');
-        });
-
-        it('should call _notifyPurchased()', async function () {
-            expectEvent(
-                this.receipt,
-                'UnderscoreNotifyPurchasedCalled');
+                'UnderscorePurchaseForCalled');
         });
     });
 

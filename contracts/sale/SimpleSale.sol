@@ -67,7 +67,7 @@ abstract contract SimpleSale is Sale {
      */
     function _validatePurchase(
         Purchase memory purchase
-    ) internal override virtual {
+    ) internal override virtual view {
         require(
             purchase.purchaser != address(0),
             "SimpleSale: purchaser cannot be the zero address");
@@ -93,7 +93,7 @@ abstract contract SimpleSale is Sale {
      */
     function _calculatePrice(
         Purchase memory purchase
-    ) internal override virtual returns (bytes32[] memory priceInfo) {
+    ) internal override virtual view returns (bytes32[] memory priceInfo) {
         uint256 unitPrice;
 
         if (purchase.paymentToken == ETH_ADDRESS) {

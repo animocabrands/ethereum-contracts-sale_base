@@ -8,18 +8,6 @@ contract SaleMock is Sale {
 
     event UnderscorePurchaseForCalled();
 
-    event UnderscoreValidatePurchaseCalled();
-
-    event UnderscoreCalculatePriceCalled();
-
-    event UnderscoreTransferFundsCalled();
-
-    event UnderscoreDeliverGoodsCalled();
-
-    event UnderscoreFinalizePurchaseCalled();
-
-    event UnderscoreNotifyPurchasedCalled();
-
     event UnderscoreCalculatePriceResult(
         bytes32[] priceInfo
     );
@@ -284,21 +272,17 @@ contract SaleMock is Sale {
 
     function _validatePurchase(
         Purchase memory purchase
-    ) internal override {
+    ) internal override view {
         super._validatePurchase(purchase);
 
         require(uint256(purchase.sku) == 0, "SaleMock: invalid sku");
-
-        emit UnderscoreValidatePurchaseCalled();
     }
 
     function _calculatePrice(
         Purchase memory /* purchase */
-    ) internal override returns (bytes32[] memory priceInfo) {
+    ) internal override view returns (bytes32[] memory priceInfo) {
         priceInfo = new bytes32[](1);
         priceInfo[0] = bytes32(uint256(1));
-
-        emit UnderscoreCalculatePriceCalled();
     }
 
     function _transferFunds(
@@ -307,8 +291,6 @@ contract SaleMock is Sale {
     ) internal override returns (bytes32[] memory paymentInfo) {
         paymentInfo = new bytes32[](1);
         paymentInfo[0] = bytes32(uint256(2));
-
-        emit UnderscoreTransferFundsCalled();
     }
 
     function _deliverGoods(
@@ -323,8 +305,6 @@ contract SaleMock is Sale {
         }
 
         deliveryInfo[superDeliveryInfo.length] = bytes32(uint256(3));
-
-        emit UnderscoreDeliverGoodsCalled();
     }
 
     function _finalizePurchase(
@@ -346,24 +326,6 @@ contract SaleMock is Sale {
         }
 
         finalizeInfo[superFinalizeInfo.length] = bytes32(uint256(4));
-
-        emit UnderscoreFinalizePurchaseCalled();
-    }
-
-    function _notifyPurchased(
-        Purchase memory purchase,
-        bytes32[] memory priceInfo,
-        bytes32[] memory paymentInfo,
-        bytes32[] memory deliveryInfo,
-        bytes32[] memory finalizeInfo
-    ) internal override {
-        super._notifyPurchased(
-            purchase,
-            priceInfo,
-            paymentInfo,
-            deliveryInfo,
-            finalizeInfo);
-        emit UnderscoreNotifyPurchasedCalled();
     }
 
 }

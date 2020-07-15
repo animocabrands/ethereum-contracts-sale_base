@@ -9,10 +9,13 @@
 ### Breaking changes
  * `FixedSupplyLotSale.sol`: Derives from `Sale.sol`.
  * `FixedSupplyLotSale.sol`: No longer derives from `KyberAdapter.sol`.
+ * `FixedSupplyLotSale.sol`: State mutability of `_validatePurchase()` and `_calculatePrice()` is restricted to `view`.
  * `KyberAdapter.sol`: Renamed `ETH_ADDRESS` constant to `KYBER_ETH_ADDRESS`.
  * `KyberAdapter.sol`: Renamed `ceilingDiv()` to `_ceilingDiv()` to conform with internal function naming conventions.
  * `Sale.sol`: Added `whenStarted` and `whenNotPaused` modifiers to `purchaseFor()` to restrict when it can be called.
+ * `Sale.sol`: State mutability of `_validatePurchase()` and `_calculatePrice()` is restricted to `view`.
  * `SimpleSale.sol`: Revert sub-messages refactored to lowercase.
+ * `SimpleSale.sol`: State mutability of `_validatePurchase()` and `_calculatePrice()` is restricted to `view`.
 
 ### Improvements
  * `FixedSupplyLotSale.sol`: All `require()` function calls are provided with appropriate error messages.
