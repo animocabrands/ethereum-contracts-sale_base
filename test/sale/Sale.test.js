@@ -143,9 +143,9 @@ contract('Sale', function ([
                 await expectRevert(
                     this.contract.purchaseFor(
                         purchaser,
+                        paymentToken,
                         sku,
                         quantity,
-                        paymentToken,
                         extData,
                         { value: quantity }),
                     'Startable: not started');
@@ -163,9 +163,9 @@ contract('Sale', function ([
                 await expectRevert(
                     this.contract.purchaseFor(
                         purchaser,
+                        paymentToken,
                         sku,
                         quantity,
-                        paymentToken,
                         extData,
                         { value: quantity }),
                     'Pausable: paused');
@@ -174,9 +174,9 @@ contract('Sale', function ([
             it('should call _purchaseFor()', async function () {
                 const receipt = await this.contract.purchaseFor(
                     purchaser,
+                    paymentToken,
                     sku,
                     quantity,
-                    paymentToken,
                     extData,
                     { value: quantity });
 
@@ -195,9 +195,9 @@ contract('Sale', function ([
 
             this.receipt = await this.contract.purchaseFor(
                 purchaser,
+                EthAddress,
                 sku,
                 quantity,
-                EthAddress,
                 extData,
                 { value: quantity });
         });

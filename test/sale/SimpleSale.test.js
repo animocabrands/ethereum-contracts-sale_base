@@ -149,9 +149,9 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                 // console.log(`Purchasing ${quantity}*'${purchaseId}'`);
                 return sale.purchaseFor(
                     purchaser,
+                    paymentToken,
                     sku,
                     quantity,
-                    paymentToken,
                     [ purchaseData ],
                     {
                         from: operator,

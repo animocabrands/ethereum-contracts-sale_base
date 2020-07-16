@@ -14,6 +14,7 @@
  * `KyberAdapter.sol`: Renamed `ceilingDiv()` to `_ceilingDiv()` to conform with internal function naming conventions.
  * `Sale.sol`: Added `whenStarted` and `whenNotPaused` modifiers to `purchaseFor()` to restrict when it can be called.
  * `Sale.sol`: State mutability of `_validatePurchase()` and `_calculatePrice()` is restricted to `view`.
+ * `Sale.sol`: Position of the `purchaseFor()` parameter `paymentToken` has changed.
  * `SimpleSale.sol`: Revert sub-messages refactored to lowercase.
  * `SimpleSale.sol`: State mutability of `_validatePurchase()` and `_calculatePrice()` is restricted to `view`.
 

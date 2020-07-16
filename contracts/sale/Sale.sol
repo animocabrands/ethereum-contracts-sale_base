@@ -34,9 +34,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
     struct Purchase {
         address payable purchaser;
         address payable operator;
+        IERC20 paymentToken;
         bytes32 sku;
         uint256 quantity;
-        IERC20 paymentToken;
         bytes32[] extData;
     }
 
@@ -87,25 +87,25 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
      * Performs a purchase based on the given purchase conditions.
      * @dev Emits the Purchased event.
      * @param purchaser The initiating account making the purchase.
+     * @param paymentToken The ERC20 token to use as the payment currency of the
      * @param sku The SKU of the item being purchased.
      * @param quantity The quantity of SKU items being purchased.
-     * @param paymentToken The ERC20 token to use as the payment currency of the
      *  purchase.
      * @param extData Deriving contract-specific extra input data.
      */
     function purchaseFor(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] calldata extData
     ) external payable whenStarted whenNotPaused {
         Purchase memory purchase;
         purchase.purchaser = purchaser;
         purchase.operator = _msgSender();
+        purchase.paymentToken = paymentToken;
         purchase.sku = sku;
         purchase.quantity = quantity;
-        purchase.paymentToken = paymentToken;
         purchase.extData = extData;
 
         _purchaseFor(purchase);
