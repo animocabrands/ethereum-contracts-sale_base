@@ -6,8 +6,16 @@ import "../../sale/KyberLotSale.sol";
 
 contract KyberLotSaleMock is KyberLotSale {
 
+    event UnderscoreCalculatePriceResult(
+        bytes32[] priceInfo
+    );
+
     event UnderscoreTransferFundsResult(
         bytes32[] paymentInfo
+    );
+
+    event UnderscoreGetTotalPriceInfoResult(
+        bytes32[] totalPriceInfo
     );
 
     constructor(
@@ -26,6 +34,29 @@ contract KyberLotSaleMock is KyberLotSale {
         )
         public
     {}
+
+    function callUnderscoreCalculatePrice(
+        address payable purchaser,
+        bytes32 sku,
+        uint256 quantity,
+        IERC20 paymentToken,
+        bytes32[] calldata extData
+    )
+        external
+        payable
+    {
+        Purchase memory purchase =
+            _getPurchaseStruct(
+                purchaser,
+                sku,
+                quantity,
+                paymentToken,
+                extData);
+
+        bytes32[] memory priceInfo = _calculatePrice(purchase);
+
+        emit UnderscoreCalculatePriceResult(priceInfo);
+    }
 
     function callUnderscoreTransferFunds(
         address payable purchaser,
@@ -51,21 +82,21 @@ contract KyberLotSaleMock is KyberLotSale {
         emit UnderscoreTransferFundsResult(paymentInfo);
     }
 
-    function callUnderscoreGetPrice(
-        address payable recipient,
-        uint256 lotId,
-        uint256 quantity
-    )
-        external
-        view
-        returns
-    (
-        uint256 totalPrice,
-        uint256 totalDiscounts
-    )
-    {
-        (totalPrice, totalDiscounts) =
-            _getPrice(recipient, _lots[lotId], quantity);
+    function callUnderscoreGetTotalPriceInfo(
+        address payable purchaser,
+        IERC20 paymentToken,
+        bytes32 sku,
+        uint256 quantity,
+        bytes32[] calldata extData
+    ) external {
+        bytes32[] memory totalPriceInfo = _getTotalPriceInfo(
+            purchaser,
+            paymentToken,
+            sku,
+            quantity,
+            extData);
+
+        emit UnderscoreGetTotalPriceInfoResult(totalPriceInfo);
     }
 
     function _getPurchaseStruct(

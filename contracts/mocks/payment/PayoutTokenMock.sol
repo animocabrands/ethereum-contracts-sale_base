@@ -8,7 +8,10 @@ contract PayoutTokenMock is PayoutToken
 {
     constructor(
         IERC20 payoutToken_
-    ) PayoutToken(payoutToken_) public {}
+    )
+        PayoutToken(payoutToken_)
+        public
+    {}
 
     function callUnderscoreSetPayoutToken(
         IERC20 payoutToken_

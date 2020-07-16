@@ -158,7 +158,14 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
      */
     function _calculatePrice(
         Purchase memory purchase
-    ) internal virtual view returns (bytes32[] memory priceInfo);
+    ) internal virtual view returns (bytes32[] memory priceInfo) {
+        priceInfo = _getTotalPriceInfo(
+            purchase.purchaser,
+            purchase.paymentToken,
+            purchase.sku,
+            purchase.quantity,
+            purchase.extData);
+    }
 
     /**
      * Transfers the funds of a purchase payment from the purchaser to the
@@ -293,5 +300,26 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
             extData[offset++] = finalizeInfo[index];
         }
     }
+
+    /**
+     * Retrieves the total price information for the given quantity of the
+     *  specified SKU item.
+     * @param purchaser The account for whome the queried total price
+     *  information is for.
+     * @param paymentToken The ERC20 token payment currency of the total price
+     *  information.
+     * @param sku The SKU item whose total price information will be retrieved.
+     * @param quantity The quantity of SKU items to retrieve the total price
+     *  information for.
+     * @param extData Implementation-specific extra input data.
+     * @return totalPriceInfo Implementation-specific total price information.
+     */
+    function _getTotalPriceInfo(
+        address payable purchaser,
+        IERC20 paymentToken,
+        bytes32 sku,
+        uint256 quantity,
+        bytes32[] memory extData
+    ) internal virtual view returns (bytes32[] memory totalPriceInfo);
 
 }

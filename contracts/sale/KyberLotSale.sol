@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.8;
 
-import "../payment/KyberAdapter.sol";
+import "../payment/KyberPayment.sol";
 import "./FixedSupplyLotSale.sol";
 
 /**
@@ -10,10 +10,10 @@ import "./FixedSupplyLotSale.sol";
  * An abstract fixed supply lot sale contract that uses Kyber token swaps to
  * accept supported ERC20 tokens as purchase payments.
  */
-abstract contract KyberLotSale is FixedSupplyLotSale, KyberAdapter {
+abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
 
     /**
-     * @dev Constructor.
+     * Constructor.
      * @param kyberProxy Kyber network proxy contract.
      * @param payoutWallet_ Account to receive payout currency tokens from the Lot sales.
      * @param payoutToken_ Payout currency token contract address.
@@ -28,66 +28,35 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberAdapter {
         address inventoryContract
     )
         FixedSupplyLotSale(
-            payoutWallet_,
-            payoutToken_,
             fungibleTokenId,
             inventoryContract
         )
-        KyberAdapter(kyberProxy)
+        KyberPayment(
+            payoutWallet_,
+            payoutToken_,
+            kyberProxy
+        )
         internal
     {}
 
     /**
-     * @dev Retrieves user purchase price information for the given quantity of Lot items.
-     * @param recipient The user for whom the price information is being retrieved for.
-     * @param lotId Lot id of the items from which the purchase price information will be retrieved.
-     * @param quantity Quantity of Lot items from which the purchase price information will be retrieved.
-     * @param paymentToken Purchase currency token contract address.
-     * @return minConversionRate Minimum conversion rate from purchase tokens to payout tokens.
-     * @return totalPrice Total price (excluding any discounts), in purchase currency tokens.
-     * @return totalDiscounts Total discounts to apply to the total price, in purchase currency tokens.
+     * Calculates the purchase price.
+     * @param purchase Purchase conditions.
+     * @return priceInfo Implementation-specific calculated purchase price
+     *  information (0:total payout price).
      */
-    function getPrice(
-        address payable recipient,
-        uint256 lotId,
-        uint256 quantity,
-        IERC20 paymentToken
-    )
-        external
-        view
-        returns
-    (
-        uint256 minConversionRate,
-        uint256 totalPrice,
-        uint256 totalDiscounts
-    )
-    {
-        Lot memory lot = _lots[lotId];
+    function _calculatePrice(
+        Purchase memory purchase
+    ) internal override virtual view returns (bytes32[] memory priceInfo) {
+        bytes32[] memory totalPriceInfo = _getTotalPriceInfo(
+            purchase.purchaser,
+            payoutToken,
+            purchase.sku,
+            purchase.quantity,
+            purchase.extData);
 
-        require(lot.exists, "KyberLotSale: non-existent lot");
-        require(paymentToken != IERC20(0), "KyberLotSale: zero address payment token");
-
-        (totalPrice, totalDiscounts) = _getPrice(recipient, lot, quantity);
-
-        minConversionRate =
-            _getMinConversionRate(
-                payoutToken,
-                totalPrice,
-                paymentToken);
-
-        totalPrice =
-            _convertToken(
-                payoutToken,
-                totalPrice,
-                paymentToken,
-                minConversionRate);
-
-        totalDiscounts =
-            _convertToken(
-                payoutToken,
-                totalDiscounts,
-                paymentToken,
-                minConversionRate);
+        priceInfo = new bytes32[](1);
+        priceInfo[0] = totalPriceInfo[0];
     }
 
     /**
@@ -96,7 +65,7 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberAdapter {
      * @param purchase Purchase conditions (extData[0]:max token amount,
      *  extData[1]:min conversion rate).
      * @param priceInfo Implementation-specific calculated purchase price
-     *  information (0:total price, 1:total discounts).
+     *  information (0:total payout price).
      * @return paymentInfo Implementation-specific purchase payment funds
      *  transfer information (0:purchase tokens sent, 1:payout tokens received).
      */
@@ -104,33 +73,54 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberAdapter {
         Purchase memory purchase,
         bytes32[] memory priceInfo
     ) internal override virtual returns (bytes32[] memory paymentInfo) {
-        uint256 maxTokenAmount = uint256(purchase.extData[0]);
-        uint256 minConversionRate = uint256(purchase.extData[1]);
-        uint256 totalPrice = uint256(priceInfo[0]);
-        uint256 totalDiscounts = uint256(priceInfo[1]);
+        bytes32[] memory extData = new bytes32[](2);
+        extData[0] = priceInfo[0];
+        extData[1] = purchase.extData[1];
 
-        uint256 totalDiscountedPrice = totalPrice.sub(totalDiscounts);
+        paymentInfo = _handlePaymentTransfers(
+            purchase.operator,
+            purchase.paymentToken,
+            uint256(purchase.extData[0]),
+            extData);
+    }
 
-        (uint256 paymentTokensSent, uint256 payoutTokensReceived) =
-            _swapTokenAndHandleChange(
-                purchase.paymentToken,
-                maxTokenAmount,
-                payoutToken,
-                totalDiscountedPrice,
-                minConversionRate,
-                purchase.operator,
-                address(uint160(address(this))));
+    /**
+     * Retrieves the total price information for the given quantity of the
+     *  specified SKU item.
+     * @param purchaser The account for whome the queried total price
+     *  information is for.
+     * @param paymentToken The ERC20 token payment currency of the total price
+     *  information.
+     * @param sku The SKU item whose total price information will be retrieved.
+     * @param quantity The quantity of SKU items to retrieve the total price
+     *  information for.
+     * @param extData Implementation-specific extra input data.
+     * @return totalPriceInfo Implementation-specific total price information
+     *  (0:payment amount, 1:minimum conversion rate).
+     */
+    function _getTotalPriceInfo(
+        address payable purchaser,
+        IERC20 paymentToken,
+        bytes32 sku,
+        uint256 quantity,
+        bytes32[] memory extData
+    ) internal override virtual view returns (bytes32[] memory totalPriceInfo) {
+        bytes32[] memory superTotalPriceInfo = super._getTotalPriceInfo(
+            purchaser,
+            paymentToken,
+            sku,
+            quantity,
+            extData);
 
-        require(
-            payoutTokensReceived >= totalDiscountedPrice,
-            "KyberLotSale: insufficient payout tokens received");
-        require(
-            payoutToken.transfer(payoutWallet, payoutTokensReceived),
-            "KyberLotSale: failure in transferring ERC20 payment");
+        uint256 payoutAmount = uint256(superTotalPriceInfo[0]);
 
-        paymentInfo = new bytes32[](2);
-        paymentInfo[0] = bytes32(paymentTokensSent);
-        paymentInfo[1] = bytes32(payoutTokensReceived);
+        bytes32[] memory paymentAmountExtData = new bytes32[](1);
+        paymentAmountExtData[0] = bytes32(uint256(address(paymentToken)));
+
+        totalPriceInfo = _handlePaymentAmount(
+            payoutToken,
+            payoutAmount,
+            paymentAmountExtData);
     }
 
 }

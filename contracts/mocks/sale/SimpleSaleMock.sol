@@ -7,6 +7,14 @@ import "../../sale/SimpleSale.sol";
 
 contract SimpleSaleMock is SimpleSale {
 
+    event UnderscoreTransferFundsResult(
+        bytes32[] paymentInfo
+    );
+
+    event UnderscoreGetTotalPriceInfoResult(
+        bytes32[] totalPriceInfo
+    );
+
     constructor(
         address payable payoutWallet_,
         IERC20 payoutToken_
@@ -18,14 +26,6 @@ contract SimpleSaleMock is SimpleSale {
         public
     {}
 
-    /**
-     * Retrieves the associated ETH and ERC20 token prices for the given
-     * purchase ID.
-     * @param sku The SKU of the item whose price will be retrieved.
-     * @return ethPrice The associated ETH price for the given purchase ID.
-     * @return erc20Price The associated ERC20 token price for the given
-     *  purchase ID.
-     */
     function getPrice(
         bytes32 sku
     ) external view returns (uint256 ethPrice, uint256 erc20Price) {
@@ -34,21 +34,83 @@ contract SimpleSaleMock is SimpleSale {
         erc20Price = price.erc20Price;
     }
 
-    /**
-     * Retrieves implementation-specific extra data passed as the Purchased
-     *  event extData argument.
-     * @param *purchase* Purchase conditions.
-     * @param priceInfo Implementation-specific calculated purchase price
-     *  information.
-     * @param *paymentInfo* Implementation-specific accepted purchase payment
-     *  information.
-     * @param *deliveryInfo* Implementation-specific purchase delivery
-     *  information.
-     * @param *finalizeInfo* Implementation-specific purchase finalization
-     *  information.
-     * @return extData Implementation-specific extra data passed as the Purchased event
-     *  extData argument (0:total price, 1:unit price, 2:purchase data).
-     */
+    function callUnderscoreValidatePurchase(
+        address payable purchaser,
+        bytes32 sku,
+        uint256 quantity,
+        IERC20 paymentToken,
+        bytes32[] calldata extData
+    )
+        external
+        payable
+    {
+        Purchase memory purchase =
+            _getPurchaseStruct(
+                purchaser,
+                sku,
+                quantity,
+                paymentToken,
+                extData);
+
+        _validatePurchase(purchase);
+    }
+
+    function callUnderscoreTransferFunds(
+        address payable purchaser,
+        bytes32 sku,
+        uint256 quantity,
+        IERC20 paymentToken,
+        bytes32[] calldata extData,
+        bytes32[] calldata priceInfo
+    )
+        external
+        payable
+    {
+        Purchase memory purchase =
+            _getPurchaseStruct(
+                purchaser,
+                sku,
+                quantity,
+                paymentToken,
+                extData);
+
+        bytes32[] memory paymentInfo = _transferFunds(purchase, priceInfo);
+
+        emit UnderscoreTransferFundsResult(paymentInfo);
+    }
+
+    function callUnderscoreGetTotalPriceInfo(
+        address payable purchaser,
+        IERC20 paymentToken,
+        bytes32 sku,
+        uint256 quantity,
+        bytes32[] calldata extData
+    ) external {
+        bytes32[] memory totalPriceInfo = _getTotalPriceInfo(
+            purchaser,
+            paymentToken,
+            sku,
+            quantity,
+            extData);
+
+        emit UnderscoreGetTotalPriceInfoResult(totalPriceInfo);
+    }
+
+    function _getPurchaseStruct(
+        address payable purchaser,
+        bytes32 sku,
+        uint256 quantity,
+        IERC20 paymentToken,
+        bytes32[] memory extData
+    ) private view returns (Purchase memory purchase) {
+        purchase.purchaser = purchaser;
+        purchase.operator = _msgSender();
+        purchase.sku = sku;
+        purchase.quantity = quantity;
+        purchase.paymentToken = paymentToken;
+        purchase.extData = extData;
+    }
+
     function _getPurchasedEventExtData(
         Purchase memory purchase,
         bytes32[] memory priceInfo,

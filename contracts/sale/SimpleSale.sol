@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.8;
 
-import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
+import "../payment/SimplePayment.sol";
 import "./Sale.sol";
 
 /**
@@ -10,7 +10,7 @@ import "./Sale.sol";
  * An abstract sale contract that supports purchases made by ETH and/or an
  * ERC20-compatible token.
  */
-abstract contract SimpleSale is Sale {
+abstract contract SimpleSale is Sale, SimplePayment {
 
     event PriceUpdated(
         bytes32 sku,
@@ -34,13 +34,12 @@ abstract contract SimpleSale is Sale {
      * @param payoutWallet_ The wallet address used to receive purchase payments
      *  with.
      * @param payoutToken_ The ERC20 token currency accepted by the payout
-     *  wallet for purchase payments.
      */
     constructor(
         address payable payoutWallet_,
         IERC20 payoutToken_
     )
-        Sale(
+        SimplePayment(
             payoutWallet_,
             payoutToken_
         )
@@ -59,10 +58,12 @@ abstract contract SimpleSale is Sale {
         emit PriceUpdated(sku, ethPrice, erc20Price);
     }
 
-    /////////////////////////////////////////// internal hooks ///////////////////////////////////
-
     /**
      * Validates a purchase.
+     * @dev Reverts if the purchaser is the zero address.
+     * @dev Reverts if the purchaser is the sale contract address.
+     * @dev Reverts if the purchase quantity is zero.
+     * @dev Reverts if the payment token type is unsupported for the lot being purchased.
      * @param purchase Purchase conditions.
      */
     function _validatePurchase(
@@ -86,67 +87,71 @@ abstract contract SimpleSale is Sale {
     }
 
     /**
-     * Calculates the purchase price.
-     * @param purchase Purchase conditions.
-     * @return priceInfo Implementation-specific calculated purchase price
-     *  information (0:total price, 1:unit price).
-     */
-    function _calculatePrice(
-        Purchase memory purchase
-    ) internal override virtual view returns (bytes32[] memory priceInfo) {
-        uint256 unitPrice;
-
-        if (purchase.paymentToken == ETH_ADDRESS) {
-            unitPrice = prices[purchase.sku].ethPrice;
-        } else {
-            require(
-                payoutToken != IERC20(0),
-                "SimpleSale: ERC20 payment is unsupported");
-
-            unitPrice = prices[purchase.sku].erc20Price;
-        }
-
-        require(unitPrice != 0, "SimpleSale: invalid SKU");
-
-        uint256 totalPrice = unitPrice.mul(purchase.quantity);
-
-        priceInfo = new bytes32[](2);
-        priceInfo[0] = bytes32(totalPrice);
-        priceInfo[1] = bytes32(unitPrice);
-    }
-
-    /**
      * Transfers the funds of a purchase payment from the purchaser to the
      * payout wallet.
      * @param purchase Purchase conditions.
      * @param priceInfo Implementation-specific calculated purchase price
-     *  information.
+     *  information (0:total price).
      * @return paymentInfo Implementation-specific purchase payment funds
      *  transfer information.
      */
     function _transferFunds(
         Purchase memory purchase,
         bytes32[] memory priceInfo
-    ) internal override virtual returns (bytes32[] memory /* paymentInfo */) {
-        uint256 totalPrice = uint256(priceInfo[0]);
+    ) internal override virtual returns (bytes32[] memory paymentInfo) {
+        paymentInfo = _handlePaymentTransfers(
+            purchase.operator,
+            purchase.paymentToken,
+            uint256(priceInfo[0]),
+            new bytes32[](0));
+    }
 
-        if (purchase.paymentToken == ETH_ADDRESS) {
-            require(
-                msg.value >= totalPrice,
-                "SimpleSale: insufficient ETH provided");
+    /**
+     * Retrieves the total price information for the given quantity of the
+     *  specified SKU item.
+     * @dev Reverts if the payment token is the zero address.
+     * @dev Reverts if the payment token type is unsupported.
+     * @dev Reverts if the SKU does not exist.
+     * @param *purchaser* The account for whome the queried total price
+     *  information is for.
+     * @param paymentToken The ERC20 token payment currency of the total price
+     *  information.
+     * @param sku The SKU item whose total price information will be retrieved.
+     * @param quantity The quantity of SKU items to retrieve the total price
+     *  information for.
+     * @param *extData* Implementation-specific extra input data.
+     * @return totalPriceInfo Implementation-specific total price information
+     *  (0:total price).
+     */
+    function _getTotalPriceInfo(
+        address payable /* purchaser */,
+        IERC20 paymentToken,
+        bytes32 sku,
+        uint256 quantity,
+        bytes32[] memory /* extData */
+    ) internal override virtual view returns (bytes32[] memory totalPriceInfo) {
+        require(
+            paymentToken != IERC20(0),
+            "SimpleSale: zero address payment token");
 
-            payoutWallet.transfer(totalPrice);
+        uint256 unitPrice;
 
-            uint256 change = msg.value.sub(totalPrice);
-
-            if (change > 0) {
-                purchase.operator.transfer(change);
-            }
+        if (paymentToken == ETH_ADDRESS) {
+            unitPrice = prices[sku].ethPrice;
         } else {
             require(
-                payoutToken.transferFrom(purchase.operator, payoutWallet, totalPrice),
-                "SimpleSale: failure in transferring ERC20 payment");
+                payoutToken != IERC20(0),
+                "SimpleSale: ERC20 payment is unsupported");
+
+            unitPrice = prices[sku].erc20Price;
         }
+
+        require(unitPrice != 0, "SimpleSale: invalid SKU");
+
+        uint256 totalPrice = unitPrice.mul(quantity);
+
+        totalPriceInfo = new bytes32[](1);
+        totalPriceInfo[0] = bytes32(totalPrice);
     }
 
 }

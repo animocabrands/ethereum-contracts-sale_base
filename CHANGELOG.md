@@ -3,8 +3,12 @@
 ## 4.0.0 (UNRELEASED)
 
 ### New Features
- * `KyberLotSale.sol`: A new lot sale contract that derives from `FixedSupplyLotSale.sol` and `KyberAdapter.sol`, which implements Kyber-related sale behaviors.
+ * `KyberLotSale.sol`: A new lot sale contract that derives from `FixedSupplyLotSale.sol` and `KyberPayment.sol`, which implements Kyber-related sale behaviors.
+ * `KyberPayment.sol`: A new payment contract that derives from `Payment.sol`, which implements Kyber-related payment behaviors.
+ * `Payment.sol`: A new base payment contract.
  * `PayoutToken.sol`: A new payment contract module that adds support for a payment token to a sale contract.
+ * `Sale.sol`: A new base sale contract.
+ * `SimplePayment.sol`: A new payment contract that derives from `Payment.sol`, which implements simple payment behaviors.
 
 ### Breaking changes
  * `FixedSupplyLotSale.sol`: Derives from `Sale.sol`.
@@ -12,18 +16,12 @@
  * `FixedSupplyLotSale.sol`: State mutability of `_validatePurchase()` and `_calculatePrice()` is restricted to `view`.
  * `KyberAdapter.sol`: Renamed `ETH_ADDRESS` constant to `KYBER_ETH_ADDRESS`.
  * `KyberAdapter.sol`: Renamed `ceilingDiv()` to `_ceilingDiv()` to conform with internal function naming conventions.
- * `Sale.sol`: Added `whenStarted` and `whenNotPaused` modifiers to `purchaseFor()` to restrict when it can be called.
- * `Sale.sol`: State mutability of `_validatePurchase()` and `_calculatePrice()` is restricted to `view`.
- * `Sale.sol`: Position of the `purchaseFor()` parameter `paymentToken` has changed.
  * `SimpleSale.sol`: Revert sub-messages refactored to lowercase.
  * `SimpleSale.sol`: State mutability of `_validatePurchase()` and `_calculatePrice()` is restricted to `view`.
 
 ### Improvements
  * `FixedSupplyLotSale.sol`: All `require()` function calls are provided with appropriate error messages.
- * `Sale.sol`: Added `virtual` modifier to `start()`, `pause()`, `unpause()`, and `setPayoutToken()` to be able to override the functions.
- * `Sale.sol`: Changed function visibility to `public` on `start()`, `pause()`, `unpause()`, and `setPayoutToken()` to allow internal invocation of the functions, especially for overrides.
- * `Sale.sol`: Removed `view` modifier from `_validatePurchase()` to allow state changes in the function.
- * `Sale.sol`: By default, `_getPurchasedEventExtData()` supplies the `Purchased` event with the `purchaseFor()` extra data and the return values of `_calculatePrice()`, `_acceptPayment()`, `_deliverGoods()`, and `_finalizePurchase()`.
+`_calculatePrice()`, `_acceptPayment()`, `_deliverGoods()`, and `_finalizePurchase()`.
  * `SimpleSale.sol`: Removed `view` modifier from `_validatePurchase()` to allow state changes in the function.
 
 ## 3.0.0 (03/07/2020)

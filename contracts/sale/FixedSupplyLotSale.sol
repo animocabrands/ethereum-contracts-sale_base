@@ -2,8 +2,6 @@
 
 pragma solidity 0.6.8;
 
-import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-
 import "./Sale.sol";
 
 /**
@@ -51,22 +49,15 @@ abstract contract FixedSupplyLotSale is Sale {
     mapping (uint256 => Lot) public _lots; // mapping of lotId => Lot.
 
     /**
-     * @dev Constructor.
-     * @param payoutWallet_ Account to receive payout currency tokens from the Lot sales.
-     * @param payoutToken_ Payout currency token contract address.
+     * Constructor.
      * @param fungibleTokenId Inventory token id of the fungible tokens bundled in a Lot item.
      * @param inventoryContract Address of the inventory contract to use in the delivery of purchased Lot items.
      */
     constructor(
-        address payable payoutWallet_,
-        IERC20 payoutToken_,
         uint256 fungibleTokenId,
         address inventoryContract
     )
-        Sale(
-            payoutWallet_,
-            payoutToken_
-        )
+        Sale()
         internal
     {
         setFungibleTokenId(fungibleTokenId);
@@ -74,23 +65,9 @@ abstract contract FixedSupplyLotSale is Sale {
     }
 
     /**
-     * Sets the ERC20 token currency accepted by the payout wallet for purchase
-     *  payments.
-     * @dev Emits the PayoutTokenSet event.
-     * @dev Reverts if called by any other than the contract owner.
-     * @dev Reverts if the payout token is the same as the current value.
-     * @dev Reverts if the payout token is the zero address.
-     * @dev Reverts if the contract is not paused.
-     * @param payoutToken_ The new ERC20 token currency accepted by the payout
-     *  wallet for purchase payments.
-     */
-     function setPayoutToken(IERC20 payoutToken_) public override virtual onlyOwner whenPaused {
-        require(payoutToken_ != IERC20(0), "FixedSupplyLotSale: zero address payout token");
-        super.setPayoutToken(payoutToken_);
-    }
-
-    /**
-     * @dev Sets the inventory token id of the fungible tokens bundled in a Lot item.
+     * Sets the inventory token id of the fungible tokens bundled in a Lot item.
+     * @dev Reverts if `fungibleTokenId` is zero.
+     * @dev Reverts if setting `fungibleTokenId` with the current value.
      * @param fungibleTokenId Inventory token id of the fungible tokens to bundle in a Lot item.
      */
     function setFungibleTokenId(
@@ -107,7 +84,9 @@ abstract contract FixedSupplyLotSale is Sale {
     }
 
     /**
-     * @dev Sets the inventory contract to use in the delivery of purchased Lot items.
+     * Sets the inventory contract to use in the delivery of purchased Lot items.
+     * @dev Reverts if `inventoryContract` is zero.
+     * @dev Reverts if setting `inventoryContract` with the current value.
      * @param inventoryContract Address of the inventory contract to use.
      */
     function setInventoryContract(
@@ -124,9 +103,10 @@ abstract contract FixedSupplyLotSale is Sale {
     }
 
     /**
-     * @dev Creates a new Lot to add to the sale.
-     * There are NO guarantees about the uniqueness of the non-fungible token supply.
-     * Lot item price must be at least 0.00001 of the base denomination.
+     * Creates a new Lot to add to the sale.
+     * @dev Reverts if the lot to create already exists.
+     * @dev There are NO guarantees about the uniqueness of the non-fungible token supply.
+     * @dev Lot item price must be at least 0.00001 of the base denomination.
      * @param lotId Id of the Lot to create.
      * @param nonFungibleSupply Initial non-fungible token supply of the Lot.
      * @param fungibleAmount Initial fungible token amount to bundle with each NFT.
@@ -157,8 +137,10 @@ abstract contract FixedSupplyLotSale is Sale {
     }
 
     /**
-     * @dev Updates the given Lot's non-fungible token supply with additional NFTs.
-     * There are NO guarantees about the uniqueness of the non-fungible token supply.
+     * Updates the given Lot's non-fungible token supply with additional NFTs.
+     * @dev Reverts if `nonFungibleTokens` is an empty array.
+     * @dev Reverts if the lot whose non-fungible supply is being updated does not exist.
+     * @dev There are NO guarantees about the uniqueness of the non-fungible token supply.
      * @param lotId Id of the Lot to update.
      * @param nonFungibleTokens Non-fungible tokens to update with.
      */
@@ -197,7 +179,9 @@ abstract contract FixedSupplyLotSale is Sale {
     }
 
     /**
-     * @dev Updates the given Lot's fungible token amount bundled with each NFT.
+     * Updates the given Lot's fungible token amount bundled with each NFT.
+     * @dev Reverts if the lot whose fungible amount is being updated does not exist.
+     * @dev Reverts if setting `fungibleAmount` with the current value.
      * @param lotId Id of the Lot to update.
      * @param fungibleAmount Fungible token amount to update with.
      */
@@ -218,7 +202,9 @@ abstract contract FixedSupplyLotSale is Sale {
     }
 
     /**
-     * @dev Updates the given Lot's item sale price.
+     * Updates the given Lot's item sale price.
+     * @dev Reverts if the lot whose price is being updated does not exist.
+     * @dev Reverts if setting `price` with the current value.
      * @param lotId Id of the Lot to update.
      * @param price The new sale price, in payout currency tokens, to update with.
      */
@@ -239,7 +225,8 @@ abstract contract FixedSupplyLotSale is Sale {
     }
 
     /**
-     * @dev Returns the given number of next available non-fungible tokens for the specified Lot.
+     * Returns the given number of next available non-fungible tokens for the specified Lot.
+     * @dev Reverts if the lot being peeked does not exist.
      * @dev If the given number is more than the next available non-fungible tokens, then the remaining available is returned.
      * @param lotId Id of the Lot whose non-fungible supply to peek into.
      * @param count Number of next available non-fungible tokens to peek.
@@ -278,6 +265,12 @@ abstract contract FixedSupplyLotSale is Sale {
 
     /**
      * Validates a purchase.
+     * @dev Reverts if the purchaser is the zero address.
+     * @dev Reverts if the purchaser is the sale contract address.
+     * @dev Reverts if the quantity being purchased is zero.
+     * @dev Reverts if the payment token is the zero address.
+     * @dev Reverts if the lot being purchased does not exist.
+     * @dev Reverts if the lot being purchased has an insufficient token supply.
      * @param purchase Purchase conditions (extData[0]:max token amount,
      *  extData[1]:min conversion rate).
      */
@@ -286,38 +279,13 @@ abstract contract FixedSupplyLotSale is Sale {
     ) internal override virtual view {
         require(purchase.purchaser != address(0), "FixedSupplyLotSale: zero address purchaser");
         require(purchase.purchaser != address(uint160(address(this))), "FixedSupplyLotSale: contract address purchaser");
-        require (purchase.quantity > 0, "FixedSupplyLotSale: zero quantity purchase");
+        require (purchase.quantity != 0, "FixedSupplyLotSale: zero quantity purchase");
         require(purchase.paymentToken != IERC20(0), "FixedSupplyLotSale: zero address payment token");
 
         uint256 lotId = uint256(purchase.sku);
 
         require(_lots[lotId].exists, "FixedSupplyLotSale: non-existent lot");
         require(purchase.quantity <= _lots[lotId].numAvailable, "FixedSupplyLotSale: insufficient available lot supply");
-    }
-
-    /**
-     * Calculates the purchase price.
-     * @param purchase Purchase conditions (extData[0]:max token amount,
-     *  extData[1]:min conversion rate).
-     * @return priceInfo Implementation-specific calculated purchase price
-     *  information (0:total price, 1:total discounts).
-     */
-    function _calculatePrice(
-        Purchase memory purchase
-    ) internal override virtual view returns (bytes32[] memory priceInfo) {
-        uint256 lotId = uint256(purchase.sku);
-
-        (uint256 totalPrice, uint256 totalDiscounts) =
-            _getPrice(
-                purchase.purchaser,
-                _lots[lotId],
-                purchase.quantity);
-
-        require(totalDiscounts <= totalPrice, "FixedSupplyLotSale: discount exceeds price");
-
-        priceInfo = new bytes32[](2);
-        priceInfo[0] = bytes32(totalPrice);
-        priceInfo[1] = bytes32(totalDiscounts);
     }
 
     /**
@@ -352,7 +320,7 @@ abstract contract FixedSupplyLotSale is Sale {
      * @param purchase Purchase conditions (extData[0]:max token amount,
      *  extData[1]:min conversion rate).
      * @param *priceInfo* Implementation-specific calculated purchase price
-     *  information (0:total price, 1:total discounts).
+     *  information (0:total price).
      * @param *paymentInfo* Implementation-specific accepted purchase payment
      *  information (0:purchase tokens sent, 1:payout tokens received).
      * @param *deliveryInfo* Implementation-specific purchase delivery
@@ -372,28 +340,32 @@ abstract contract FixedSupplyLotSale is Sale {
     }
 
     /**
-     * @dev Retrieves user payout price information for the given quantity of Lot items.
-     * @dev @param recipient The user for whom the price information is being retrieved for.
-     * @param lot Lot of the items from which the purchase price information will be retrieved.
-     * @param quantity Quantity of Lot items from which the purchase price information will be retrieved.
-     * @return totalPrice Total price (excluding any discounts), in payout currency tokens.
-     * @return totalDiscounts Total discounts to apply to the total price, in payout currency tokens.
+     * Retrieves the total price information for the given quantity of the
+     *  specified SKU item.
+     * @param *purchaser* The account for whome the queried total price
+     *  information is for.
+     * @param *paymentToken* The ERC20 token payment currency of the total price
+     *  information.
+     * @param sku The SKU item whose total price information will be retrieved.
+     * @param quantity The quantity of SKU items to retrieve the total price
+     *  information for.
+     * @param *extData* Implementation-specific extra input data.
+     * @return totalPriceInfo Implementation-specific total price information
+     *  (0:total price).
      */
-    function _getPrice(
-        address payable /* recipient */,
-        Lot memory lot,
-        uint256 quantity
-    )
-        internal
-        virtual
-        pure
-        returns
-    (
-        uint256 totalPrice,
-        uint256 totalDiscounts
-    )
-    {
-        totalPrice = lot.price.mul(quantity);
-        totalDiscounts = 0;
+    function _getTotalPriceInfo(
+        address payable /* purchaser */,
+        IERC20 /* paymentToken */,
+        bytes32 sku,
+        uint256 quantity,
+        bytes32[] memory /* extData */
+    ) internal override virtual view returns (bytes32[] memory totalPriceInfo) {
+        uint256 lotId = uint256(sku);
+        uint256 unitPrice = _lots[lotId].price;
+        uint256 totalPrice = unitPrice.mul(quantity);
+
+        totalPriceInfo = new bytes32[](1);
+        totalPriceInfo[0] = bytes32(totalPrice);
     }
+
 }
