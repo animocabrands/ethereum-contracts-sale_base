@@ -24,16 +24,7 @@ contract SaleMock is Sale {
         bytes32[] finalizeInfo
     );
 
-    constructor(
-        address payable payoutWallet_,
-        IERC20 payoutToken_
-    )
-        Sale(
-            payoutWallet_,
-            payoutToken_
-        )
-        public
-    {}
+    constructor() public {}
 
     function callUnderscorePurchaseFor(
         address payable purchaser,

@@ -6,14 +6,11 @@ const Sale = artifacts.require('SaleMock');
 
 contract('Sale', function ([
     _,
-    payoutWallet,
     owner,
     operator,
     purchaser,
     ...accounts
 ]) {
-    const PayoutTokenAddress = '0xe19Ec968c15f487E96f631Ad9AA54fAE09A67C8c'; // MANA
-    const Erc20TokenAddress = '0x3750bE154260872270EbA56eEf89E78E6E21C1D9'; // OMG
     const EthAddress = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
     const sku = toBytes32(Constants.Zero);
@@ -44,10 +41,7 @@ contract('Sale', function ([
     }
 
     beforeEach(async function () {
-        this.contract = await Sale.new(
-            payoutWallet,
-            PayoutTokenAddress,
-            { from: owner });
+        this.contract = await Sale.new({ from: owner });
     });
 
     describe('start()', function () {

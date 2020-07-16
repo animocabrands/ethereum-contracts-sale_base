@@ -4,24 +4,19 @@ pragma solidity 0.6.8;
 
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
 import "@animoca/ethereum-contracts-core_library/contracts/utils/Startable.sol";
-import "@animoca/ethereum-contracts-core_library/contracts/payment/PayoutWallet.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../payment/PayoutToken.sol";
 
 /**
  * @title Sale
  * An abstract base contract which defines the events, members, and purchase
  * lifecycle methods for a sale contract.
  */
-abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet, PayoutToken   {
+abstract contract Sale is Context, Ownable, Startable, Pausable   {
 
     using SafeMath for uint256;
-
-    // special address value to represent a payment in ETH
-    IERC20 public constant ETH_ADDRESS = IERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
 
     event Purchased(
         address indexed purchaser,
@@ -47,22 +42,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, PayoutWallet, P
 
     /**
      * Constructor.
-     * @dev Emits the PayoutWalletSet event.
-     * @dev Emits the PayoutTokenSet event.
      * @dev Emits the Paused event.
-     * @param payoutWallet_ The wallet address used to receive purchase payments
-     *  with.
-     * @param payoutToken_ The ERC20 token currency accepted by the payout
-     *  wallet for purchase payments.
      */
-    constructor(
-        address payable payoutWallet_,
-        IERC20 payoutToken_
-    )
-        PayoutWallet(payoutWallet_)
-        PayoutToken(payoutToken_)
-        internal
-    {
+    constructor() internal {
         _pause();
     }
 
