@@ -20,8 +20,6 @@
 
 ### Improvements
  * `FixedSupplyLotSale.sol`: All `require()` function calls are provided with appropriate error messages.
- * `KyberAdapter.sol`: Added `_getMinConversionRate()` to be able to retrieve the minimum conversion rate from a source token currency to a destination token currency.
- * `KyberAdapter.sol`: Added `_convertToken()` overload to perform a source token currency amount conversion for a given minimum conversion rate.
  * `Sale.sol`: Added `virtual` modifier to `start()`, `pause()`, `unpause()`, and `setPayoutToken()` to be able to override the functions.
  * `Sale.sol`: Changed function visibility to `public` on `start()`, `pause()`, `unpause()`, and `setPayoutToken()` to allow internal invocation of the functions, especially for overrides.
  * `Sale.sol`: Removed `view` modifier from `_validatePurchase()` to allow state changes in the function.

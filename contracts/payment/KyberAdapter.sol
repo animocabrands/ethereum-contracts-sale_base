@@ -85,60 +85,6 @@ contract KyberAdapter {
         );
     }
 
-    /**
-     * Retrieves the minimum token currency conversion rate for the specified
-     * source currency amount into the destination tokken currency.
-     * @dev To specify ETH as a conversion currency, use the constant
-     *  KYBER_ETH_ADDRESS.
-     * @param _src Source ERC20 currency to convert from.
-     * @param _srcAmount Reference source currency amount used to derive the
-     *  minimum conversion rate with.
-     * @param _dest Destination ERC20 currency to convert to.
-     * @return _minConversionRate The minimum token currency conversion rate of
-     *  the source currency amount into the destination currency.
-     */
-    function _getMinConversionRate(
-        IERC20 _src,
-        uint256 _srcAmount,
-        IERC20 _dest
-    ) internal view returns (uint256 _minConversionRate) {
-        if (_src == _dest) {
-            _minConversionRate = 1 ether;
-        } else {
-            (, uint amount) = _convertToken(_src, _srcAmount, _dest);
-            (, _minConversionRate) = kyber.getExpectedRate(_dest, _src, amount);
-        }
-    }
-
-    /**
-     * Converts the specified source currency amount into the destination
-     * currency.
-     * @dev To specify ETH as a conversion currency, use the constant
-     *  KYBER_ETH_ADDRESS.
-     * @param _src Source ERC20 currency to convert the source amount from.
-     * @param _srcAmount The source currency amount to convert.
-     * @param _dest Destination ERC20 currency to convert the source amount to.
-     * @param _minConversionRate The minimum token currency conversion rate used
-     *  in the currency conversion calculations.
-     * @return _destAmount The converted source currency amount into the
-     *  destination currency.
-     */
-    function _convertToken(
-        IERC20 _src,
-        uint256 _srcAmount,
-        IERC20 _dest,
-        uint256 _minConversionRate
-    ) internal view returns (uint256 _destAmount) {
-        if (_srcAmount != 0) {
-            if ((_src == _dest) && (_minConversionRate == 1 ether)) {
-                _destAmount = _srcAmount;
-            } else {
-                _destAmount = _ceilingDiv(_srcAmount.mul(10**36), _minConversionRate);
-                _destAmount = _fixTokenDecimals(_src, _dest, _destAmount, true);
-            }
-        }
-    }
-
     function _swapTokenAndHandleChange(
         IERC20 _src,
         uint256 _maxSrcAmount,
