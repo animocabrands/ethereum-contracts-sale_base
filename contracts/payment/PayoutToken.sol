@@ -43,7 +43,7 @@ contract PayoutToken is Ownable
      * @param payoutToken_ The new ERC20 token to accept as the payment
      *  currency.
      */
-    function _setPayoutToken(IERC20 payoutToken_) internal {
+    function _setPayoutToken(IERC20 payoutToken_) internal virtual {
         payoutToken = payoutToken_;
         emit PayoutTokenSet(payoutToken_);
     }
