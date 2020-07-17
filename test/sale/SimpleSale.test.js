@@ -23,7 +23,7 @@ const prices = {
 
 const purchaseData = asciiToHex('some data');
 
-contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
+contract.only('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
     async function doFreshDeploy(params) {
         let payoutToken;
 
@@ -210,7 +210,6 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                                         paymentToken: toChecksumAddress(this.payoutToken),
                                         extData: [
                                             '0x' + totalPrice.toString(16, 64),
-                                            '0x' + unitPrice.toString(16, 64),
                                             padRight(purchaseData, 64)]
                                     });
 
@@ -324,7 +323,7 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                             { value: unitPrice }),
                         useErc20 ?
                             'ERC20: transfer amount exceeds allowance' :
-                            'SimpleSale: insufficient ETH provided');
+                            'SimplePayment: insufficient ETH provided');
                 });
             });
 

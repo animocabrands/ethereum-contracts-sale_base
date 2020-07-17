@@ -118,10 +118,9 @@ contract SimpleSaleMock is SimpleSale {
         bytes32[] memory /* deliveryInfo */,
         bytes32[] memory /* finalizeInfo */
     ) internal override virtual view returns (bytes32[] memory extData) {
-        extData = new bytes32[](3);
+        extData = new bytes32[](2);
         extData[0] = priceInfo[0];
-        extData[1] = priceInfo[1];
-        extData[2] = purchase.extData[0];
+        extData[1] = purchase.extData[0];
     }
 
 }
