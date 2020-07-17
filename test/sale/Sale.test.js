@@ -384,4 +384,20 @@ contract('Sale', function ([
             }
         });
     });
+
+    describe('_getTotalPriceInfo()', function () {
+        it('should return the correct total price info', async function () {
+            const quantity = Constants.One;
+
+            const totalPriceInfo =
+                await this.contract.callUnderscoreGetTotalPriceInfo(
+                    purchaser,
+                    EthAddress,
+                    sku,
+                    quantity,
+                    extData);
+
+            totalPriceInfo.length.should.be.equal(0);
+        });
+    });
 });

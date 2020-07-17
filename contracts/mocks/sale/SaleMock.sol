@@ -236,6 +236,21 @@ contract SaleMock is Sale {
             finalizeInfo);
     }
 
+    function callUnderscoreGetTotalPriceInfo(
+        address payable purchaser,
+        IERC20 paymentToken,
+        bytes32 sku,
+        uint256 quantity,
+        bytes32[] calldata extData
+    ) external view returns (bytes32[] memory totalPriceInfo) {
+        totalPriceInfo = _getTotalPriceInfo(
+            purchaser,
+            paymentToken,
+            sku,
+            quantity,
+            extData);
+    }
+
     function _getPurchaseStruct(
         address payable purchaser,
         bytes32 sku,
@@ -244,10 +259,10 @@ contract SaleMock is Sale {
         bytes32[] memory extData
     ) private view returns (Purchase memory purchase) {
         purchase.purchaser = purchaser;
+        purchase.paymentToken = paymentToken;
         purchase.operator = _msgSender();
         purchase.sku = sku;
         purchase.quantity = quantity;
-        purchase.paymentToken = paymentToken;
         purchase.extData = extData;
     }
 
@@ -270,10 +285,17 @@ contract SaleMock is Sale {
     }
 
     function _calculatePrice(
-        Purchase memory /* purchase */
+        Purchase memory purchase
     ) internal override view returns (bytes32[] memory priceInfo) {
-        priceInfo = new bytes32[](1);
-        priceInfo[0] = bytes32(uint256(1));
+        bytes32[] memory superPriceInfo = super._calculatePrice(purchase);
+
+        priceInfo = new bytes32[](superPriceInfo.length + 1);
+
+        for (uint256 index = 0; index < superPriceInfo.length; ++index) {
+            priceInfo[index] = superPriceInfo[index];
+        }
+
+        priceInfo[superPriceInfo.length] = bytes32(uint256(1));
     }
 
     function _transferFunds(
