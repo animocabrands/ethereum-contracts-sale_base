@@ -21,9 +21,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
     event Purchased(
         address indexed purchaser,
         address operator,
+        IERC20 paymentToken,
         bytes32 indexed sku,
         uint256 indexed quantity,
-        IERC20 paymentToken,
         bytes32[] extData
     );
 
@@ -234,9 +234,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
         emit Purchased(
             purchase.purchaser,
             purchase.operator,
+            purchase.paymentToken,
             purchase.sku,
             purchase.quantity,
-            purchase.paymentToken,
             _getPurchasedEventExtData(
                 purchase,
                 priceInfo,

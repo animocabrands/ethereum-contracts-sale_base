@@ -59,9 +59,9 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
 
     function callUnderscoreValidatePurchase(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] calldata extData
     )
         external
@@ -70,9 +70,9 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
         Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
+                paymentToken,
                 sku,
                 quantity,
-                paymentToken,
                 extData);
 
         _validatePurchase(purchase);
@@ -80,9 +80,9 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
 
     function callUnderscoreDeliverGoods(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] calldata extData
     )
         external
@@ -91,9 +91,9 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
         Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
+                paymentToken,
                 sku,
                 quantity,
-                paymentToken,
                 extData);
 
         bytes32[] memory deliveryInfo = _deliverGoods(purchase);
@@ -103,9 +103,9 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
 
     function callUnderscoreFinalizePurchase(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] calldata extData,
         bytes32[] calldata priceInfo,
         bytes32[] calldata paymentInfo,
@@ -117,9 +117,9 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
         Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
+                paymentToken,
                 sku,
                 quantity,
-                paymentToken,
                 extData);
 
         bytes32[] memory finalizeInfo =
@@ -152,16 +152,16 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
 
     function _getPurchaseStruct(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] memory extData
     ) private view returns (Purchase memory purchase) {
         purchase.purchaser = purchaser;
         purchase.operator = _msgSender();
+        purchase.paymentToken = paymentToken;
         purchase.sku = sku;
         purchase.quantity = quantity;
-        purchase.paymentToken = paymentToken;
         purchase.extData = extData;
     }
 

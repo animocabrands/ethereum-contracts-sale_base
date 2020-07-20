@@ -37,9 +37,9 @@ contract KyberLotSaleMock is KyberLotSale {
 
     function callUnderscoreCalculatePrice(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] calldata extData
     )
         external
@@ -48,9 +48,9 @@ contract KyberLotSaleMock is KyberLotSale {
         Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
+                paymentToken,
                 sku,
                 quantity,
-                paymentToken,
                 extData);
 
         bytes32[] memory priceInfo = _calculatePrice(purchase);
@@ -60,9 +60,9 @@ contract KyberLotSaleMock is KyberLotSale {
 
     function callUnderscoreTransferFunds(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] calldata extData,
         bytes32[] calldata priceInfo
     )
@@ -72,9 +72,9 @@ contract KyberLotSaleMock is KyberLotSale {
         Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
+                paymentToken,
                 sku,
                 quantity,
-                paymentToken,
                 extData);
 
         bytes32[] memory paymentInfo = _transferFunds(purchase, priceInfo);
@@ -101,16 +101,16 @@ contract KyberLotSaleMock is KyberLotSale {
 
     function _getPurchaseStruct(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] memory extData
     ) private view returns (Purchase memory purchase) {
         purchase.purchaser = purchaser;
         purchase.operator = _msgSender();
+        purchase.paymentToken = paymentToken;
         purchase.sku = sku;
         purchase.quantity = quantity;
-        purchase.paymentToken = paymentToken;
         purchase.extData = extData;
     }
 

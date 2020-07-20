@@ -28,9 +28,9 @@ contract SaleMock is Sale {
 
     function callUnderscorePurchaseFor(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] calldata extData
     )
         external
@@ -39,9 +39,9 @@ contract SaleMock is Sale {
         Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
+                paymentToken,
                 sku,
                 quantity,
-                paymentToken,
                 extData);
 
         _purchaseFor(purchase);
@@ -49,9 +49,9 @@ contract SaleMock is Sale {
 
     function callUnderscoreValidatePurchase(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] calldata extData
     )
         external
@@ -60,9 +60,9 @@ contract SaleMock is Sale {
         Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
+                paymentToken,
                 sku,
                 quantity,
-                paymentToken,
                 extData);
 
         _validatePurchase(purchase);
@@ -70,9 +70,9 @@ contract SaleMock is Sale {
 
     function callUnderscoreCalculatePrice(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] calldata extData
     )
         external
@@ -81,9 +81,9 @@ contract SaleMock is Sale {
         Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
+                paymentToken,
                 sku,
                 quantity,
-                paymentToken,
                 extData);
 
         bytes32[] memory priceInfo = _calculatePrice(purchase);
@@ -93,9 +93,9 @@ contract SaleMock is Sale {
 
     function callUnderscoreTransferFunds(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] calldata extData,
         bytes32[] calldata priceInfo
     )
@@ -105,9 +105,9 @@ contract SaleMock is Sale {
         Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
+                paymentToken,
                 sku,
                 quantity,
-                paymentToken,
                 extData);
 
         bytes32[] memory paymentInfo = _transferFunds(purchase, priceInfo);
@@ -117,9 +117,9 @@ contract SaleMock is Sale {
 
     function callUnderscoreDeliverGoods(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] calldata extData
     )
         external
@@ -128,9 +128,9 @@ contract SaleMock is Sale {
         Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
+                paymentToken,
                 sku,
                 quantity,
-                paymentToken,
                 extData);
 
         bytes32[] memory deliveryInfo = _deliverGoods(purchase);
@@ -140,9 +140,9 @@ contract SaleMock is Sale {
 
     function callUnderscoreFinalizePurchase(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] calldata extData,
         bytes32[] calldata priceInfo,
         bytes32[] calldata paymentInfo,
@@ -154,9 +154,9 @@ contract SaleMock is Sale {
         Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
+                paymentToken,
                 sku,
                 quantity,
-                paymentToken,
                 extData);
 
         bytes32[] memory finalizeInfo =
@@ -167,9 +167,9 @@ contract SaleMock is Sale {
 
     function callUnderscoreNotifyPurchased(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] calldata extData,
         bytes32[] calldata priceInfo,
         bytes32[] calldata paymentInfo,
@@ -182,9 +182,9 @@ contract SaleMock is Sale {
         Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
+                paymentToken,
                 sku,
                 quantity,
-                paymentToken,
                 extData);
 
         _notifyPurchased(
@@ -197,17 +197,17 @@ contract SaleMock is Sale {
 
     function callUnderscoreGetPurchasedEventExtData(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] calldata extData
     ) external view returns (bytes32[] memory extData_) {
         Purchase memory purchase =
             _getPurchaseStruct(
                 purchaser,
+                paymentToken,
                 sku,
                 quantity,
-                paymentToken,
                 extData);
 
         bytes32[] memory priceInfo = new bytes32[](1);
@@ -253,14 +253,14 @@ contract SaleMock is Sale {
 
     function _getPurchaseStruct(
         address payable purchaser,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        IERC20 paymentToken,
         bytes32[] memory extData
     ) private view returns (Purchase memory purchase) {
         purchase.purchaser = purchaser;
-        purchase.paymentToken = paymentToken;
         purchase.operator = _msgSender();
+        purchase.paymentToken = paymentToken;
         purchase.sku = sku;
         purchase.quantity = quantity;
         purchase.extData = extData;

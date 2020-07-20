@@ -18,6 +18,7 @@
  * `KyberAdapter.sol`: Renamed `ceilingDiv()` to `_ceilingDiv()` to conform with internal function naming conventions.
  * `SimpleSale.sol`: Revert sub-messages refactored to lowercase.
  * `SimpleSale.sol`: State mutability of `_validatePurchase()` and `_calculatePrice()` is restricted to `view`.
+ * `purchaseFor()` function arguments have been re-ordered.
 
 ### Improvements
  * `FixedSupplyLotSale.sol`: All `require()` function calls are provided with appropriate error messages.
