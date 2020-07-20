@@ -96,7 +96,7 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
      *  information for.
      * @param extData Implementation-specific extra input data.
      * @return totalPriceInfo Implementation-specific total price information
-     *  (0:payment amount, 1:minimum conversion rate).
+     *  (0:total payment amount, 1:minimum conversion rate).
      */
     function _getTotalPriceInfo(
         address payable purchaser,
