@@ -10,10 +10,6 @@ contract KyberPaymentMock is KyberPayment {
         bytes32[] paymentTransfersInfo
     );
 
-    event UnderscoreHandlePaymentAmountResult(
-        bytes32[] paymentAmountInfo
-    );
-
     constructor(
         address payable payoutWallet_,
         IERC20 payoutToken_,
@@ -21,7 +17,7 @@ contract KyberPaymentMock is KyberPayment {
     )
         KyberPayment(
             payoutWallet_,
-            payoutToken,
+            payoutToken_,
             kyberProxy
         )
         public
@@ -52,13 +48,11 @@ contract KyberPaymentMock is KyberPayment {
         IERC20 paymentToken,
         uint256 paymentAmount,
         bytes32[] calldata extData
-    ) external {
-        bytes32[] memory paymentAmountInfo = _handlePaymentAmount(
+    ) external view returns (bytes32[] memory paymentAmountInfo) {
+        paymentAmountInfo = _handlePaymentAmount(
             paymentToken,
             paymentAmount,
             extData);
-
-        emit UnderscoreHandlePaymentAmountResult(paymentAmountInfo);
     }
 
 }
