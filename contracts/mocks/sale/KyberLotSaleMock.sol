@@ -6,16 +6,8 @@ import "../../sale/KyberLotSale.sol";
 
 contract KyberLotSaleMock is KyberLotSale {
 
-    event UnderscoreCalculatePriceResult(
-        bytes32[] priceInfo
-    );
-
     event UnderscoreTransferFundsResult(
         bytes32[] paymentInfo
-    );
-
-    event UnderscoreGetTotalPriceInfoResult(
-        bytes32[] totalPriceInfo
     );
 
     constructor(
@@ -42,8 +34,8 @@ contract KyberLotSaleMock is KyberLotSale {
         uint256 quantity,
         bytes32[] calldata extData
     )
-        external
-        payable
+        external view
+        returns (bytes32[] memory priceInfo)
     {
         Purchase memory purchase =
             _getPurchaseStruct(
@@ -53,9 +45,7 @@ contract KyberLotSaleMock is KyberLotSale {
                 quantity,
                 extData);
 
-        bytes32[] memory priceInfo = _calculatePrice(purchase);
-
-        emit UnderscoreCalculatePriceResult(priceInfo);
+        priceInfo = _calculatePrice(purchase);
     }
 
     function callUnderscoreTransferFunds(
@@ -88,15 +78,13 @@ contract KyberLotSaleMock is KyberLotSale {
         bytes32 sku,
         uint256 quantity,
         bytes32[] calldata extData
-    ) external {
-        bytes32[] memory totalPriceInfo = _getTotalPriceInfo(
+    ) external view returns (bytes32[] memory totalPriceInfo) {
+        totalPriceInfo = _getTotalPriceInfo(
             purchaser,
             paymentToken,
             sku,
             quantity,
             extData);
-
-        emit UnderscoreGetTotalPriceInfoResult(totalPriceInfo);
     }
 
     function _getPurchaseStruct(

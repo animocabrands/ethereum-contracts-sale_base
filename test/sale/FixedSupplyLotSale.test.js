@@ -62,7 +62,6 @@ contract('FixedSupplyLotSale', function ([
 
         const sale = await Sale.new(
             payoutWallet,
-            PayoutTokenAddress,
             ftCollectionId,
             this.inventory.address,
             { from: owner });
@@ -75,16 +74,6 @@ contract('FixedSupplyLotSale', function ([
             { from: owner });
 
         this.sale = sale;
-    });
-
-    describe('setPayoutToken()', function () {
-        it('should revert if if the payout token is the zero address', async function () {
-            await expectRevert(
-                this.sale.setPayoutToken(
-                    Constants.ZeroAddress,
-                    { from: owner }),
-                'FixedSupplyLotSale: zero address payout token');
-        });
     });
 
     describe('setFungibleTokenId()', function () {
@@ -654,9 +643,9 @@ contract('FixedSupplyLotSale', function ([
             await expectRevert(
                 this.sale.callUnderscoreValidatePurchase(
                     recipient,
+                    tokenAddress,
                     toBytes32(lotId),
                     quantity,
-                    tokenAddress,
                     [ extDataString ].map(item => toBytes32(item)),
                     txParams),
                 error);
@@ -743,44 +732,6 @@ contract('FixedSupplyLotSale', function ([
         });
     });
 
-    describe('_calculatePrice()', function () {
-        const quantity = Constants.One;
-        const tokenAddress = EthAddress;
-
-        beforeEach(async function () {
-            this.lot = await this.sale._lots(lotId);
-
-            const pricingInfoReceipt = await this.sale.callUnderscoreCalculatePrice(
-                recipient,
-                sku,
-                quantity,
-                tokenAddress,
-                [], // extData
-                { from: operator });
-
-            const calculatePriceEvents = await this.sale.getPastEvents(
-                'UnderscoreCalculatePriceResult',
-                {
-                    fromBlock: 0,
-                    toBlock: 'latest'
-                });
-
-            this.calculatePriceResult = calculatePriceEvents[0].args;
-        });
-
-        it('should return correct total price pricing info', async function () {
-            const expectedTotalPrice = this.lot.price.mul(quantity);
-            const actualTotalPrice = toBN(this.calculatePriceResult.priceInfo[0]);
-            expectedTotalPrice.should.be.bignumber.equal(actualTotalPrice);
-        });
-
-        it('should return correct total discounts pricing info', async function () {
-            const expectedTotalDiscounts = Constants.Zero;
-            const actualTotalDiscounts = toBN(this.calculatePriceResult.priceInfo[1]);
-            expectedTotalDiscounts.should.be.bignumber.equal(actualTotalDiscounts);
-        });
-    });
-
     describe('_deliverGoods()', function () {
         const quantity = Constants.One;
         const tokenAddress = EthAddress;
@@ -791,9 +742,9 @@ contract('FixedSupplyLotSale', function ([
 
             await this.sale.callUnderscoreDeliverGoods(
                 recipient,
+                tokenAddress,
                 sku,
                 quantity,
-                tokenAddress,
                 [], // extData
                 { from: operator });
 
@@ -831,9 +782,9 @@ contract('FixedSupplyLotSale', function ([
 
             await this.sale.callUnderscoreFinalizePurchase(
                 recipient,
+                tokenAddress,
                 sku,
                 quantity,
-                tokenAddress,
                 [], // extData
                 [], // priceInfo
                 [], // paymentInfo
@@ -863,28 +814,24 @@ contract('FixedSupplyLotSale', function ([
         });
     });
 
-    describe('_getPrice()', function () {
+    describe('_getTotalPriceInfo()', function () {
         const quantity = Constants.One;
 
         beforeEach(async function () {
             this.lot = await this.sale._lots(lotId);
 
-            this.priceInfo = await this.sale.callUnderscoreGetPrice(
+            this.totalPriceInfo = await this.sale.callUnderscoreGetTotalPriceInfo(
                 recipient,
-                lotId,
-                quantity);
+                PayoutTokenAddress,
+                sku,
+                quantity,
+                []);
         });
 
         it('should return correct total price pricing info', async function () {
             const expectedTotalPrice = this.lot.price.mul(quantity);
-            const actualTotalPrice = this.priceInfo.totalPrice;
+            const actualTotalPrice = toBN(this.totalPriceInfo[0]);
             expectedTotalPrice.should.be.bignumber.equal(actualTotalPrice);
-        });
-
-        it('should return correct total discounts pricing info', async function () {
-            const expectedTotalDiscounts = Constants.Zero;
-            const actualTotalDiscounts = this.priceInfo.totalDiscounts;
-            expectedTotalDiscounts.should.be.bignumber.equal(actualTotalDiscounts);
         });
     });
 });

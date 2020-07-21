@@ -23,7 +23,7 @@ const prices = {
 
 const purchaseData = asciiToHex('some data');
 
-contract.only('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
+contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
     async function doFreshDeploy(params) {
         let payoutToken;
 
@@ -113,14 +113,14 @@ contract.only('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
 
     describe('Purchasing', async function () {
         function simplePurchase(payout, owner, operator, purchaser, useErc20) {
-            async function getPrice(sale, purchaseId, quantity, paymentToken) {
+            async function getPrice(sale, paymentToken, purchaseId, quantity) {
                 const sku = asciiToHex(purchaseId);
                 const { ethPrice, erc20Price } = await sale.getPrice(sku);
                 return (paymentToken == EthAddress) ? ethPrice.mul(new BN(quantity)) : erc20Price.mul(new BN(quantity));
             }
 
-            async function purchaseFor(sale, purchaser, purchaseId, quantity, paymentToken, operator, overrides) {
-                const price = await getPrice(sale, purchaseId, quantity, paymentToken);
+            async function purchaseFor(sale, purchaser, paymentToken, purchaseId, quantity, operator, overrides) {
+                const price = await getPrice(sale, paymentToken, purchaseId, quantity);
 
                 let value = price;
 
@@ -177,7 +177,7 @@ contract.only('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
 
                             this.test.title = `purchasing ${quantity.toString()} * '${purchaseId}' for ${fromWei(totalPrice.toString())} ${this.payoutToken == EthAddress ? 'ETH' : 'ERC20'}`;
 
-                            const priceFromContract = await getPrice(this.contract, purchaseId, quantity, this.payoutToken);
+                            const priceFromContract = await getPrice(this.contract, this.payoutToken, purchaseId, quantity);
                             priceFromContract.should.be.bignumber.equal(totalPrice);
 
                             if (totalPrice.eq(Zero)) {
@@ -185,9 +185,9 @@ contract.only('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                                     purchaseFor(
                                         this.contract,
                                         purchaser,
+                                        this.payoutToken,
                                         purchaseId,
                                         quantity,
-                                        this.payoutToken,
                                         operator),
                                     'SimpleSale: invalid SKU');
                             } else {
@@ -196,7 +196,7 @@ contract.only('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                                         await balance.current(operator) :
                                         await getBalance(this.payoutToken, operator);
 
-                                const receipt = await purchaseFor(this.contract, purchaser, purchaseId, quantity, this.payoutToken, operator, {value: totalPrice.add(overvalue)});
+                                const receipt = await purchaseFor(this.contract, purchaser, this.payoutToken, purchaseId, quantity, operator, {value: totalPrice.add(overvalue)});
 
                                 expectEvent.inTransaction(
                                     receipt.tx,
@@ -249,9 +249,9 @@ contract.only('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                             purchaseFor(
                                 this.contract,
                                 ZeroAddress,
+                                this.payoutToken,
                                 purchaseId,
                                 One,
-                                this.payoutToken,
                                 purchaser),
                             'SimpleSale: purchaser cannot be the zero address');
                     }
@@ -263,9 +263,9 @@ contract.only('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                             purchaseFor(
                                 this.contract,
                                 this.contract.address,
+                                this.payoutToken,
                                 purchaseId,
                                 One,
-                                this.payoutToken,
                                 purchaser),
                             'SimpleSale: purchaser cannot be the contract address');
                     }
@@ -277,9 +277,9 @@ contract.only('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                             purchaseFor(
                                 this.contract,
                                 purchaser,
+                                this.payoutToken,
                                 purchaseId,
                                 Zero,
-                                this.payoutToken,
                                 purchaser),
                             'SimpleSale: quantity cannot be zero');
                     }
@@ -290,9 +290,9 @@ contract.only('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                         purchaseFor(
                             this.contract,
                             purchaser,
+                            '0xe19Ec968c15f487E96f631Ad9AA54fAE09A67C8c',
                             'both',
                             One,
-                            '0xe19Ec968c15f487E96f631Ad9AA54fAE09A67C8c',
                             purchaser),
                         'SimpleSale: payment token is unsupported');
                 });
@@ -302,23 +302,23 @@ contract.only('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                         purchaseFor(
                             this.contract,
                             purchaser,
+                            this.payoutToken,
                             'invalid',
                             One,
-                            this.payoutToken,
                             purchaser),
                         'SimpleSale: invalid SKU');
                 });
 
                 it('when the value is insufficient', async function () {
-                    const unitPrice = await getPrice(this.contract, 'both', One, this.payoutToken);
+                    const unitPrice = await getPrice(this.contract, this.payoutToken, 'both', One);
 
                     await expectRevert(
                         purchaseFor(
                             this.contract,
                             purchaser,
+                            this.payoutToken,
                             'both',
                             Two,
-                            this.payoutToken,
                             purchaser,
                             { value: unitPrice }),
                         useErc20 ?

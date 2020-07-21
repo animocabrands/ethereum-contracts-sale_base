@@ -15,10 +15,6 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
         bytes32[] finalizeInfo
     );
 
-    event UnderscoreGetTotalPriceInfoResult(
-        bytes32[] totalPriceInfo
-    );
-
     constructor(
         address payable payoutWallet_,
         uint256 fungibleTokenId,
@@ -134,15 +130,13 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
         bytes32 sku,
         uint256 quantity,
         bytes32[] calldata extData
-    ) external {
-        bytes32[] memory totalPriceInfo = _getTotalPriceInfo(
+    ) external view returns (bytes32[] memory totalPriceInfo) {
+        totalPriceInfo = _getTotalPriceInfo(
             purchaser,
             paymentToken,
             sku,
             quantity,
             extData);
-
-        emit UnderscoreGetTotalPriceInfoResult(totalPriceInfo);
     }
 
     function _transferFunds(

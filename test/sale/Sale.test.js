@@ -214,9 +214,9 @@ contract('Sale', function ([
             await expectRevert(
                 this.contract.callUnderscoreValidatePurchase(
                     purchaser,
+                    EthAddress,
                     toBytes32(Constants.One),
                     Constants.One,
-                    EthAddress,
                     extData,
                     { value: Constants.One }),
                 'SaleMock: invalid sku');
@@ -229,9 +229,9 @@ contract('Sale', function ([
 
             const receipt = await this.contract.callUnderscoreCalculatePrice(
                 purchaser,
+                EthAddress,
                 sku,
                 quantity,
-                EthAddress,
                 extData,
                 { value: quantity });
 
@@ -248,9 +248,9 @@ contract('Sale', function ([
 
             const receipt = await this.contract.callUnderscoreTransferFunds(
                 purchaser,
+                EthAddress,
                 sku,
                 quantity,
-                EthAddress,
                 extData,
                 [], // priceInfo
                 { value: quantity });
@@ -268,9 +268,9 @@ contract('Sale', function ([
 
             const receipt = await this.contract.callUnderscoreDeliverGoods(
                 purchaser,
+                EthAddress,
                 sku,
                 quantity,
-                EthAddress,
                 extData,
                 { value: quantity });
 
@@ -287,9 +287,9 @@ contract('Sale', function ([
 
             const receipt = await this.contract.callUnderscoreFinalizePurchase(
                 purchaser,
+                EthAddress,
                 sku,
                 quantity,
-                EthAddress,
                 extData,
                 [], // priceInfo
                 [], // paymentInfo
@@ -310,9 +310,9 @@ contract('Sale', function ([
 
             const receipt = await this.contract.callUnderscoreNotifyPurchased(
                 purchaser,
+                paymentToken,
                 sku,
                 quantity,
-                paymentToken,
                 extData,
                 [
                     toBytes32(new BN(9)),
@@ -370,9 +370,9 @@ contract('Sale', function ([
             const purchasedEventExtData =
                 await this.contract.callUnderscoreGetPurchasedEventExtData(
                     purchaser,
+                    EthAddress,
                     sku,
                     quantity,
-                    EthAddress,
                     extData);
 
             let offset = 0;
