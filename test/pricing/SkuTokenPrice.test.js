@@ -596,112 +596,213 @@ contract('SkuTokenPrice', function ([
                 'SkuTokenPrice: token/price list mis-match');
         });
 
-        it('should not set the price with empty token prices', async function () {
-            await this.contract.setPrices(
-                this.skus[0],
-                [this.tokens[0]],
-                [this.prices[0]]);
+        context('when setting an empty sku token price', function () {
+            it('should set the correct token prices', async function () {
+                await this.contract.setPrices(
+                    this.skus[0],
+                    [this.tokens[0]],
+                    [this.prices[0]]);
 
-            let price = await this.contract.getPrice(
-                this.skus[0],
-                this.tokens[0]);
+                let price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[0]);
 
-            price.should.be.bignumber.equal(this.prices[0]);
+                price.should.be.bignumber.equal(this.prices[0]);
 
-            price = await this.contract.getPrice(
-                this.skus[0],
-                this.tokens[1]);
+                price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[1]);
 
-            price.should.be.bignumber.equal(Zero);
+                price.should.be.bignumber.equal(Zero);
 
-            await this.contract.setPrices(
-                this.skus[0],
-                [],
-                []);
+                await this.contract.setPrices(
+                    this.skus[0],
+                    [],
+                    []);
 
-            price = await this.contract.getPrice(
-                this.skus[0],
-                this.tokens[0]);
+                price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[0]);
 
-            price.should.be.bignumber.equal(this.prices[0]);
+                price.should.be.bignumber.equal(this.prices[0]);
 
-            price = await this.contract.getPrice(
-                this.skus[0],
-                this.tokens[1]);
+                price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[1]);
 
-            price.should.be.bignumber.equal(Zero);
+                price.should.be.bignumber.equal(Zero);
+            });
+
+            it('should return the correct previous token prices', async function () {
+                await this.contract.setPrices(
+                    this.skus[0],
+                    [this.tokens[0]],
+                    [this.prices[0]]);
+
+                let price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[0]);
+
+                price.should.be.bignumber.equal(this.prices[0]);
+
+                price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[1]);
+
+                price.should.be.bignumber.equal(Zero);
+
+                const receipt = await this.contract.setPrices(
+                    this.skus[0],
+                    [],
+                    []);
+
+                expectEvent.inTransaction(
+                    receipt.tx,
+                    this.contract,
+                    'SetPricesResult',
+                    { prevPrices: [] });
+            });
         });
 
-        it('should set a single sku token price', async function () {
-            await this.contract.setPrices(
-                this.skus[0],
-                [this.tokens[0]],
-                [this.prices[0]]);
+        context('when setting a single sku token price', function () {
+            it('should set the correct token prices', async function () {
+                await this.contract.setPrices(
+                    this.skus[0],
+                    [this.tokens[0]],
+                    [this.prices[0]]);
 
-            let price = await this.contract.getPrice(
-                this.skus[0],
-                this.tokens[0]);
+                let price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[0]);
 
-            price.should.be.bignumber.equal(this.prices[0]);
+                price.should.be.bignumber.equal(this.prices[0]);
 
-            price = await this.contract.getPrice(
-                this.skus[0],
-                this.tokens[1]);
+                price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[1]);
 
-            price.should.be.bignumber.equal(Zero);
+                price.should.be.bignumber.equal(Zero);
 
-            await this.contract.setPrices(
-                this.skus[0],
-                [this.tokens[0]],
-                [this.prices[1]]);
+                await this.contract.setPrices(
+                    this.skus[0],
+                    [this.tokens[0]],
+                    [this.prices[1]]);
 
-            price = await this.contract.getPrice(
-                this.skus[0],
-                this.tokens[0]);
+                price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[0]);
 
-            price.should.be.bignumber.equal(this.prices[1]);
+                price.should.be.bignumber.equal(this.prices[1]);
 
-            price = await this.contract.getPrice(
-                this.skus[0],
-                this.tokens[1]);
+                price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[1]);
 
-            price.should.be.bignumber.equal(Zero);
+                price.should.be.bignumber.equal(Zero);
+            });
+
+            it('should return the correct previous token prices', async function () {
+                await this.contract.setPrices(
+                    this.skus[0],
+                    [this.tokens[0]],
+                    [this.prices[0]]);
+
+                let price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[0]);
+
+                price.should.be.bignumber.equal(this.prices[0]);
+
+                price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[1]);
+
+                price.should.be.bignumber.equal(Zero);
+
+                const receipt = await this.contract.setPrices(
+                    this.skus[0],
+                    [this.tokens[0]],
+                    [this.prices[1]]);
+
+                expectEvent.inTransaction(
+                    receipt.tx,
+                    this.contract,
+                    'SetPricesResult',
+                    { prevPrices: [this.prices[0].toString()] });
+            });
         });
 
-        it('should set multiple sku token prices', async function () {
-            await this.contract.setPrices(
-                this.skus[0],
-                [this.tokens[0], this.tokens[1]],
-                [this.prices[0], this.prices[1]]);
+        context('when setting multiple sku token prices', function () {
+            it('should set the correct token prices', async function () {
+                await this.contract.setPrices(
+                    this.skus[0],
+                    [this.tokens[0], this.tokens[1]],
+                    [this.prices[0], this.prices[1]]);
 
-            let price = await this.contract.getPrice(
-                this.skus[0],
-                this.tokens[0]);
+                let price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[0]);
 
-            price.should.be.bignumber.equal(this.prices[0]);
+                price.should.be.bignumber.equal(this.prices[0]);
 
-            price = await this.contract.getPrice(
-                this.skus[0],
-                this.tokens[1]);
+                price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[1]);
 
-            price.should.be.bignumber.equal(this.prices[1]);
+                price.should.be.bignumber.equal(this.prices[1]);
 
-            await this.contract.setPrices(
-                this.skus[0],
-                [this.tokens[0], this.tokens[1]],
-                [this.prices[2], this.prices[3]]);
+                await this.contract.setPrices(
+                    this.skus[0],
+                    [this.tokens[0], this.tokens[1]],
+                    [this.prices[2], this.prices[3]]);
 
-            price = await this.contract.getPrice(
-                this.skus[0],
-                this.tokens[0]);
+                price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[0]);
 
-            price.should.be.bignumber.equal(this.prices[2]);
+                price.should.be.bignumber.equal(this.prices[2]);
 
-            price = await this.contract.getPrice(
-                this.skus[0],
-                this.tokens[1]);
+                price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[1]);
 
-            price.should.be.bignumber.equal(this.prices[3]);
+                price.should.be.bignumber.equal(this.prices[3]);
+            });
+
+            it('should return the correct previous token prices', async function () {
+                await this.contract.setPrices(
+                    this.skus[0],
+                    [this.tokens[0], this.tokens[1]],
+                    [this.prices[0], this.prices[1]]);
+
+                let price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[0]);
+
+                price.should.be.bignumber.equal(this.prices[0]);
+
+                price = await this.contract.getPrice(
+                    this.skus[0],
+                    this.tokens[1]);
+
+                price.should.be.bignumber.equal(this.prices[1]);
+
+                const receipt = await this.contract.setPrices(
+                    this.skus[0],
+                    [this.tokens[0], this.tokens[1]],
+                    [this.prices[2], this.prices[3]]);
+
+                expectEvent.inTransaction(
+                    receipt.tx,
+                    this.contract,
+                    'SetPricesResult',
+                    {
+                        prevPrices: [
+                            this.prices[0].toString(),
+                            this.prices[1].toString()
+                        ]
+                    });
+            });
         });
     });
 });

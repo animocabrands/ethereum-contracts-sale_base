@@ -8,6 +8,8 @@ contract SkuTokenPriceMock {
 
     event AddRemoveResult(bool[] result);
 
+    event SetPricesResult(uint256[] prevPrices);
+
     using SkuTokenPrice for SkuTokenPrice.Manager;
 
     SkuTokenPrice.Manager private _manager;
@@ -99,7 +101,8 @@ contract SkuTokenPriceMock {
         IERC20[] calldata tokens,
         uint256[] calldata prices
     ) external {
-        _manager.setPrices(sku, tokens, prices);
+        uint256[] memory prevPrices = _manager.setPrices(sku, tokens, prices);
+        emit SetPricesResult(prevPrices);
     }
 
 }

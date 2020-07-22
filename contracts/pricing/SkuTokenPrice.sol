@@ -265,13 +265,17 @@ library SkuTokenPrice {
      * @param sku The SKU item whose token price will be set.
      * @param tokens The list of ERC20 tokens whose SKU price will be set.
      * @param prices The list of prices to set with.
+     * @return prevPrices The list of previous SKU token prices.
      */
     function setPrices(
         Manager storage manager,
         bytes32 sku,
         IERC20[] memory tokens,
         uint256[] memory prices
-    ) internal {
+    )
+        internal
+        returns (uint256[] memory prevPrices)
+    {
         require(
             manager.skus.contains(sku),
             "SkuTokenPrice: non-existent sku");
@@ -282,6 +286,8 @@ library SkuTokenPrice {
 
         uint256 numItems = tokens.length;
 
+        prevPrices = new uint256[](numItems);
+
         for (uint256 index = 0; index != numItems; ++index) {
             IERC20 token = tokens[index];
 
@@ -289,9 +295,9 @@ library SkuTokenPrice {
                 manager.tokens.contains(bytes32(uint256(address(token)))),
                 "SkuTokenPrice: unsupported token");
 
-            uint256 price = prices[index];
+            prevPrices[index] = manager.skuTokenPrices[sku][token];
 
-            manager.skuTokenPrices[sku][token] = price;
+            manager.skuTokenPrices[sku][token] = prices[index];
         }
     }
 
