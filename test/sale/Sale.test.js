@@ -1,4 +1,4 @@
-const { BN, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
+const { BN, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const Constants = require('@animoca/ethereum-contracts-core_library').constants;
 const { toHex, padLeft } = require('web3-utils');
 
@@ -131,6 +131,176 @@ contract('Sale', function ([
             await this.contract.unpause({ from: owner });
 
             await shouldHavePausedTheSale.bind(this, false);
+        });
+    });
+
+    describe('addInventorySkus()', function () {
+        context('when adding zero skus', function () {
+            it('should emit the InventorySkusAdded event', async function () {
+                const skus = [].map(item => toBytes32(item));
+                const receipt = await this.contract.addInventorySkus(skus, { from: owner});
+
+                expectEvent.inTransaction(
+                    receipt.tx,
+                    this.contract,
+                    'InventorySkusAdded',
+                    {
+                        skus: skus,
+                        added: []
+                    });
+            });
+        });
+
+        context('when adding one sku', function () {
+            it('should emit the InventorySkusAdded event', async function () {
+                const skus = [Constants.Zero].map(item => toBytes32(item));
+                const receipt = await this.contract.addInventorySkus(skus, { from: owner});
+
+                expectEvent.inTransaction(
+                    receipt.tx,
+                    this.contract,
+                    'InventorySkusAdded',
+                    {
+                        skus: skus,
+                        added: [true]
+                    });
+            });
+        });
+
+        context('when adding multiple skus', function () {
+            it('should emit the InventorySkusAdded event', async function () {
+                const skus = [Constants.Zero, Constants.One].map(item => toBytes32(item));
+                const receipt = await this.contract.addInventorySkus(skus, { from: owner});
+
+                expectEvent.inTransaction(
+                    receipt.tx,
+                    this.contract,
+                    'InventorySkusAdded',
+                    {
+                        skus: skus,
+                        added: [true, true]
+                    });
+            });
+        });
+    });
+
+    describe('addSupportedPayoutTokens()', function () {
+        context('when adding zero tokens', function () {
+            it('should emit the SupportedPayoutTokensAdded event', async function () {
+                const tokens = [];
+                const receipt = await this.contract.addSupportedPayoutTokens(tokens, { from: owner});
+
+                expectEvent.inTransaction(
+                    receipt.tx,
+                    this.contract,
+                    'SupportedPayoutTokensAdded',
+                    {
+                        tokens: tokens,
+                        added: []
+                    });
+            });
+        });
+
+        context('when adding one token', function () {
+            it('should emit the SupportedPayoutTokensAdded event', async function () {
+                const tokens = [Constants.ZeroAddress];
+                const receipt = await this.contract.addSupportedPayoutTokens(tokens, { from: owner});
+
+                expectEvent.inTransaction(
+                    receipt.tx,
+                    this.contract,
+                    'SupportedPayoutTokensAdded',
+                    {
+                        tokens: tokens,
+                        added: [true]
+                    });
+            });
+        });
+
+        context('when adding multiple tokens', function () {
+            it('should emit the SupportedPayoutTokensAdded event', async function () {
+                const tokens = [Constants.ZeroAddress, EthAddress];
+                const receipt = await this.contract.addSupportedPayoutTokens(tokens, { from: owner});
+
+                expectEvent.inTransaction(
+                    receipt.tx,
+                    this.contract,
+                    'SupportedPayoutTokensAdded',
+                    {
+                        tokens: tokens,
+                        added: [true, true]
+                    });
+            });
+        });
+    });
+
+    describe('setSkuTokenPrices()', function () {
+        beforeEach(async function () {
+            this.sku = toBytes32(Constants.Zero);
+            this.tokens = [Constants.ZeroAddress, EthAddress];
+            this.prices = [ether('1'), ether('10')].map(item => item.toString());
+            await this.contract.addInventorySkus([this.sku], { from: owner});
+            await this.contract.addSupportedPayoutTokens(this.tokens, { from: owner});
+        });
+
+        context('when setting zero prices', function () {
+            it('should emit the SkuTokenPricesUpdated event', async function () {
+                const sku = this.sku;
+                const tokens = [];
+                const prices = [];
+                const receipt = await this.contract.setSkuTokenPrices(sku, tokens, prices, { from: owner});
+
+                expectEvent.inTransaction(
+                    receipt.tx,
+                    this.contract,
+                    'SkuTokenPricesUpdated',
+                    {
+                        sku: sku,
+                        tokens: tokens,
+                        prices: prices,
+                        prevPrices: [].map(item => item.toString())
+                    });
+            });
+        });
+
+        context('when setting one price', function () {
+            it('should emit the SkuTokenPricesUpdated event', async function () {
+                const sku = this.sku;
+                const tokens = [this.tokens[0]];
+                const prices = [this.prices[0]];
+                const receipt = await this.contract.setSkuTokenPrices(sku, tokens, prices, { from: owner});
+
+                expectEvent.inTransaction(
+                    receipt.tx,
+                    this.contract,
+                    'SkuTokenPricesUpdated',
+                    {
+                        sku: sku,
+                        tokens: tokens,
+                        prices: prices,
+                        prevPrices: [Constants.Zero].map(item => item.toString())
+                    });
+            });
+        });
+
+        context('when setting multiple prices', function () {
+            it('should emit the SkuTokenPricesUpdated event', async function () {
+                const sku = this.sku;
+                const tokens = [this.tokens[0], this.tokens[1]];
+                const prices = [this.prices[0], this.prices[1]];
+                const receipt = await this.contract.setSkuTokenPrices(sku, tokens, prices, { from: owner});
+
+                expectEvent.inTransaction(
+                    receipt.tx,
+                    this.contract,
+                    'SkuTokenPricesUpdated',
+                    {
+                        sku: sku,
+                        tokens: tokens,
+                        prices: prices,
+                        prevPrices: [Constants.Zero, Constants.Zero].map(item => item.toString())
+                    });
+            });
         });
     });
 

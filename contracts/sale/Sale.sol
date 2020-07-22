@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "../pricing/SkuTokenPrice.sol";
 
 /**
  * @title Sale
@@ -17,6 +18,24 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 abstract contract Sale is Context, Ownable, Startable, Pausable   {
 
     using SafeMath for uint256;
+    using SkuTokenPrice for SkuTokenPrice.Manager;
+
+    event InventorySkusAdded(
+        bytes32[] skus,
+        bool[] added
+    );
+
+    event SupportedPayoutTokensAdded(
+        IERC20[] tokens,
+        bool[] added
+    );
+
+    event SkuTokenPricesUpdated(
+        bytes32 sku,
+        IERC20[] tokens,
+        uint256[] prices,
+        uint256[] prevPrices
+    );
 
     event Purchased(
         address indexed purchaser,
@@ -39,6 +58,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
         uint256 quantity;
         bytes32[] extData;
     }
+
+    SkuTokenPrice.Manager internal _skuTokenPrices;
 
     /**
      * Constructor.
@@ -81,6 +102,66 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
      */
     function unpause() public virtual onlyOwner whenStarted {
         _unpause();
+    }
+
+    /**
+     * Adds a list of inventory SKUs to make available for purchase.
+     * @dev Emits the InventorySkusUpdated event.
+     * @dev Reverts if called by any other than the owner.
+     * @param skus List of inventory SKUs to add.
+     * @return added List of state flags indicating whether or not the
+     *  corresponding inventory SKU has been added.
+     */
+    function addInventorySkus(
+        bytes32[] calldata skus
+    )
+        external onlyOwner
+        returns (bool[] memory added)
+    {
+        added = _skuTokenPrices.addSkus(skus);
+        emit InventorySkusAdded(skus, added);
+    }
+
+    /**
+     * Adds a list of ERC20 tokens to add to the supported list of payout
+     * tokens.
+     * @dev Emits the SupportedPayoutTokensUpdated event.
+     * @dev Reverts if called by any other than the owner.
+     * @param tokens List of ERC20 tokens to add.
+     * @return added List of state flags indicating whether or not the
+     *  corresponding ERC20 token has been added.
+     */
+    function addSupportedPayoutTokens(
+        IERC20[] calldata tokens
+    )
+        external onlyOwner
+        returns (bool[] memory added)
+    {
+        added = _skuTokenPrices.addTokens(tokens);
+        emit SupportedPayoutTokensAdded(tokens, added);
+    }
+
+    /**
+     * Sets the token prices for the specified inventory SKU.
+     * @dev Emits the SkuTokenPricesUpdated event.
+     * @dev Reverts if called by any other than the owner.
+     * @dev Reverts if the specified SKU does not exist.
+     * @dev Reverts if the token/price list lengths are not aligned.
+     * @dev Reverts if any of the specified ERC20 tokens are unsupported.
+     * @param sku The SKU whose token prices will be set.
+     * @param tokens The list of SKU payout tokens to set the price for.
+     * @param prices The list of SKU token prices to set with.
+     */
+    function setSkuTokenPrices(
+        bytes32 sku,
+        IERC20[] calldata tokens,
+        uint256[] calldata prices
+    )
+        external onlyOwner
+        returns (uint256[] memory prevPrices)
+    {
+        prevPrices = _skuTokenPrices.setPrices(sku, tokens, prices);
+        emit SkuTokenPricesUpdated(sku, tokens, prices, prevPrices);
     }
 
     /**
