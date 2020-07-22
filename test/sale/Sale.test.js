@@ -135,6 +135,29 @@ contract('Sale', function ([
     });
 
     describe('addInventorySkus()', function () {
+        beforeEach(async function () {
+            await this.contract.start({ from: owner });
+            await this.contract.pause({ from: owner })
+        });
+
+        it('reverts if called by any other than the owner', async function () {
+            const skus = [Constants.Zero].map(item => toBytes32(item));
+
+            await expectRevert(
+                this.contract.addInventorySkus(skus, { from: purchaser }),
+                'Ownable: caller is not the owner');
+        });
+
+        it('reverts if the contract is not paused', async function () {
+            await this.contract.unpause({ from: owner });
+
+            const skus = [Constants.Zero].map(item => toBytes32(item));
+
+            await expectRevert(
+                this.contract.addInventorySkus(skus, { from: owner }),
+                'Pausable: not paused');
+        });
+
         context('when adding zero skus', function () {
             it('should emit the InventorySkusAdded event', async function () {
                 const skus = [].map(item => toBytes32(item));
@@ -185,6 +208,29 @@ contract('Sale', function ([
     });
 
     describe('addSupportedPayoutTokens()', function () {
+        beforeEach(async function () {
+            await this.contract.start({ from: owner });
+            await this.contract.pause({ from: owner })
+        });
+
+        it('reverts if called by any other than the owner', async function () {
+            const tokens = [Constants.ZeroAddress];
+
+            await expectRevert(
+                this.contract.addSupportedPayoutTokens(tokens, { from: purchaser }),
+                'Ownable: caller is not the owner');
+        });
+
+        it('reverts if the contract is not paused', async function () {
+            await this.contract.unpause({ from: owner });
+
+            const tokens = [Constants.ZeroAddress];
+
+            await expectRevert(
+                this.contract.addSupportedPayoutTokens(tokens, { from: owner }),
+                'Pausable: not paused');
+        });
+
         context('when adding zero tokens', function () {
             it('should emit the SupportedPayoutTokensAdded event', async function () {
                 const tokens = [];
@@ -235,6 +281,33 @@ contract('Sale', function ([
     });
 
     describe('setSkuTokenPrices()', function () {
+        beforeEach(async function () {
+            await this.contract.start({ from: owner });
+            await this.contract.pause({ from: owner })
+        });
+
+        it('reverts if called by any other than the owner', async function () {
+            const sku = this.sku;
+            const tokens = [this.tokens[0]];
+            const prices = [this.prices[0]];
+
+            await expectRevert(
+                this.contract.setSkuTokenPrices(sku, tokens, prices, { from: purchaser}),
+                'Ownable: caller is not the owner');
+        });
+
+        it('reverts if the contract is not paused', async function () {
+            await this.contract.unpause({ from: owner });
+
+            const sku = this.sku;
+            const tokens = [this.tokens[0]];
+            const prices = [this.prices[0]];
+
+            await expectRevert(
+                this.contract.setSkuTokenPrices(sku, tokens, prices, { from: owner}),
+                'Pausable: not paused');
+        });
+
         beforeEach(async function () {
             this.sku = toBytes32(Constants.Zero);
             this.tokens = [Constants.ZeroAddress, EthAddress];

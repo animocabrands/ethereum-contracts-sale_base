@@ -108,6 +108,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
      * Adds a list of inventory SKUs to make available for purchase.
      * @dev Emits the InventorySkusUpdated event.
      * @dev Reverts if called by any other than the owner.
+     * @dev Reverts if the contract is not paused.
      * @param skus List of inventory SKUs to add.
      * @return added List of state flags indicating whether or not the
      *  corresponding inventory SKU has been added.
@@ -115,7 +116,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
     function addInventorySkus(
         bytes32[] calldata skus
     )
-        external onlyOwner
+        external onlyOwner whenPaused
         returns (bool[] memory added)
     {
         added = _skuTokenPrices.addSkus(skus);
@@ -127,6 +128,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
      * tokens.
      * @dev Emits the SupportedPayoutTokensUpdated event.
      * @dev Reverts if called by any other than the owner.
+     * @dev Reverts if the contract is not paused.
      * @param tokens List of ERC20 tokens to add.
      * @return added List of state flags indicating whether or not the
      *  corresponding ERC20 token has been added.
@@ -134,7 +136,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
     function addSupportedPayoutTokens(
         IERC20[] calldata tokens
     )
-        external onlyOwner
+        external onlyOwner whenPaused
         returns (bool[] memory added)
     {
         added = _skuTokenPrices.addTokens(tokens);
@@ -145,6 +147,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
      * Sets the token prices for the specified inventory SKU.
      * @dev Emits the SkuTokenPricesUpdated event.
      * @dev Reverts if called by any other than the owner.
+     * @dev Reverts if the contract is not paused.
      * @dev Reverts if the specified SKU does not exist.
      * @dev Reverts if the token/price list lengths are not aligned.
      * @dev Reverts if any of the specified ERC20 tokens are unsupported.
@@ -157,7 +160,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
         IERC20[] calldata tokens,
         uint256[] calldata prices
     )
-        external onlyOwner
+        external onlyOwner whenPaused
         returns (uint256[] memory prevPrices)
     {
         prevPrices = _skuTokenPrices.setPrices(sku, tokens, prices);
