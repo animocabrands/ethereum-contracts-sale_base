@@ -234,6 +234,8 @@ library SkuTokenPrice {
 
     /**
      * Retrieves the price for the specified supported SKU and token.
+     * @dev Reverts if the specified SKU does not exist.
+     * @dev Reverts is the specified ERC20 token is unsupported.
      * @param manager The storage instance of the SkuTokenPriceManager.
      * @param sku The SKU item whose token price will be retrieved.
      * @param token The ERC20 token whose SKU price will be retrieved.
@@ -261,6 +263,9 @@ library SkuTokenPrice {
 
     /**
      * Sets the prices for the specified supported SKU and tokens.
+     * @dev Reverts if the specified SKU does not exist.
+     * @dev Reverts if the token/price list lengths are not aligned.
+     * @dev Reverts if any of the specified ERC20 tokens are unsupported.
      * @param manager The storage instance of the SkuTokenPriceManager.
      * @param sku The SKU item whose token price will be set.
      * @param tokens The list of ERC20 tokens whose SKU price will be set.
