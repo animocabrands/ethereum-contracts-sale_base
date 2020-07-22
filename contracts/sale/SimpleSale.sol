@@ -12,23 +12,6 @@ import "./Sale.sol";
  */
 abstract contract SimpleSale is Sale, SimplePayment {
 
-    event PriceUpdated(
-        bytes32 sku,
-        uint256 ethPrice,
-        uint256 erc20Price
-    );
-
-    /**
-     * Used to represent the unit price for a given purchase ID in terms of
-     * ETH and/or an ERC20 token amount.
-     */
-    struct Price {
-        uint256 ethPrice;
-        uint256 erc20Price;
-    }
-
-    mapping(bytes32 /* sku */ => Price) public prices;
-
     /**
      * Constructor.
      * @param payoutWallet_ The wallet address used to receive purchase payments
@@ -45,18 +28,6 @@ abstract contract SimpleSale is Sale, SimplePayment {
         )
         internal
     {}
-
-    /**
-     * Sets the ETH/ERC20 price for the given purchase ID.
-     * @dev Will emit the PriceUpdated event after calling the function successfully.
-     * @param sku The SKU item whose price will be set.
-     * @param ethPrice The ETH price to assign to the purchase ID.
-     * @param erc20Price The ERC20 token price to assign to the purchase ID.
-     */
-    function setPrice(bytes32 sku, uint256 ethPrice, uint256 erc20Price) public onlyOwner {
-        prices[sku] = Price(ethPrice, erc20Price);
-        emit PriceUpdated(sku, ethPrice, erc20Price);
-    }
 
     /**
      * Validates a purchase.
@@ -136,15 +107,13 @@ abstract contract SimpleSale is Sale, SimplePayment {
 
         uint256 unitPrice;
 
-        if (paymentToken == ETH_ADDRESS) {
-            unitPrice = prices[sku].ethPrice;
-        } else {
+        if (paymentToken != ETH_ADDRESS) {
             require(
                 payoutToken != IERC20(0),
                 "SimpleSale: ERC20 payment is unsupported");
-
-            unitPrice = prices[sku].erc20Price;
         }
+
+        unitPrice = _skuTokenPrices.getPrice(sku, paymentToken);
 
         require(unitPrice != 0, "SimpleSale: invalid SKU");
 

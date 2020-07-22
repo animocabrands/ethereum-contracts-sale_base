@@ -27,11 +27,10 @@ contract SimpleSaleMock is SimpleSale {
     {}
 
     function getPrice(
-        bytes32 sku
-    ) external view returns (uint256 ethPrice, uint256 erc20Price) {
-        Price storage price = prices[sku];
-        ethPrice = price.ethPrice;
-        erc20Price = price.erc20Price;
+        bytes32 sku,
+        IERC20 token
+    ) external view returns (uint256 price) {
+        price = _skuTokenPrices.getPrice(sku, token);
     }
 
     function callUnderscoreValidatePurchase(

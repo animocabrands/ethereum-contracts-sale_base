@@ -27,12 +27,15 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
     async function doFreshDeploy(params) {
         let payoutToken;
 
+        this.supportedPayoutTokens = [EthAddress];
+
         if (params.useErc20) {
             const erc20Token = await ERC20.new(ether('1000000000'), { from: params.owner });
             await erc20Token.transfer(params.operator, ether('100000'), { from: params.owner });
             await erc20Token.transfer(params.purchaser, ether('100000'), { from: params.owner });
             payoutToken = erc20Token.address;
             this.payoutToken = payoutToken;
+            this.supportedPayoutTokens.push(payoutToken);
         } else {
             payoutToken = ZeroAddress;
             this.payoutToken = EthAddress;
@@ -40,83 +43,43 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
 
         this.contract = await Sale.new(params.payout, payoutToken, { from: params.owner });
 
-        if (params.setPrices) {
-            for (const [purchaseId, { ethPrice, erc20Price }] of Object.entries(prices)) {
-                const sku = asciiToHex(purchaseId);
-                await this.contract.setPrice(sku, ethPrice, erc20Price, { from: params.owner });
+        this.inventorySkus = Object.keys(prices).map(item => asciiToHex(item));
+        await this.contract.addInventorySkus(this.inventorySkus, { from: params.owner });
+        await this.contract.addSupportedPayoutTokens(this.supportedPayoutTokens, { from: params.owner });
+
+        for (const [purchaseId, { ethPrice, erc20Price }] of Object.entries(prices)) {
+            const sku = asciiToHex(purchaseId);
+
+            if (this.payoutToken == EthAddress) {
+                await this.contract.setSkuTokenPrices(
+                    sku,
+                    [ EthAddress ],
+                    [ prices[purchaseId].ethPrice ],
+                    { from: params.owner });
+            } else {
+                await this.contract.setSkuTokenPrices(
+                    sku,
+                    [
+                        EthAddress,
+                        this.payoutToken
+                    ],
+                    [
+                        prices[purchaseId].ethPrice,
+                        prices[purchaseId].erc20Price
+                    ],
+                    { from: params.owner });
             }
         }
 
         await this.contract.start({ from: params.owner });
     };
 
-    describe('Purchase IDs Management', function () {
-        describe('setPrice()', function () {
-            beforeEach(async function () {
-                await doFreshDeploy.bind(this)({
-                    payout: payout,
-                    owner: owner,
-                    operator: operator,
-                    purchaser: purchaser,
-                    useErc20: true,
-                    setPrices: false});
-            });
-
-            it('should fail if not sent by the owner', async function () {
-                const purchaseId = 'both';
-                const sku = asciiToHex(purchaseId);
-                await expectRevert(
-                    this.contract.setPrice(
-                        sku,
-                        prices[purchaseId].ethPrice,
-                        prices[purchaseId].erc20Price,
-                        { from: purchaser }),
-                    'Ownable: caller is not the owner');
-            });
-
-            it('should update the prices and emit a PriceUpdated event', async function () {
-                for (const [purchaseId, {ethPrice, erc20Price}] of Object.entries(prices)) {
-                    const sku = asciiToHex(purchaseId);
-                    const initialPrices = await this.contract.prices(sku);
-                    initialPrices.ethPrice.should.be.bignumber.equal(new BN(0));
-                    initialPrices.erc20Price.should.be.bignumber.equal(new BN(0));
-                    await this.contract.setPrice(sku, ethPrice, erc20Price, { from: owner });
-                    const updatedPrices = await this.contract.prices(sku);
-                    updatedPrices.ethPrice.should.be.bignumber.equal(ethPrice);
-                    updatedPrices.erc20Price.should.be.bignumber.equal(erc20Price);
-                }
-
-                for (const [purchaseId, {ethPrice, erc20Price}] of Object.entries(prices)) {
-                    const sku = asciiToHex(purchaseId);
-                    const { logs } = await this.contract.setPrice(sku, ethPrice, erc20Price, { from: owner });
-
-                    expectEvent.inLogs(logs, 'PriceUpdated', {
-                        sku: web3.utils.padRight(sku, 64),
-                        ethPrice: ethPrice,
-                        erc20Price: erc20Price
-                    });
-                }
-
-                for (const purchaseId of Object.keys(prices)) {
-                    const sku = asciiToHex(purchaseId);
-                    const { logs } = await this.contract.setPrice(sku, '0', '0', { from: owner });
-
-                    expectEvent.inLogs(logs, 'PriceUpdated', {
-                        sku: web3.utils.padRight(sku, 64),
-                        ethPrice: '0',
-                        erc20Price: '0'
-                    });
-                }
-            });
-        });
-    });
-
     describe('Purchasing', async function () {
         function simplePurchase(payout, owner, operator, purchaser, useErc20) {
             async function getPrice(sale, paymentToken, purchaseId, quantity) {
                 const sku = asciiToHex(purchaseId);
-                const { ethPrice, erc20Price } = await sale.getPrice(sku);
-                return (paymentToken == EthAddress) ? ethPrice.mul(new BN(quantity)) : erc20Price.mul(new BN(quantity));
+                const unitPrice = await sale.getPrice(sku, paymentToken)
+                return unitPrice.mul(new BN(quantity));
             }
 
             async function purchaseFor(sale, purchaser, paymentToken, purchaseId, quantity, operator, overrides) {
@@ -239,8 +202,7 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                         owner: owner,
                         operator: operator,
                         purchaser: purchaser,
-                        useErc20: useErc20,
-                        setPrices: true});
+                        useErc20: useErc20});
                 });
 
                 it('when the purchaser is the zero address', async function () {
@@ -294,7 +256,7 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                             'both',
                             One,
                             purchaser),
-                        'SimpleSale: payment token is unsupported');
+                        'SkuTokenPrice: unsupported token');
                 });
 
                 it('when purchaseId does not exist', async function () {
@@ -306,7 +268,7 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                             'invalid',
                             One,
                             purchaser),
-                        'SimpleSale: invalid SKU');
+                        'SkuTokenPrice: non-existent sku');
                 });
 
                 it('when the value is insufficient', async function () {
@@ -336,8 +298,7 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                                 owner: owner,
                                 operator: operator,
                                 purchaser: purchaser,
-                                useErc20: useErc20,
-                                setPrices: true});
+                                useErc20: useErc20});
                         });
                         await testPurchases(purchaser, Zero);
                     });
@@ -348,8 +309,7 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                                 owner: owner,
                                 operator: operator,
                                 purchaser: purchaser,
-                                useErc20: useErc20,
-                                setPrices: true});
+                                useErc20: useErc20});
                         });
                         await testPurchases(purchaser, ether('1'));
                     });
@@ -363,8 +323,7 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                                 owner: owner,
                                 operator: operator,
                                 purchaser: purchaser,
-                                useErc20: useErc20,
-                                setPrices: true});
+                                useErc20: useErc20});
                         });
                         await testPurchases(operator, Zero);
                     });
@@ -375,8 +334,7 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                                 owner: owner,
                                 operator: operator,
                                 purchaser: purchaser,
-                                useErc20: useErc20,
-                                setPrices: true});
+                                useErc20: useErc20});
                         });
                         await testPurchases(operator, ether('1'));
                     });
