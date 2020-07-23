@@ -70,7 +70,16 @@ contract('FixedSupplyLotSale', function ([
             lotId,
             [ nfTokenId1, nfTokenId2, nfTokenId3 ],
             lotFungibleAmount,
-            lotPrice,
+            { from: owner });
+
+        await sale.addSupportedPayoutTokens(
+            [ PayoutTokenAddress],
+            { from: owner });
+
+        await sale.setSkuTokenPrices(
+            sku,
+            [ PayoutTokenAddress ],
+            [ lotPrice ],
             { from: owner });
 
         this.sale = sale;
@@ -187,13 +196,13 @@ contract('FixedSupplyLotSale', function ([
     describe('createLot()', function () {
         const [ notOwner ] = accounts;
         const newLotId = Constants.Two;
+        const newSku = toBytes32(newLotId);
         const newLotNonFungibleSupply = [
             new BN(InventoryIds.makeNonFungibleTokenId(1, 2, NF_MASK_LENGTH)),
             new BN(InventoryIds.makeNonFungibleTokenId(2, 2, NF_MASK_LENGTH)),
             new BN(InventoryIds.makeNonFungibleTokenId(3, 2, NF_MASK_LENGTH))
         ];
         const newLotFungibleAmount = lotFungibleAmount.muln(2);
-        const newLotPrice = lotPrice.muln(2);
 
         it('should revert if not called by the owner', async function () {
             await expectRevert(
@@ -201,7 +210,6 @@ contract('FixedSupplyLotSale', function ([
                     newLotId,
                     newLotNonFungibleSupply,
                     newLotFungibleAmount,
-                    newLotPrice,
                     { from: notOwner }),
                 'Ownable: caller is not the owner');
         });
@@ -216,7 +224,6 @@ contract('FixedSupplyLotSale', function ([
                     newLotId,
                     newLotNonFungibleSupply,
                     newLotFungibleAmount,
-                    newLotPrice,
                     { from: owner }),
                 'Startable: started');
         });
@@ -227,7 +234,6 @@ contract('FixedSupplyLotSale', function ([
                     '0',
                     newLotNonFungibleSupply,
                     newLotFungibleAmount,
-                    newLotPrice,
                     { from: owner }),
                 'FixedSupplyLotSale: lot exists');
         });
@@ -238,7 +244,6 @@ contract('FixedSupplyLotSale', function ([
                     lotId,
                     newLotNonFungibleSupply,
                     newLotFungibleAmount,
-                    newLotPrice,
                     { from: owner }),
                 'FixedSupplyLotSale: lot exists');
         });
@@ -248,14 +253,14 @@ contract('FixedSupplyLotSale', function ([
                 newLotId,
                 newLotNonFungibleSupply,
                 newLotFungibleAmount,
-                newLotPrice,
                 { from: owner });
+
+            const exists = await this.sale.hasInventorySku(newSku);
+            exists.should.be.true;
 
             const lot = await this.sale._lots(newLotId);
 
-            lot.exists.should.be.true;
             lot.fungibleAmount.should.be.bignumber.equal(newLotFungibleAmount);
-            lot.price.should.be.bignumber.equal(newLotPrice);
             lot.numAvailable.should.be.bignumber.equal(new BN(newLotNonFungibleSupply.length));
 
             const lotNonFungibleSupply = await this.sale.getLotNonFungibleSupply(newLotId);
@@ -273,7 +278,6 @@ contract('FixedSupplyLotSale', function ([
                 newLotId,
                 newLotNonFungibleSupply,
                 newLotFungibleAmount,
-                newLotPrice,
                 { from: owner });
 
             // // deep array equality test for event arguments is not yet supported
@@ -294,8 +298,7 @@ contract('FixedSupplyLotSale', function ([
                 'LotCreated',
                 {
                     lotId: newLotId,
-                    fungibleAmount: newLotFungibleAmount,
-                    price: newLotPrice
+                    fungibleAmount: newLotFungibleAmount
                 });
         });
     });
@@ -473,83 +476,6 @@ contract('FixedSupplyLotSale', function ([
         });
     });
 
-    describe('updateLotPrice()', function () {
-        const [ notOwner ] = accounts;
-        const newLotPrice = lotPrice.muln(2);
-
-        it('should revert if not called by the owner', async function () {
-            await expectRevert(
-                this.sale.updateLotPrice(
-                    lotId,
-                    newLotPrice,
-                    { from: notOwner }),
-                'Ownable: caller is not the owner');
-        });
-
-        it('should revert if the sale is not paused', async function () {
-            await this.sale.start({ from: owner });
-
-            await shouldHavePausedTheSale.bind(this, false)();
-
-            await expectRevert(
-                this.sale.updateLotPrice(
-                    lotId,
-                    newLotPrice,
-                    { from: owner }),
-                'Pausable: not paused');
-        });
-
-        it('should revert if the lot doesnt exist', async function () {
-            await expectRevert(
-                this.sale.updateLotPrice(
-                    unknownLotId,
-                    newLotPrice,
-                    { from: owner }),
-                'FixedSupplyLotSale: non-existent lot');
-        });
-
-        it('should revert if set with the current lot price', async function () {
-            const lot = await this.sale._lots(lotId);
-            const currentLotPrice = lot.price;
-            await expectRevert(
-                this.sale.updateLotPrice(
-                    lotId,
-                    currentLotPrice,
-                    { from: owner }),
-                'FixedSupplyLotSale: duplicate assignment');
-        });
-
-        it('should update the lot price', async function () {
-            const lotBefore = await this.sale._lots(lotId);
-            const lotPriceBefore = lotBefore.price;
-            lotPriceBefore.should.not.be.bignumber.equal(newLotPrice);
-
-            const receipt = await this.sale.updateLotPrice(
-                lotId,
-                newLotPrice,
-                { from: owner });
-
-            const lotAfter = await this.sale._lots(lotId);
-            const lotPriceAfter = lotAfter.price;
-            lotPriceAfter.should.be.bignumber.equal(newLotPrice);
-        });
-
-        it('should emit the LotPriceUpdated event', async function () {
-            const receipt = await this.sale.updateLotPrice(
-                lotId,
-                newLotPrice,
-                { from: owner });
-
-            expectEvent(
-                receipt,
-                'LotPriceUpdated',
-                {
-                    lotId: lotId,
-                    price: newLotPrice
-                });
-        });
-    });
-
     describe('peekLotAvailableNonFungibleSupply()', function () {
         async function shouldReturnAvailableNonFugibleTokens(count) {
             const availableNonFungibleTokens = await this.sale.peekLotAvailableNonFungibleSupply(
@@ -652,9 +578,11 @@ contract('FixedSupplyLotSale', function ([
         }
 
         async function shouldRevertWithValidatedQuantity(recipient, lotId, quantity, tokenAddress, error, txParams = {}) {
-            const lot = await this.sale._lots(lotId);
+            const sku = toBytes32(lotId);
+            const exists = await this.sale.hasInventorySku(sku);
 
-            if (lot.exists) {
+            if (exists) {
+                const lot = await this.sale._lots(lotId);
                 (quantity.gt(Constants.Zero) && quantity.lte(lot.numAvailable)).should.be.true;
             }
 
@@ -829,7 +757,8 @@ contract('FixedSupplyLotSale', function ([
         });
 
         it('should return correct total price pricing info', async function () {
-            const expectedTotalPrice = this.lot.price.mul(quantity);
+            const expectedUnitPrice = await this.sale.getSkuTokenPrice(sku, PayoutTokenAddress);
+            const expectedTotalPrice = expectedUnitPrice.mul(quantity);
             const actualTotalPrice = toBN(this.totalPriceInfo[0]);
             expectedTotalPrice.should.be.bignumber.equal(actualTotalPrice);
         });

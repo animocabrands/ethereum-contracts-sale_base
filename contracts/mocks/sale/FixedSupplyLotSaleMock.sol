@@ -28,6 +28,19 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
         public
     {}
 
+    function hasInventorySku(
+        bytes32 sku
+    ) external view returns (bool exists) {
+        exists = _skuTokenPrices.hasSku(sku);
+    }
+
+    function getSkuTokenPrice(
+        bytes32 sku,
+        IERC20 token
+    ) external view returns (uint256 price) {
+        price = _skuTokenPrices.getPrice(sku, token);
+    }
+
     function getLotNonFungibleSupply(
         uint256 lotId
     )
@@ -38,7 +51,8 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
         uint256[] memory
     )
     {
-        require(_lots[lotId].exists);
+        bytes32 sku = bytes32(lotId);
+        require(_skuTokenPrices.hasSku(sku));
         return _lots[lotId].nonFungibleSupply;
     }
 
@@ -48,7 +62,8 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
     )
         external
     {
-        require(_lots[lotId].exists);
+        bytes32 sku = bytes32(lotId);
+        require(_skuTokenPrices.hasSku(sku));
         require(_lots[lotId].numAvailable <= _lots[lotId].nonFungibleSupply.length);
         _lots[lotId].numAvailable = numAvailable;
     }

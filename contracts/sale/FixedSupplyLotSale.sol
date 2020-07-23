@@ -13,18 +13,15 @@ abstract contract FixedSupplyLotSale is Sale {
 
     // a Lot is a class of purchasable sale items.
     struct Lot {
-        bool exists; // state flag to indicate that the Lot item exists.
         uint256[] nonFungibleSupply; // supply of non-fungible tokens for sale.
         uint256 fungibleAmount; // fungible token amount bundled with each NFT.
-        uint256 price; // Lot item price, in payout currency tokens.
         uint256 numAvailable; // number of Lot items available for purchase.
     }
 
     event LotCreated (
         uint256 lotId, // id of the created Lot.
         uint256[] nonFungibleTokens, // initial Lot supply of non-fungible tokens.
-        uint256 fungibleAmount, // initial fungible token amount bundled with each NFT.
-        uint256 price // initial Lot item price.
+        uint256 fungibleAmount // initial fungible token amount bundled with each NFT.
     );
 
     event LotNonFungibleSupplyUpdated (
@@ -35,11 +32,6 @@ abstract contract FixedSupplyLotSale is Sale {
     event LotFungibleAmountUpdated (
         uint256 lotId, // id of the Lot whose fungible token amount was updated.
         uint256 fungibleAmount // updated fungible token amount.
-    );
-
-    event LotPriceUpdated (
-        uint256 lotId, // id of the Lot whose item price was updated.
-        uint256 price // updated item price.
     );
 
     uint256 public _fungibleTokenId; // inventory token id of the fungible tokens bundled in a Lot item.
@@ -106,34 +98,36 @@ abstract contract FixedSupplyLotSale is Sale {
      * Creates a new Lot to add to the sale.
      * @dev Reverts if the lot to create already exists.
      * @dev There are NO guarantees about the uniqueness of the non-fungible token supply.
-     * @dev Lot item price must be at least 0.00001 of the base denomination.
      * @param lotId Id of the Lot to create.
      * @param nonFungibleSupply Initial non-fungible token supply of the Lot.
      * @param fungibleAmount Initial fungible token amount to bundle with each NFT.
-     * @param price Initial Lot item sale price, in payout currency tokens
      */
     function createLot(
         uint256 lotId,
         uint256[] memory nonFungibleSupply,
-        uint256 fungibleAmount,
-        uint256 price
+        uint256 fungibleAmount
     )
         public
         onlyOwner
         whenNotStarted
     {
-        require(!_lots[lotId].exists, "FixedSupplyLotSale: lot exists");
+        bytes32 sku = bytes32(lotId);
+
+        require(!_skuTokenPrices.hasSku(sku), "FixedSupplyLotSale: lot exists");
+
+        bytes32[] memory inventorySkus = new bytes32[](1);
+        inventorySkus[0] = sku;
+
+        _skuTokenPrices.addSkus(inventorySkus);
 
         Lot memory lot;
-        lot.exists = true;
         lot.nonFungibleSupply = nonFungibleSupply;
         lot.fungibleAmount = fungibleAmount;
-        lot.price = price;
         lot.numAvailable = nonFungibleSupply.length;
 
         _lots[lotId] = lot;
 
-        emit LotCreated(lotId, nonFungibleSupply, fungibleAmount, price);
+        emit LotCreated(lotId, nonFungibleSupply, fungibleAmount);
     }
 
     /**
@@ -154,9 +148,11 @@ abstract contract FixedSupplyLotSale is Sale {
     {
         require(nonFungibleTokens.length != 0, "FixedSupplyLotSale: zero length non-fungible supply");
 
-        Lot memory lot = _lots[lotId];
+        bytes32 sku = bytes32(lotId);
 
-        require(lot.exists, "FixedSupplyLotSale: non-existent lot");
+        require(_skuTokenPrices.hasSku(sku), "FixedSupplyLotSale: non-existent lot");
+
+        Lot memory lot = _lots[lotId];
 
         uint256 newSupplySize = lot.nonFungibleSupply.length.add(nonFungibleTokens.length);
         uint256[] memory newNonFungibleSupply = new uint256[](newSupplySize);
@@ -193,35 +189,14 @@ abstract contract FixedSupplyLotSale is Sale {
         onlyOwner
         whenPaused
     {
-        require(_lots[lotId].exists, "FixedSupplyLotSale: non-existent lot");
+        bytes32 sku = bytes32(lotId);
+
+        require(_skuTokenPrices.hasSku(sku), "FixedSupplyLotSale: non-existent lot");
         require(_lots[lotId].fungibleAmount != fungibleAmount, "FixedSupplyLotSale: duplicate assignment");
 
         _lots[lotId].fungibleAmount = fungibleAmount;
 
         emit LotFungibleAmountUpdated(lotId, fungibleAmount);
-    }
-
-    /**
-     * Updates the given Lot's item sale price.
-     * @dev Reverts if the lot whose price is being updated does not exist.
-     * @dev Reverts if setting `price` with the current value.
-     * @param lotId Id of the Lot to update.
-     * @param price The new sale price, in payout currency tokens, to update with.
-     */
-    function updateLotPrice(
-        uint256 lotId,
-        uint256 price
-    )
-        external
-        onlyOwner
-        whenPaused
-    {
-        require(_lots[lotId].exists, "FixedSupplyLotSale: non-existent lot");
-        require(_lots[lotId].price != price, "FixedSupplyLotSale: duplicate assignment");
-
-        _lots[lotId].price = price;
-
-        emit LotPriceUpdated(lotId, price);
     }
 
     /**
@@ -243,9 +218,11 @@ abstract contract FixedSupplyLotSale is Sale {
         uint256[] memory
     )
     {
-        Lot memory lot = _lots[lotId];
+        bytes32 sku = bytes32(lotId);
 
-        require(lot.exists, "FixedSupplyLotSale: non-existent lot");
+        require(_skuTokenPrices.hasSku(sku), "FixedSupplyLotSale: non-existent lot");
+
+        Lot memory lot = _lots[lotId];
 
         if (count > lot.numAvailable) {
             count = lot.numAvailable;
@@ -281,10 +258,10 @@ abstract contract FixedSupplyLotSale is Sale {
         require(purchase.purchaser != address(uint160(address(this))), "FixedSupplyLotSale: contract address purchaser");
         require (purchase.quantity != 0, "FixedSupplyLotSale: zero quantity purchase");
         require(purchase.paymentToken != IERC20(0), "FixedSupplyLotSale: zero address payment token");
+        require(_skuTokenPrices.hasSku(purchase.sku), "FixedSupplyLotSale: non-existent lot");
 
         uint256 lotId = uint256(purchase.sku);
 
-        require(_lots[lotId].exists, "FixedSupplyLotSale: non-existent lot");
         require(purchase.quantity <= _lots[lotId].numAvailable, "FixedSupplyLotSale: insufficient available lot supply");
     }
 
@@ -344,7 +321,7 @@ abstract contract FixedSupplyLotSale is Sale {
      *  specified SKU item.
      * @param *purchaser* The account for whome the queried total price
      *  information is for.
-     * @param *paymentToken* The ERC20 token payment currency of the total price
+     * @param paymentToken The ERC20 token payment currency of the total price
      *  information.
      * @param sku The SKU item whose total price information will be retrieved.
      * @param quantity The quantity of SKU items to retrieve the total price
@@ -355,13 +332,12 @@ abstract contract FixedSupplyLotSale is Sale {
      */
     function _getTotalPriceInfo(
         address payable /* purchaser */,
-        IERC20 /* paymentToken */,
+        IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
         bytes32[] memory /* extData */
     ) internal override virtual view returns (bytes32[] memory totalPriceInfo) {
-        uint256 lotId = uint256(sku);
-        uint256 unitPrice = _lots[lotId].price;
+        uint256 unitPrice = _skuTokenPrices.getPrice(sku, paymentToken);
         uint256 totalPrice = unitPrice.mul(quantity);
 
         totalPriceInfo = new bytes32[](1);
