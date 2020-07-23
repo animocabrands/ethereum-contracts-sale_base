@@ -107,7 +107,7 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
     ) internal override virtual view returns (bytes32[] memory totalPriceInfo) {
         bytes32[] memory superTotalPriceInfo = super._getTotalPriceInfo(
             purchaser,
-            paymentToken,
+            payoutToken,
             sku,
             quantity,
             extData);
