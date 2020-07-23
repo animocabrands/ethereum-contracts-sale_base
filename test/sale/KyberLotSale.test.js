@@ -56,7 +56,16 @@ contract('KyberLotSale', function ([
             lotId,
             [ nfTokenId1, nfTokenId2, nfTokenId3 ],
             lotFungibleAmount,
-            lotPrice,
+            { from: owner });
+
+        await sale.addSupportedPayoutTokens(
+            [ PayoutTokenAddress ],
+            { from: owner });
+
+        await sale.setSkuTokenPrices(
+            sku,
+            [ PayoutTokenAddress ],
+            [ lotPrice ],
             { from: owner });
 
         this.sale = sale;
@@ -81,7 +90,8 @@ contract('KyberLotSale', function ([
         });
 
         it('should return correct total price pricing info', async function () {
-            const expectedTotalPrice = this.lot.price.mul(quantity);
+            const expectedUnitPrice = await this.sale.getSkuTokenPrice(sku, PayoutTokenAddress);
+            const expectedTotalPrice = expectedUnitPrice.mul(quantity);
             const actualTotalPrice = this.totalPrice;
             expectedTotalPrice.should.be.bignumber.equal(actualTotalPrice);
         });
@@ -100,8 +110,9 @@ contract('KyberLotSale', function ([
                     []);
             }
 
-            const lot = await this.sale._lots(lotId);
-            const payoutTotalPrice = lot.price.mul(quantity);
+            const sku = toBytes32(lotId);
+            const payoutUnitPrice = await this.sale.getSkuTokenPrice(sku, PayoutTokenAddress);
+            const payoutTotalPrice = payoutUnitPrice.mul(quantity);
 
             const totalPrice = toBN(priceInfo[0]);
             const minConversionRate = toBN(priceInfo[1]);
@@ -124,9 +135,11 @@ contract('KyberLotSale', function ([
         }
 
         async function shouldRevertWithValidatedQuantity(recipient, tokenAddress, lotId, quantity, priceInfo, txParams = {}) {
-            const lot = await this.sale._lots(lotId);
+            const sku = toBytes32(lotId);
+            const exists = await this.sale.hasInventorySku(sku);
 
-            if (lot.exists) {
+            if (exists) {
+                const lot = await this.sale._lots(lotId);
                 (quantity.gt(Constants.Zero) && quantity.lte(lot.numAvailable)).should.be.true;
             }
 
@@ -203,7 +216,8 @@ contract('KyberLotSale', function ([
 
         function testShouldTransferPayoutTokens(quantity) {
             it('should transfer payout tokens from the sale contract to the payout wallet', async function () {
-                const totalPrice = this.lot.price.mul(quantity);
+                const unitPrice = await this.sale.getSkuTokenPrice(sku, PayoutTokenAddress);
+                const totalPrice = unitPrice.mul(quantity);
 
                 await expectEvent.inTransaction(
                     this.receipt.tx,
@@ -292,8 +306,8 @@ contract('KyberLotSale', function ([
                     this.totalPrice = toBN(priceInfo[0]);
                     this.minConversionRate = toBN(priceInfo[1]);
 
-                    const lot = await this.sale._lots(lotId);
-                    this.payoutTotalPrice = lot.price.mul(quantity);
+                    const payoutUnitPrice = await this.sale.getSkuTokenPrice(sku, PayoutTokenAddress);
+                    this.payoutTotalPrice = payoutUnitPrice.mul(quantity);
                 });
 
                 context('when spending with more than the total price', function () {
@@ -456,7 +470,9 @@ contract('KyberLotSale', function ([
 
                         this.totalPrice = toBN(priceInfo[0]);
                         this.minConversionRate = toBN(priceInfo[1]);
-                        this.payoutTotalPrice = this.lot.price.mul(quantity);
+
+                        const payoutUnitPrice = await this.sale.getSkuTokenPrice(sku, PayoutTokenAddress);
+                        this.payoutTotalPrice = payoutUnitPrice.mul(quantity);
                     });
 
                     afterEach(async function () {
@@ -679,7 +695,9 @@ contract('KyberLotSale', function ([
 
                         this.totalPrice = toBN(priceInfo[0]);
                         this.minConversionRate = toBN(priceInfo[1]);
-                        this.payoutTotalPrice = this.lot.price.mul(quantity);
+
+                        const payoutUnitPrice = await this.sale.getSkuTokenPrice(sku, PayoutTokenAddress);
+                        this.payoutTotalPrice = payoutUnitPrice.mul(quantity);
                     });
 
                     afterEach(async function () {
@@ -790,7 +808,8 @@ contract('KyberLotSale', function ([
             });
 
             it('should return correct total price pricing info', async function () {
-                const expectedTotalPrice = this.lot.price.mul(quantity);
+                const expectedUnitPrice = await this.sale.getSkuTokenPrice(sku, PayoutTokenAddress);
+                const expectedTotalPrice = expectedUnitPrice.mul(quantity);
                 const actualTotalPrice = this.minConversionRate.mul(this.totalPrice).div(new BN(10).pow(new BN(18)));
 
                 if (maxDeviationPercentSignificand) {
