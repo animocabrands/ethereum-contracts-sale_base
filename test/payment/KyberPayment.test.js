@@ -7,7 +7,7 @@ const KyberPayment = artifacts.require('KyberPaymentMock');
 const ERC20 = artifacts.require('ERC20Mock.sol');
 const IERC20 = artifacts.require('IERC20.sol');
 
-contract.only('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]) {
+contract('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]) {
     const KyberProxyAddress = '0xd3add19ee7e5287148a5866784aE3C55bd4E375A'; // Ganache snapshot
     const PayoutTokenAddress = '0xe19Ec968c15f487E96f631Ad9AA54fAE09A67C8c'; // MANA
     const Erc20TokenAddress = '0x3750bE154260872270EbA56eEf89E78E6E21C1D9'; // OMG
