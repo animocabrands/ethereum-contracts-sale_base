@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../pricing/SkuTokenPrice.sol";
+import "./pricing/SkuTokenPrice.sol";
 
 /**
  * @title Sale

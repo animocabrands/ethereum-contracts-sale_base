@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.8;
 
-import "../payment/SimplePayment.sol";
+import "./payment/SimplePayment.sol";
 import "./Sale.sol";
 
 /**

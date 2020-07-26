@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.8;
 
-import "../../pricing/SkuTokenPrice.sol";
+import "../../../sale/pricing/SkuTokenPrice.sol";
 
 contract SkuTokenPriceMock {
 

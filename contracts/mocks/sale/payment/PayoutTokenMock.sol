@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.8;
 
-import "../../payment/PayoutToken.sol";
+import "../../../sale/payment/PayoutToken.sol";
 
 contract PayoutTokenMock is PayoutToken
 {

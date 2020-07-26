@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.8;
 
-import "../payment/KyberPayment.sol";
+import "./payment/KyberPayment.sol";
 import "./FixedSupplyLotSale.sol";
 
 /**

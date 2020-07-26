@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.8;
 
-import "../../payment/KyberPayment.sol";
+import "../../../sale/payment/KyberPayment.sol";
 
 contract KyberPaymentMock is KyberPayment {
 

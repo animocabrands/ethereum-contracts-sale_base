@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.8;
 
-import "../payment/PaymentMock.sol";
+import "./payment/PaymentMock.sol";
 import "../../sale/FixedSupplyLotSale.sol";
 
 contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {

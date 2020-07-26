@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.8;
 
-import "../../payment/Payment.sol";
+import "../../../sale/payment/Payment.sol";
 
 contract PaymentMock is Payment {
 
