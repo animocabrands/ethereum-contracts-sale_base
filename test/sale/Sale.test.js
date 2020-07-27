@@ -4,7 +4,7 @@ const { toHex, padLeft } = require('web3-utils');
 
 const Sale = artifacts.require('SaleMock');
 
-contract('Sale', function ([
+contract.only('Sale', function ([
     _,
     owner,
     operator,
@@ -13,7 +13,21 @@ contract('Sale', function ([
 ]) {
     const EthAddress = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
-    const sku = toBytes32(Constants.Zero);
+    const allSkus = [
+        Constants.Zero,
+        Constants.One
+    ].map(item => toBytes32(item));
+
+    const allTokens = [
+        Constants.ZeroAddress,
+        EthAddress
+    ];
+
+    const allPrices = [
+        ether('1'),
+        ether('10')
+    ].map(item => item.toString());
+
     const extData = [ toBytes32('extData') ];
 
     function toBytes32(value) {
@@ -141,7 +155,7 @@ contract('Sale', function ([
         });
 
         it('reverts if called by any other than the owner', async function () {
-            const skus = [Constants.Zero].map(item => toBytes32(item));
+            const skus = allSkus;
 
             await expectRevert(
                 this.contract.addInventorySkus(skus, { from: purchaser }),
@@ -149,9 +163,9 @@ contract('Sale', function ([
         });
 
         it('reverts if the contract is not paused', async function () {
-            await this.contract.unpause({ from: owner });
+            const skus = allSkus;
 
-            const skus = [Constants.Zero].map(item => toBytes32(item));
+            await this.contract.unpause({ from: owner });
 
             await expectRevert(
                 this.contract.addInventorySkus(skus, { from: owner }),
@@ -160,7 +174,8 @@ contract('Sale', function ([
 
         context('when adding zero skus', function () {
             it('should emit the InventorySkusAdded event', async function () {
-                const skus = [].map(item => toBytes32(item));
+                const skus = [];
+
                 const receipt = await this.contract.addInventorySkus(skus, { from: owner});
 
                 expectEvent.inTransaction(
@@ -176,7 +191,8 @@ contract('Sale', function ([
 
         context('when adding one sku', function () {
             it('should emit the InventorySkusAdded event', async function () {
-                const skus = [Constants.Zero].map(item => toBytes32(item));
+                const skus = [allSkus[0]];
+
                 const receipt = await this.contract.addInventorySkus(skus, { from: owner});
 
                 expectEvent.inTransaction(
@@ -192,7 +208,8 @@ contract('Sale', function ([
 
         context('when adding multiple skus', function () {
             it('should emit the InventorySkusAdded event', async function () {
-                const skus = [Constants.Zero, Constants.One].map(item => toBytes32(item));
+                const skus = allSkus;
+
                 const receipt = await this.contract.addInventorySkus(skus, { from: owner});
 
                 expectEvent.inTransaction(
@@ -200,7 +217,7 @@ contract('Sale', function ([
                     this.contract,
                     'InventorySkusAdded',
                     {
-                        skus: skus,
+                        skus: allSkus,
                         added: [true, true]
                     });
             });
@@ -214,7 +231,7 @@ contract('Sale', function ([
         });
 
         it('reverts if called by any other than the owner', async function () {
-            const tokens = [Constants.ZeroAddress];
+            const tokens = allTokens;
 
             await expectRevert(
                 this.contract.addSupportedPayoutTokens(tokens, { from: purchaser }),
@@ -222,9 +239,9 @@ contract('Sale', function ([
         });
 
         it('reverts if the contract is not paused', async function () {
-            await this.contract.unpause({ from: owner });
+            const tokens = allTokens;
 
-            const tokens = [Constants.ZeroAddress];
+            await this.contract.unpause({ from: owner });
 
             await expectRevert(
                 this.contract.addSupportedPayoutTokens(tokens, { from: owner }),
@@ -234,6 +251,7 @@ contract('Sale', function ([
         context('when adding zero tokens', function () {
             it('should emit the SupportedPayoutTokensAdded event', async function () {
                 const tokens = [];
+
                 const receipt = await this.contract.addSupportedPayoutTokens(tokens, { from: owner});
 
                 expectEvent.inTransaction(
@@ -249,7 +267,8 @@ contract('Sale', function ([
 
         context('when adding one token', function () {
             it('should emit the SupportedPayoutTokensAdded event', async function () {
-                const tokens = [Constants.ZeroAddress];
+                const tokens = [allTokens[0]];
+
                 const receipt = await this.contract.addSupportedPayoutTokens(tokens, { from: owner});
 
                 expectEvent.inTransaction(
@@ -265,7 +284,8 @@ contract('Sale', function ([
 
         context('when adding multiple tokens', function () {
             it('should emit the SupportedPayoutTokensAdded event', async function () {
-                const tokens = [Constants.ZeroAddress, EthAddress];
+                const tokens = allTokens;
+
                 const receipt = await this.contract.addSupportedPayoutTokens(tokens, { from: owner});
 
                 expectEvent.inTransaction(
@@ -282,14 +302,20 @@ contract('Sale', function ([
 
     describe('setSkuTokenPrices()', function () {
         beforeEach(async function () {
+            const skus = [allSkus[0]];
+            const tokens = allTokens;
+
+            await this.contract.addInventorySkus(skus, { from: owner});
+            await this.contract.addSupportedPayoutTokens(tokens, { from: owner});
+
             await this.contract.start({ from: owner });
             await this.contract.pause({ from: owner })
         });
 
         it('reverts if called by any other than the owner', async function () {
-            const sku = this.sku;
-            const tokens = [this.tokens[0]];
-            const prices = [this.prices[0]];
+            const sku = allSkus[0];
+            const tokens = [allTokens[0]];
+            const prices = [allPrices[0]];
 
             await expectRevert(
                 this.contract.setSkuTokenPrices(sku, tokens, prices, { from: purchaser}),
@@ -299,28 +325,21 @@ contract('Sale', function ([
         it('reverts if the contract is not paused', async function () {
             await this.contract.unpause({ from: owner });
 
-            const sku = this.sku;
-            const tokens = [this.tokens[0]];
-            const prices = [this.prices[0]];
+            const sku = allSkus[0];
+            const tokens = [allTokens[0]];
+            const prices = [allPrices[0]];
 
             await expectRevert(
                 this.contract.setSkuTokenPrices(sku, tokens, prices, { from: owner}),
                 'Pausable: not paused');
         });
 
-        beforeEach(async function () {
-            this.sku = toBytes32(Constants.Zero);
-            this.tokens = [Constants.ZeroAddress, EthAddress];
-            this.prices = [ether('1'), ether('10')].map(item => item.toString());
-            await this.contract.addInventorySkus([this.sku], { from: owner});
-            await this.contract.addSupportedPayoutTokens(this.tokens, { from: owner});
-        });
-
         context('when setting zero prices', function () {
             it('should emit the SkuTokenPricesUpdated event', async function () {
-                const sku = this.sku;
+                const sku = allSkus[0];
                 const tokens = [];
                 const prices = [];
+
                 const receipt = await this.contract.setSkuTokenPrices(sku, tokens, prices, { from: owner});
 
                 expectEvent.inTransaction(
@@ -338,9 +357,10 @@ contract('Sale', function ([
 
         context('when setting one price', function () {
             it('should emit the SkuTokenPricesUpdated event', async function () {
-                const sku = this.sku;
-                const tokens = [this.tokens[0]];
-                const prices = [this.prices[0]];
+                const sku = allSkus[0];
+                const tokens = [allTokens[0]];
+                const prices = [allPrices[0]];
+
                 const receipt = await this.contract.setSkuTokenPrices(sku, tokens, prices, { from: owner});
 
                 expectEvent.inTransaction(
@@ -358,9 +378,10 @@ contract('Sale', function ([
 
         context('when setting multiple prices', function () {
             it('should emit the SkuTokenPricesUpdated event', async function () {
-                const sku = this.sku;
-                const tokens = [this.tokens[0], this.tokens[1]];
-                const prices = [this.prices[0], this.prices[1]];
+                const sku = allSkus[0];
+                const tokens = allTokens;
+                const prices = allPrices;
+
                 const receipt = await this.contract.setSkuTokenPrices(sku, tokens, prices, { from: owner});
 
                 expectEvent.inTransaction(
@@ -378,8 +399,9 @@ contract('Sale', function ([
     });
 
     describe('purchaseFor()', function () {
-        const quantity = Constants.One;
         const paymentToken = EthAddress;
+        const sku = allSkus[0];
+        const quantity = Constants.One;
 
         context('when the sale has not started', function () {
             it('should revert', async function () {
@@ -431,14 +453,16 @@ contract('Sale', function ([
     });
 
     describe('_purchaseFor()', function () {
-        beforeEach(async function () {
-            const quantity = Constants.One;
+        const paymentToken = EthAddress;
+        const sku = allSkus[0];
+        const quantity = Constants.One;
 
+        beforeEach(async function () {
             await this.contract.start({ from: owner });
 
             this.receipt = await this.contract.purchaseFor(
                 purchaser,
-                EthAddress,
+                paymentToken,
                 sku,
                 quantity,
                 extData,
@@ -453,26 +477,33 @@ contract('Sale', function ([
     });
 
     describe('_validatePurchase()', function () {
+        const paymentToken = EthAddress;
+        const sku = allSkus[1];
+        const quantity = Constants.One;
+
         it('should revert if the purchase is invalid', async function () {
             await expectRevert(
                 this.contract.callUnderscoreValidatePurchase(
                     purchaser,
-                    EthAddress,
-                    toBytes32(Constants.One),
-                    Constants.One,
+                    paymentToken,
+                    sku,
+                    quantity,
                     extData,
-                    { value: Constants.One }),
+                    { value: quantity }),
                 'SaleMock: invalid sku');
         });
     });
 
     describe('_calculatePrice()', function () {
+        const paymentToken = EthAddress;
+        const sku = allSkus[0];
+        const quantity = Constants.One;
+
         it('should return the correct price info', async function () {
-            const quantity = Constants.One;
 
             const receipt = await this.contract.callUnderscoreCalculatePrice(
                 purchaser,
-                EthAddress,
+                paymentToken,
                 sku,
                 quantity,
                 extData,
@@ -486,12 +517,14 @@ contract('Sale', function ([
     });
 
     describe('_transferFunds()', function () {
-        it('should return the correct payment info', async function () {
-            const quantity = Constants.One;
+        const paymentToken = EthAddress;
+        const sku = allSkus[0];
+        const quantity = Constants.One;
 
+        it('should return the correct payment info', async function () {
             const receipt = await this.contract.callUnderscoreTransferFunds(
                 purchaser,
-                EthAddress,
+                paymentToken,
                 sku,
                 quantity,
                 extData,
@@ -506,12 +539,14 @@ contract('Sale', function ([
     });
 
     describe('_deliverGoods()', function () {
-        it('should return the correct delivery info', async function () {
-            const quantity = Constants.One;
+        const paymentToken = EthAddress;
+        const sku = allSkus[0];
+        const quantity = Constants.One;
 
+        it('should return the correct delivery info', async function () {
             const receipt = await this.contract.callUnderscoreDeliverGoods(
                 purchaser,
-                EthAddress,
+                paymentToken,
                 sku,
                 quantity,
                 extData,
@@ -525,12 +560,14 @@ contract('Sale', function ([
     });
 
     describe('_finalizePurchase()', function () {
-        it('should return the correct finalize info', async function () {
-            const quantity = Constants.One;
+        const paymentToken = EthAddress;
+        const sku = allSkus[0];
+        const quantity = Constants.One;
 
+        it('should return the correct finalize info', async function () {
             const receipt = await this.contract.callUnderscoreFinalizePurchase(
                 purchaser,
-                EthAddress,
+                paymentToken,
                 sku,
                 quantity,
                 extData,
@@ -548,8 +585,9 @@ contract('Sale', function ([
 
     describe('_notifyPurchased()', function () {
         it('should emit the `Purchased` event', async function () {
-            const quantity = Constants.One;
             const paymentToken = EthAddress;
+            const sku = allSkus[0];
+            const quantity = Constants.One;
 
             const receipt = await this.contract.callUnderscoreNotifyPurchased(
                 purchaser,
@@ -607,13 +645,15 @@ contract('Sale', function ([
     });
 
     describe('_getPurchasedEventExtData()', function () {
-        it('should return the correct Purchased event extra data', async function () {
-            const quantity = Constants.One;
+        const paymentToken = EthAddress;
+        const sku = allSkus[0];
+        const quantity = Constants.One;
 
+        it('should return the correct Purchased event extra data', async function () {
             const purchasedEventExtData =
                 await this.contract.callUnderscoreGetPurchasedEventExtData(
                     purchaser,
-                    EthAddress,
+                    paymentToken,
                     sku,
                     quantity,
                     extData);
@@ -629,13 +669,15 @@ contract('Sale', function ([
     });
 
     describe('_getTotalPriceInfo()', function () {
-        it('should return the correct total price info', async function () {
-            const quantity = Constants.One;
+        const paymentToken = EthAddress;
+        const sku = allSkus[0];
+        const quantity = Constants.One;
 
+        it('should return the correct total price info', async function () {
             const totalPriceInfo =
                 await this.contract.callUnderscoreGetTotalPriceInfo(
                     purchaser,
-                    EthAddress,
+                    paymentToken,
                     sku,
                     quantity,
                     extData);
