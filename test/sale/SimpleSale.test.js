@@ -6,20 +6,9 @@ const Sale = artifacts.require('SimpleSaleMock.sol');
 const ERC20 = artifacts.require('ERC20Mock.sol');
 const IERC20 = artifacts.require('IERC20.sol');
 
-const prices = {
-    'both': {
-        ethPrice: ether('0.01'),
-        erc20Price: ether('1')
-    },
-    'ethOnly': {
-        ethPrice: ether('0.01'),
-        erc20Price: new BN('0')
-    },
-    'erc20Only': {
-        ethPrice: new BN('0'),
-        erc20Price: ether('1')
-    },
-};
+const sku = asciiToHex('sku');
+const ethPrice = ether('0.01');
+const erc20Price = ether('1');
 
 const purchaseData = asciiToHex('some data');
 
@@ -28,6 +17,7 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
         let payoutToken;
 
         this.supportedPayoutTokens = [EthAddress];
+        this.tokenPrices = [ethPrice];
 
         if (params.useErc20) {
             const erc20Token = await ERC20.new(ether('1000000000'), { from: params.owner });
@@ -36,6 +26,7 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
             payoutToken = erc20Token.address;
             this.payoutToken = payoutToken;
             this.supportedPayoutTokens.push(payoutToken);
+            this.tokenPrices.push(erc20Price);
         } else {
             payoutToken = ZeroAddress;
             this.payoutToken = EthAddress;
@@ -43,55 +34,27 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
 
         this.contract = await Sale.new(params.payout, payoutToken, { from: params.owner });
 
-        this.inventorySkus = Object.keys(prices).map(item => asciiToHex(item));
+        this.inventorySkus = [sku];
+
         await this.contract.addInventorySkus(this.inventorySkus, { from: params.owner });
         await this.contract.addSupportedPayoutTokens(this.supportedPayoutTokens, { from: params.owner });
-
-        for (const [purchaseId, { ethPrice, erc20Price }] of Object.entries(prices)) {
-            const sku = asciiToHex(purchaseId);
-
-            if (this.payoutToken == EthAddress) {
-                await this.contract.setSkuTokenPrices(
-                    sku,
-                    [ EthAddress ],
-                    [ prices[purchaseId].ethPrice ],
-                    { from: params.owner });
-            } else {
-                await this.contract.setSkuTokenPrices(
-                    sku,
-                    [
-                        EthAddress,
-                        this.payoutToken
-                    ],
-                    [
-                        prices[purchaseId].ethPrice,
-                        prices[purchaseId].erc20Price
-                    ],
-                    { from: params.owner });
-            }
-        }
-
+        await this.contract.setSkuTokenPrices(sku, this.supportedPayoutTokens, this.tokenPrices, { from: params.owner });
         await this.contract.start({ from: params.owner });
     };
 
     describe('Purchasing', async function () {
         function simplePurchase(payout, owner, operator, purchaser, useErc20) {
-            async function getPrice(sale, paymentToken, purchaseId, quantity) {
-                const sku = asciiToHex(purchaseId);
+            async function getPrice(sale, paymentToken, quantity) {
                 const unitPrice = await sale.getPrice(sku, paymentToken)
                 return unitPrice.mul(new BN(quantity));
             }
 
-            async function purchaseFor(sale, purchaser, paymentToken, purchaseId, quantity, operator, overrides) {
-                const price = await getPrice(sale, paymentToken, purchaseId, quantity);
+            async function purchaseFor(sale, purchaser, paymentToken, quantity, operator, overrides) {
+                const price = await getPrice(sale, paymentToken, quantity);
 
                 let value = price;
 
                 if (overrides) {
-                    if (overrides.purchaseId !== undefined) {
-                        purchaseId = overrides.purchaseId;
-                    }
-
                     if (overrides.value !== undefined) {
                         value = overrides.value;
                     }
@@ -107,9 +70,6 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                     etherValue = 0;
                 }
 
-                const sku = asciiToHex(purchaseId);
-
-                // console.log(`Purchasing ${quantity}*'${purchaseId}'`);
                 return sale.purchaseFor(
                     purchaser,
                     paymentToken,
@@ -130,56 +90,53 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
             }
 
             async function testPurchases(operator, overvalue) {
-                for (const [purchaseId, { ethPrice, erc20Price }] of Object.entries(prices)) {
-                    const sku = asciiToHex(purchaseId);
-                    const quantities = [One, new BN('10'), new BN('1000')];
-                    for (const quantity of quantities) {
-                        it('<this.test.title>', async function () {
-                            const unitPrice = (this.payoutToken == EthAddress) ? ethPrice : erc20Price;
-                            const totalPrice = (new BN(unitPrice)).mul(quantity);
+                const quantities = [One, new BN('10'), new BN('1000')];
+                for (const quantity of quantities) {
+                    it('<this.test.title>', async function () {
+                        const unitPrice = (this.payoutToken == EthAddress) ? ethPrice : erc20Price;
+                        const totalPrice = (new BN(unitPrice)).mul(quantity);
 
-                            this.test.title = `purchasing ${quantity.toString()} * '${purchaseId}' for ${fromWei(totalPrice.toString())} ${this.payoutToken == EthAddress ? 'ETH' : 'ERC20'}`;
+                        this.test.title = `purchasing ${quantity.toString()} items for ${fromWei(totalPrice.toString())} ${this.payoutToken == EthAddress ? 'ETH' : 'ERC20'}`;
 
-                            const priceFromContract = await getPrice(this.contract, this.payoutToken, purchaseId, quantity);
-                            priceFromContract.should.be.bignumber.equal(totalPrice);
+                        const priceFromContract = await getPrice(this.contract, this.payoutToken, quantity);
+                        priceFromContract.should.be.bignumber.equal(totalPrice);
 
-                            const balanceBefore =
-                                this.payoutToken == EthAddress ?
-                                    await balance.current(operator) :
-                                    await getBalance(this.payoutToken, operator);
+                        const balanceBefore =
+                            this.payoutToken == EthAddress ?
+                                await balance.current(operator) :
+                                await getBalance(this.payoutToken, operator);
 
-                            const receipt = await purchaseFor(this.contract, purchaser, this.payoutToken, purchaseId, quantity, operator, {value: totalPrice.add(overvalue)});
+                        const receipt = await purchaseFor(this.contract, purchaser, this.payoutToken, quantity, operator, {value: totalPrice.add(overvalue)});
 
-                            expectEvent.inTransaction(
-                                receipt.tx,
-                                this.contract,
-                                'Purchased',
-                                {
-                                    purchaser: purchaser,
-                                    operator: operator,
-                                    sku: padRight(sku, 64),
-                                    quantity: quantity,
-                                    paymentToken: toChecksumAddress(this.payoutToken),
-                                    extData: [
-                                        '0x' + totalPrice.toString(16, 64),
-                                        padRight(purchaseData, 64)]
-                                });
+                        expectEvent.inTransaction(
+                            receipt.tx,
+                            this.contract,
+                            'Purchased',
+                            {
+                                purchaser: purchaser,
+                                operator: operator,
+                                sku: padRight(sku, 64),
+                                quantity: quantity,
+                                paymentToken: toChecksumAddress(this.payoutToken),
+                                extData: [
+                                    '0x' + totalPrice.toString(16, 64),
+                                    padRight(purchaseData, 64)]
+                            });
 
-                            const balanceAfter =
-                                this.payoutToken == EthAddress ?
-                                    await balance.current(operator) :
-                                    await getBalance(this.payoutToken, operator);
+                        const balanceAfter =
+                            this.payoutToken == EthAddress ?
+                                await balance.current(operator) :
+                                await getBalance(this.payoutToken, operator);
 
-                            const balanceDiff = balanceBefore.sub(balanceAfter);
+                        const balanceDiff = balanceBefore.sub(balanceAfter);
 
-                            if (this.payoutToken == EthAddress) {
-                                const gasUsed = new BN(receipt.receipt.gasUsed);
-                                balanceDiff.should.be.bignumber.equal(totalPrice.add(gasUsed));
-                            } else {
-                                balanceDiff.should.be.bignumber.equal(totalPrice);
-                            }
-                        });
-                    }
+                        if (this.payoutToken == EthAddress) {
+                            const gasUsed = new BN(receipt.receipt.gasUsed);
+                            balanceDiff.should.be.bignumber.equal(totalPrice.add(gasUsed));
+                        } else {
+                            balanceDiff.should.be.bignumber.equal(totalPrice);
+                        }
+                    });
                 }
             }
 
@@ -194,14 +151,13 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                 });
 
                 it('when the value is insufficient', async function () {
-                    const unitPrice = await getPrice(this.contract, this.payoutToken, 'both', One);
+                    const unitPrice = await getPrice(this.contract, this.payoutToken, One);
 
                     await expectRevert(
                         purchaseFor(
                             this.contract,
                             purchaser,
                             this.payoutToken,
-                            'both',
                             Two,
                             purchaser,
                             { value: unitPrice }),
