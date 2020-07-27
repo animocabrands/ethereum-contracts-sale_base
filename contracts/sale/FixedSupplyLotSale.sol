@@ -254,15 +254,11 @@ abstract contract FixedSupplyLotSale is Sale {
     function _validatePurchase(
         Purchase memory purchase
     ) internal override virtual view {
-        require(purchase.purchaser != address(0), "FixedSupplyLotSale: zero address purchaser");
-        require(purchase.purchaser != address(uint160(address(this))), "FixedSupplyLotSale: contract address purchaser");
-        require (purchase.quantity != 0, "FixedSupplyLotSale: zero quantity purchase");
-        require(purchase.paymentToken != IERC20(0), "FixedSupplyLotSale: zero address payment token");
-        require(_skuTokenPrices.hasSku(purchase.sku), "FixedSupplyLotSale: non-existent lot");
-
         uint256 lotId = uint256(purchase.sku);
 
-        require(purchase.quantity <= _lots[lotId].numAvailable, "FixedSupplyLotSale: insufficient available lot supply");
+        require(
+            purchase.quantity <= _lots[lotId].numAvailable,
+            "FixedSupplyLotSale: insufficient available lot supply");
     }
 
     /**
@@ -314,34 +310,6 @@ abstract contract FixedSupplyLotSale is Sale {
     ) internal override virtual returns (bytes32[] memory /* finalizeInfo */) {
         uint256 lotId = uint256(purchase.sku);
         _lots[lotId].numAvailable = _lots[lotId].numAvailable.sub(purchase.quantity);
-    }
-
-    /**
-     * Retrieves the total price information for the given quantity of the
-     *  specified SKU item.
-     * @param *purchaser* The account for whome the queried total price
-     *  information is for.
-     * @param paymentToken The ERC20 token payment currency of the total price
-     *  information.
-     * @param sku The SKU item whose total price information will be retrieved.
-     * @param quantity The quantity of SKU items to retrieve the total price
-     *  information for.
-     * @param *extData* Implementation-specific extra input data.
-     * @return totalPriceInfo Implementation-specific total price information
-     *  (0:total price).
-     */
-    function _getTotalPriceInfo(
-        address payable /* purchaser */,
-        IERC20 paymentToken,
-        bytes32 sku,
-        uint256 quantity,
-        bytes32[] memory /* extData */
-    ) internal override virtual view returns (bytes32[] memory totalPriceInfo) {
-        uint256 unitPrice = _skuTokenPrices.getPrice(sku, paymentToken);
-        uint256 totalPrice = unitPrice.mul(quantity);
-
-        totalPriceInfo = new bytes32[](1);
-        totalPriceInfo[0] = bytes32(totalPrice);
     }
 
 }

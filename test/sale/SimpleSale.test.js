@@ -143,52 +143,40 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                             const priceFromContract = await getPrice(this.contract, this.payoutToken, purchaseId, quantity);
                             priceFromContract.should.be.bignumber.equal(totalPrice);
 
-                            if (totalPrice.eq(Zero)) {
-                                await expectRevert(
-                                    purchaseFor(
-                                        this.contract,
-                                        purchaser,
-                                        this.payoutToken,
-                                        purchaseId,
-                                        quantity,
-                                        operator),
-                                    'SimpleSale: invalid SKU');
+                            const balanceBefore =
+                                this.payoutToken == EthAddress ?
+                                    await balance.current(operator) :
+                                    await getBalance(this.payoutToken, operator);
+
+                            const receipt = await purchaseFor(this.contract, purchaser, this.payoutToken, purchaseId, quantity, operator, {value: totalPrice.add(overvalue)});
+
+                            expectEvent.inTransaction(
+                                receipt.tx,
+                                this.contract,
+                                'Purchased',
+                                {
+                                    purchaser: purchaser,
+                                    operator: operator,
+                                    sku: padRight(sku, 64),
+                                    quantity: quantity,
+                                    paymentToken: toChecksumAddress(this.payoutToken),
+                                    extData: [
+                                        '0x' + totalPrice.toString(16, 64),
+                                        padRight(purchaseData, 64)]
+                                });
+
+                            const balanceAfter =
+                                this.payoutToken == EthAddress ?
+                                    await balance.current(operator) :
+                                    await getBalance(this.payoutToken, operator);
+
+                            const balanceDiff = balanceBefore.sub(balanceAfter);
+
+                            if (this.payoutToken == EthAddress) {
+                                const gasUsed = new BN(receipt.receipt.gasUsed);
+                                balanceDiff.should.be.bignumber.equal(totalPrice.add(gasUsed));
                             } else {
-                                const balanceBefore =
-                                    this.payoutToken == EthAddress ?
-                                        await balance.current(operator) :
-                                        await getBalance(this.payoutToken, operator);
-
-                                const receipt = await purchaseFor(this.contract, purchaser, this.payoutToken, purchaseId, quantity, operator, {value: totalPrice.add(overvalue)});
-
-                                expectEvent.inTransaction(
-                                    receipt.tx,
-                                    this.contract,
-                                    'Purchased',
-                                    {
-                                        purchaser: purchaser,
-                                        operator: operator,
-                                        sku: padRight(sku, 64),
-                                        quantity: quantity,
-                                        paymentToken: toChecksumAddress(this.payoutToken),
-                                        extData: [
-                                            '0x' + totalPrice.toString(16, 64),
-                                            padRight(purchaseData, 64)]
-                                    });
-
-                                const balanceAfter =
-                                    this.payoutToken == EthAddress ?
-                                        await balance.current(operator) :
-                                        await getBalance(this.payoutToken, operator);
-
-                                const balanceDiff = balanceBefore.sub(balanceAfter);
-
-                                if (this.payoutToken == EthAddress) {
-                                    const gasUsed = new BN(receipt.receipt.gasUsed);
-                                    balanceDiff.should.be.bignumber.equal(totalPrice.add(gasUsed));
-                                } else {
-                                    balanceDiff.should.be.bignumber.equal(totalPrice);
-                                }
+                                balanceDiff.should.be.bignumber.equal(totalPrice);
                             }
                         });
                     }
@@ -203,72 +191,6 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                         operator: operator,
                         purchaser: purchaser,
                         useErc20: useErc20});
-                });
-
-                it('when the purchaser is the zero address', async function () {
-                    for (const purchaseId of Object.keys(prices)) {
-                        await expectRevert(
-                            purchaseFor(
-                                this.contract,
-                                ZeroAddress,
-                                this.payoutToken,
-                                purchaseId,
-                                One,
-                                purchaser),
-                            'SimpleSale: purchaser cannot be the zero address');
-                    }
-                });
-
-                it('when the purchaser is the contract address', async function () {
-                    for (const purchaseId of Object.keys(prices)) {
-                        await expectRevert(
-                            purchaseFor(
-                                this.contract,
-                                this.contract.address,
-                                this.payoutToken,
-                                purchaseId,
-                                One,
-                                purchaser),
-                            'SimpleSale: purchaser cannot be the contract address');
-                    }
-                });
-
-                it('when quantity == 0', async function () {
-                    for (const purchaseId of Object.keys(prices)) {
-                        await expectRevert(
-                            purchaseFor(
-                                this.contract,
-                                purchaser,
-                                this.payoutToken,
-                                purchaseId,
-                                Zero,
-                                purchaser),
-                            'SimpleSale: quantity cannot be zero');
-                    }
-                });
-
-                it('when paymentToken is not a supported type', async function() {
-                    await expectRevert(
-                        purchaseFor(
-                            this.contract,
-                            purchaser,
-                            '0xe19Ec968c15f487E96f631Ad9AA54fAE09A67C8c',
-                            'both',
-                            One,
-                            purchaser),
-                        'SkuTokenPrice: unsupported token');
-                });
-
-                it('when purchaseId does not exist', async function () {
-                    await expectRevert(
-                        purchaseFor(
-                            this.contract,
-                            purchaser,
-                            this.payoutToken,
-                            'invalid',
-                            One,
-                            purchaser),
-                        'SkuTokenPrice: non-existent sku');
                 });
 
                 it('when the value is insufficient', async function () {

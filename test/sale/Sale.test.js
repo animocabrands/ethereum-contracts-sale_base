@@ -4,7 +4,7 @@ const { toHex, padLeft } = require('web3-utils');
 
 const Sale = artifacts.require('SaleMock');
 
-contract.only('Sale', function ([
+contract('Sale', function ([
     _,
     owner,
     operator,
@@ -419,6 +419,8 @@ contract.only('Sale', function ([
 
         context('when the sale has started', function () {
             beforeEach(async function () {
+                await this.contract.addInventorySkus([sku], { from: owner});
+                await this.contract.addSupportedPayoutTokens([paymentToken], { from: owner});
                 await this.contract.start({ from: owner });
             });
 
@@ -458,6 +460,8 @@ contract.only('Sale', function ([
         const quantity = Constants.One;
 
         beforeEach(async function () {
+            await this.contract.addInventorySkus([sku], { from: owner});
+            await this.contract.addSupportedPayoutTokens([paymentToken], { from: owner});
             await this.contract.start({ from: owner });
 
             this.receipt = await this.contract.purchaseFor(
@@ -478,19 +482,72 @@ contract.only('Sale', function ([
 
     describe('_validatePurchase()', function () {
         const paymentToken = EthAddress;
-        const sku = allSkus[1];
+        const sku = allSkus[0];
         const quantity = Constants.One;
 
-        it('should revert if the purchase is invalid', async function () {
+        beforeEach(async function () {
+            await this.contract.addInventorySkus([sku], { from: owner});
+            await this.contract.addSupportedPayoutTokens([paymentToken], { from: owner});
+        });
+
+        it('should revert if the purchaser is the zero-address', async function () {
+            await expectRevert(
+                this.contract.callUnderscoreValidatePurchase(
+                    Constants.ZeroAddress,
+                    paymentToken,
+                    sku,
+                    quantity,
+                    extData,
+                    { from: operator }),
+                'Sale: zero address purchaser');
+        });
+
+        it('should revert if the purchaser is the sale contract address', async function () {
+            await expectRevert(
+                this.contract.callUnderscoreValidatePurchase(
+                    this.contract.address,
+                    paymentToken,
+                    sku,
+                    quantity,
+                    extData,
+                    { from: operator }),
+                'Sale: contract address purchaser');
+        });
+
+        it('should revert if the payment token is unsupported', async function () {
+            await expectRevert(
+                this.contract.callUnderscoreValidatePurchase(
+                    purchaser,
+                    Constants.ZeroAddress,
+                    sku,
+                    quantity,
+                    extData,
+                    { from: operator }),
+                'Sale: unsupported token');
+        });
+
+        it('should revert if the sku doesnt exist', async function () {
+            await expectRevert(
+                this.contract.callUnderscoreValidatePurchase(
+                    purchaser,
+                    paymentToken,
+                    toBytes32(Constants.Two),
+                    quantity,
+                    extData,
+                    { from: operator }),
+                'Sale: non-existent sku');
+        });
+
+        it('should revert if the purchase quantity is zero', async function () {
             await expectRevert(
                 this.contract.callUnderscoreValidatePurchase(
                     purchaser,
                     paymentToken,
                     sku,
-                    quantity,
+                    Constants.Zero,
                     extData,
-                    { value: quantity }),
-                'SaleMock: invalid sku');
+                    { from: operator }),
+                'Sale: zero quantity purchase');
         });
     });
 
@@ -669,20 +726,38 @@ contract.only('Sale', function ([
     });
 
     describe('_getTotalPriceInfo()', function () {
-        const paymentToken = EthAddress;
-        const sku = allSkus[0];
         const quantity = Constants.One;
 
-        it('should return the correct total price info', async function () {
-            const totalPriceInfo =
-                await this.contract.callUnderscoreGetTotalPriceInfo(
-                    purchaser,
-                    paymentToken,
-                    sku,
-                    quantity,
-                    extData);
+        beforeEach(async function () {
+            await this.contract.addInventorySkus(allSkus, { from: owner});
+            await this.contract.addSupportedPayoutTokens(allTokens, { from: owner});
+        });
 
-            totalPriceInfo.length.should.be.equal(0);
+        it('should return correct total price pricing info', async function () {
+            allTokens.length.should.be.equal(allPrices.length);
+
+            const numTokenPrices = allTokens.length;
+
+            for (const sku of allSkus) {
+                for (let index = 0; index < numTokenPrices; ++index) {
+                    const token = allTokens[index];
+                    const price = allPrices[index];
+
+                    const totalPriceInfo =
+                        await this.contract.callUnderscoreGetTotalPriceInfo(
+                            purchaser,
+                            token,
+                            sku,
+                            quantity,
+                            extData);
+
+                    totalPriceInfo.length.should.be.equal(0);
+
+                    const unitPrice = await this.contract.getSkuTokenPrice(sku, token);
+                    const totalPrice = unitPrice.mul(quantity);
+                    totalPrice.should.be.bignumber.equal(new BN(totalPriceInfo[0]));
+                }
+            }
         });
     });
 });

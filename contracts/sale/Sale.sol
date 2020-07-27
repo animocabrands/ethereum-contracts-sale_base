@@ -232,7 +232,27 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
      */
     function _validatePurchase(
         Purchase memory purchase
-    ) internal virtual view {}
+    ) internal virtual view {
+        require(
+            purchase.purchaser != address(0),
+            "Sale: zero address purchaser");
+
+        require(
+            purchase.purchaser != address(uint160(address(this))),
+            "Sale: contract address purchaser");
+
+        require(
+            _skuTokenPrices.hasToken(purchase.paymentToken),
+            "Sale: unsupported token");
+
+        require(
+            _skuTokenPrices.hasSku(purchase.sku),
+            "Sale: non-existent sku");
+
+        require(
+            purchase.quantity != 0,
+            "Sale: zero quantity purchase");
+    }
 
     /**
      * Calculates the purchase price.
@@ -388,22 +408,28 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
     /**
      * Retrieves the total price information for the given quantity of the
      *  specified SKU item.
-     * @param purchaser The account for whome the queried total price
+     * @param *purchaser* The account for whome the queried total price
      *  information is for.
      * @param paymentToken The ERC20 token payment currency of the total price
      *  information.
      * @param sku The SKU item whose total price information will be retrieved.
      * @param quantity The quantity of SKU items to retrieve the total price
      *  information for.
-     * @param extData Implementation-specific extra input data.
+     * @param *extData* Implementation-specific extra input data.
      * @return totalPriceInfo Implementation-specific total price information.
      */
     function _getTotalPriceInfo(
-        address payable purchaser,
+        address payable /* purchaser */,
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] memory extData
-    ) internal virtual view returns (bytes32[] memory totalPriceInfo);
+        bytes32[] memory /* extData */
+    ) internal virtual view returns (bytes32[] memory totalPriceInfo) {
+        uint256 unitPrice = _skuTokenPrices.getPrice(sku, paymentToken);
+        uint256 totalPrice = unitPrice.mul(quantity);
+
+        totalPriceInfo = new bytes32[](1);
+        totalPriceInfo[0] = bytes32(totalPrice);
+    }
 
 }

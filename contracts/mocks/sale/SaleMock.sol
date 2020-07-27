@@ -26,6 +26,13 @@ contract SaleMock is Sale {
 
     constructor() public {}
 
+    function getSkuTokenPrice(
+        bytes32 sku,
+        IERC20 token
+    ) external view returns (uint256 price) {
+        price = _skuTokenPrices.getPrice(sku, token);
+    }
+
     function callUnderscorePurchaseFor(
         address payable purchaser,
         IERC20 paymentToken,
@@ -274,14 +281,6 @@ contract SaleMock is Sale {
     {
         super._purchaseFor(purchase);
         emit UnderscorePurchaseForCalled();
-    }
-
-    function _validatePurchase(
-        Purchase memory purchase
-    ) internal override view {
-        super._validatePurchase(purchase);
-
-        require(uint256(purchase.sku) == 0, "SaleMock: invalid sku");
     }
 
     function _calculatePrice(

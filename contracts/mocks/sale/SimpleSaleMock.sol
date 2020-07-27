@@ -11,10 +11,6 @@ contract SimpleSaleMock is SimpleSale {
         bytes32[] paymentInfo
     );
 
-    event UnderscoreGetTotalPriceInfoResult(
-        bytes32[] totalPriceInfo
-    );
-
     constructor(
         address payable payoutWallet_,
         IERC20 payoutToken_
@@ -76,23 +72,6 @@ contract SimpleSaleMock is SimpleSale {
         bytes32[] memory paymentInfo = _transferFunds(purchase, priceInfo);
 
         emit UnderscoreTransferFundsResult(paymentInfo);
-    }
-
-    function callUnderscoreGetTotalPriceInfo(
-        address payable purchaser,
-        IERC20 paymentToken,
-        bytes32 sku,
-        uint256 quantity,
-        bytes32[] calldata extData
-    ) external {
-        bytes32[] memory totalPriceInfo = _getTotalPriceInfo(
-            purchaser,
-            paymentToken,
-            sku,
-            quantity,
-            extData);
-
-        emit UnderscoreGetTotalPriceInfoResult(totalPriceInfo);
     }
 
     function _getPurchaseStruct(

@@ -565,98 +565,18 @@ contract('FixedSupplyLotSale', function ([
         const quantity = Constants.One;
         const tokenAddress = EthAddress;
 
-        async function shouldRevert(recipient, lotId, quantity, tokenAddress, error, txParams = {}) {
+        it('should revert if the purchase quantity > number of Lot items available for sale', async function () {
+            const lot = await this.sale._lots(lotId);
+
             await expectRevert(
                 this.sale.callUnderscoreValidatePurchase(
                     recipient,
                     tokenAddress,
-                    toBytes32(lotId),
-                    quantity,
+                    sku,
+                    lot.numAvailable.add(quantity),
                     [ extDataString ].map(item => toBytes32(item)),
-                    txParams),
-                error);
-        }
-
-        async function shouldRevertWithValidatedQuantity(recipient, lotId, quantity, tokenAddress, error, txParams = {}) {
-            const sku = toBytes32(lotId);
-            const exists = await this.sale.hasInventorySku(sku);
-
-            if (exists) {
-                const lot = await this.sale._lots(lotId);
-                (quantity.gt(Constants.Zero) && quantity.lte(lot.numAvailable)).should.be.true;
-            }
-
-            await shouldRevert.bind(this, recipient, lotId, quantity, tokenAddress, error, txParams)();
-        }
-
-        it('should revert if the recipient is the zero-address', async function () {
-            await shouldRevertWithValidatedQuantity.bind(
-                this,
-                Constants.ZeroAddress,
-                lotId,
-                quantity,
-                tokenAddress,
-                'FixedSupplyLotSale: zero address purchaser',
-                { from: operator })();
-        });
-
-        it('should revert if the recipient is the sale contract address', async function () {
-            await shouldRevertWithValidatedQuantity.bind(
-                this,
-                this.sale.address,
-                lotId,
-                quantity,
-                tokenAddress,
-                'FixedSupplyLotSale: contract address purchaser',
-                { from: operator })();
-        });
-
-        it('should revert if the lot doesnt exist', async function () {
-            await shouldRevertWithValidatedQuantity.bind(
-                this,
-                recipient,
-                unknownLotId,
-                quantity,
-                tokenAddress,
-                'FixedSupplyLotSale: non-existent lot',
-                { from: operator })();
-        });
-
-        it('should revert if the purchase quantity is zero', async function () {
-            const quantity = Constants.Zero;
-
-            await shouldRevert.bind(
-                this,
-                recipient,
-                lotId,
-                Constants.Zero,
-                tokenAddress,
-                'FixedSupplyLotSale: zero quantity purchase',
-                { from: operator })();
-        });
-
-        it('should revert if the purchase token address is the zero-address', async function () {
-            await shouldRevertWithValidatedQuantity.bind(
-                this,
-                recipient,
-                lotId,
-                quantity,
-                Constants.ZeroAddress,
-                'FixedSupplyLotSale: zero address payment token',
-                { from: operator })();
-        });
-
-        it('should revert if the purchase quantity > number of Lot items available for sale', async function () {
-            const lot = await this.sale._lots(lotId);
-
-            await shouldRevert.bind(
-                this,
-                recipient,
-                lotId,
-                lot.numAvailable.add(Constants.One),
-                tokenAddress,
-                'FixedSupplyLotSale: insufficient available lot supply',
-                { from: operator })();
+                    { from: operator }),
+                'FixedSupplyLotSale: insufficient available lot supply');
         });
     });
 
@@ -739,28 +659,6 @@ contract('FixedSupplyLotSale', function ([
 
         it('should return correct finalize info', async function () {
             this.result.finalizeInfo.length.should.equal(0);
-        });
-    });
-
-    describe('_getTotalPriceInfo()', function () {
-        const quantity = Constants.One;
-
-        beforeEach(async function () {
-            this.lot = await this.sale._lots(lotId);
-
-            this.totalPriceInfo = await this.sale.callUnderscoreGetTotalPriceInfo(
-                recipient,
-                PayoutTokenAddress,
-                sku,
-                quantity,
-                []);
-        });
-
-        it('should return correct total price pricing info', async function () {
-            const expectedUnitPrice = await this.sale.getSkuTokenPrice(sku, PayoutTokenAddress);
-            const expectedTotalPrice = expectedUnitPrice.mul(quantity);
-            const actualTotalPrice = toBN(this.totalPriceInfo[0]);
-            expectedTotalPrice.should.be.bignumber.equal(actualTotalPrice);
         });
     });
 });

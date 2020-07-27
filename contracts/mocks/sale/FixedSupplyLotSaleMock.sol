@@ -34,13 +34,6 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
         exists = _skuTokenPrices.hasSku(sku);
     }
 
-    function getSkuTokenPrice(
-        bytes32 sku,
-        IERC20 token
-    ) external view returns (uint256 price) {
-        price = _skuTokenPrices.getPrice(sku, token);
-    }
-
     function getLotNonFungibleSupply(
         uint256 lotId
     )
@@ -137,21 +130,6 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
             _finalizePurchase(purchase, priceInfo, paymentInfo, deliveryInfo);
 
         emit UnderscoreFinalizePurchaseResult(finalizeInfo);
-    }
-
-    function callUnderscoreGetTotalPriceInfo(
-        address payable purchaser,
-        IERC20 paymentToken,
-        bytes32 sku,
-        uint256 quantity,
-        bytes32[] calldata extData
-    ) external view returns (bytes32[] memory totalPriceInfo) {
-        totalPriceInfo = _getTotalPriceInfo(
-            purchaser,
-            paymentToken,
-            sku,
-            quantity,
-            extData);
     }
 
     function _transferFunds(
