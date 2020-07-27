@@ -416,7 +416,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
      * @param quantity The quantity of SKU items to retrieve the total price
      *  information for.
      * @param *extData* Implementation-specific extra input data.
-     * @return totalPriceInfo Implementation-specific total price information.
+     * @return totalPriceInfo Implementation-specific total price information
+     *  (0:total price).
      */
     function _getTotalPriceInfo(
         address payable /* purchaser */,
