@@ -2,29 +2,26 @@
 
 pragma solidity 0.6.8;
 
-import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-
 import "./Sale.sol";
-import "../payment/KyberAdapter.sol";
 
-abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
-    using SafeMath for uint256;
+/**
+ * @title FixedSupplyLotSale
+ * An abstract sale contract for fixed supply lots, where each instance of a lot
+ * is composed of a non-fungible token and some quantity of a fungible token.
+ */
+abstract contract FixedSupplyLotSale is Sale {
 
     // a Lot is a class of purchasable sale items.
     struct Lot {
-        bool exists; // state flag to indicate that the Lot item exists.
         uint256[] nonFungibleSupply; // supply of non-fungible tokens for sale.
         uint256 fungibleAmount; // fungible token amount bundled with each NFT.
-        uint256 price; // Lot item price, in payout currency tokens.
         uint256 numAvailable; // number of Lot items available for purchase.
     }
 
     event LotCreated (
         uint256 lotId, // id of the created Lot.
         uint256[] nonFungibleTokens, // initial Lot supply of non-fungible tokens.
-        uint256 fungibleAmount, // initial fungible token amount bundled with each NFT.
-        uint256 price // initial Lot item price.
+        uint256 fungibleAmount // initial fungible token amount bundled with each NFT.
     );
 
     event LotNonFungibleSupplyUpdated (
@@ -37,61 +34,32 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
         uint256 fungibleAmount // updated fungible token amount.
     );
 
-    event LotPriceUpdated (
-        uint256 lotId, // id of the Lot whose item price was updated.
-        uint256 price // updated item price.
-    );
-
     uint256 public _fungibleTokenId; // inventory token id of the fungible tokens bundled in a Lot item.
 
-    IInventoryContract public _inventoryContract; // inventory contract address.
+    address public _inventoryContract; // inventory contract address.
 
     mapping (uint256 => Lot) public _lots; // mapping of lotId => Lot.
 
     /**
-     * @dev Constructor.
-     * @param kyberProxy Kyber network proxy contract.
-     * @param payoutWallet_ Account to receive payout currency tokens from the Lot sales.
-     * @param payoutToken_ Payout currency token contract address.
+     * Constructor.
      * @param fungibleTokenId Inventory token id of the fungible tokens bundled in a Lot item.
      * @param inventoryContract Address of the inventory contract to use in the delivery of purchased Lot items.
      */
     constructor(
-        address kyberProxy,
-        address payable payoutWallet_,
-        IERC20 payoutToken_,
         uint256 fungibleTokenId,
-        IInventoryContract inventoryContract
+        address inventoryContract
     )
-        Sale(
-            payoutWallet_,
-            payoutToken_
-        )
-        KyberAdapter(kyberProxy)
-        public
+        Sale()
+        internal
     {
         setFungibleTokenId(fungibleTokenId);
         setInventoryContract(inventoryContract);
     }
 
     /**
-     * Sets the ERC20 token currency accepted by the payout wallet for purchase
-     *  payments.
-     * @dev Emits the PayoutTokenSet event.
-     * @dev Reverts if called by any other than the contract owner.
-     * @dev Reverts if the payout token is the same as the current value.
-     * @dev Reverts if the payout token is the zero address.
-     * @dev Reverts if the contract is not paused.
-     * @param payoutToken_ The new ERC20 token currency accepted by the payout
-     *  wallet for purchase payments.
-     */
-     function setPayoutToken(IERC20 payoutToken_) public override virtual onlyOwner whenPaused {
-        require(payoutToken_ != IERC20(0));
-        super.setPayoutToken(payoutToken_);
-    }
-
-    /**
-     * @dev Sets the inventory token id of the fungible tokens bundled in a Lot item.
+     * Sets the inventory token id of the fungible tokens bundled in a Lot item.
+     * @dev Reverts if `fungibleTokenId` is zero.
+     * @dev Reverts if setting `fungibleTokenId` with the current value.
      * @param fungibleTokenId Inventory token id of the fungible tokens to bundle in a Lot item.
      */
     function setFungibleTokenId(
@@ -101,65 +69,72 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
         onlyOwner
         whenNotStarted
     {
-        require(fungibleTokenId != 0);
-        require(fungibleTokenId != _fungibleTokenId);
+        require(fungibleTokenId != 0, "FixedSupplyLotSale: zero fungible token ID");
+        require(fungibleTokenId != _fungibleTokenId, "FixedSupplyLotSale: duplicate assignment");
 
         _fungibleTokenId = fungibleTokenId;
     }
 
     /**
-     * @dev Sets the inventory contract to use in the delivery of purchased Lot items.
+     * Sets the inventory contract to use in the delivery of purchased Lot items.
+     * @dev Reverts if `inventoryContract` is zero.
+     * @dev Reverts if setting `inventoryContract` with the current value.
      * @param inventoryContract Address of the inventory contract to use.
      */
     function setInventoryContract(
-        IInventoryContract inventoryContract
+        address inventoryContract
     )
         public
         onlyOwner
         whenNotStarted
     {
-        require(inventoryContract != IInventoryContract(0));
-        require(inventoryContract != _inventoryContract);
+        require(inventoryContract != address(0), "FixedSupplyLotSale: zero inventory contract");
+        require(inventoryContract != _inventoryContract, "FixedSupplyLotSale: duplicate assignment");
 
         _inventoryContract = inventoryContract;
     }
 
     /**
-     * @dev Creates a new Lot to add to the sale.
-     * There are NO guarantees about the uniqueness of the non-fungible token supply.
-     * Lot item price must be at least 0.00001 of the base denomination.
+     * Creates a new Lot to add to the sale.
+     * @dev Reverts if the lot to create already exists.
+     * @dev There are NO guarantees about the uniqueness of the non-fungible token supply.
      * @param lotId Id of the Lot to create.
      * @param nonFungibleSupply Initial non-fungible token supply of the Lot.
      * @param fungibleAmount Initial fungible token amount to bundle with each NFT.
-     * @param price Initial Lot item sale price, in payout currency tokens
      */
     function createLot(
         uint256 lotId,
         uint256[] memory nonFungibleSupply,
-        uint256 fungibleAmount,
-        uint256 price
+        uint256 fungibleAmount
     )
         public
         onlyOwner
         whenNotStarted
     {
-        require(!_lots[lotId].exists);
+        bytes32 sku = bytes32(lotId);
+
+        require(!_hasSku(sku), "FixedSupplyLotSale: lot exists");
+
+        bytes32[] memory inventorySkus = new bytes32[](1);
+        inventorySkus[0] = sku;
+
+        _addSkus(inventorySkus);
 
         Lot memory lot;
-        lot.exists = true;
         lot.nonFungibleSupply = nonFungibleSupply;
         lot.fungibleAmount = fungibleAmount;
-        lot.price = price;
         lot.numAvailable = nonFungibleSupply.length;
 
         _lots[lotId] = lot;
 
-        emit LotCreated(lotId, nonFungibleSupply, fungibleAmount, price);
+        emit LotCreated(lotId, nonFungibleSupply, fungibleAmount);
     }
 
     /**
-     * @dev Updates the given Lot's non-fungible token supply with additional NFTs.
-     * There are NO guarantees about the uniqueness of the non-fungible token supply.
+     * Updates the given Lot's non-fungible token supply with additional NFTs.
+     * @dev Reverts if `nonFungibleTokens` is an empty array.
+     * @dev Reverts if the lot whose non-fungible supply is being updated does not exist.
+     * @dev There are NO guarantees about the uniqueness of the non-fungible token supply.
      * @param lotId Id of the Lot to update.
      * @param nonFungibleTokens Non-fungible tokens to update with.
      */
@@ -171,11 +146,13 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
         onlyOwner
         whenNotStarted
     {
-        require(nonFungibleTokens.length != 0);
+        require(nonFungibleTokens.length != 0, "FixedSupplyLotSale: zero length non-fungible supply");
+
+        bytes32 sku = bytes32(lotId);
+
+        require(_hasSku(sku), "FixedSupplyLotSale: non-existent lot");
 
         Lot memory lot = _lots[lotId];
-
-        require(lot.exists);
 
         uint256 newSupplySize = lot.nonFungibleSupply.length.add(nonFungibleTokens.length);
         uint256[] memory newNonFungibleSupply = new uint256[](newSupplySize);
@@ -198,7 +175,9 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
     }
 
     /**
-     * @dev Updates the given Lot's fungible token amount bundled with each NFT.
+     * Updates the given Lot's fungible token amount bundled with each NFT.
+     * @dev Reverts if the lot whose fungible amount is being updated does not exist.
+     * @dev Reverts if setting `fungibleAmount` with the current value.
      * @param lotId Id of the Lot to update.
      * @param fungibleAmount Fungible token amount to update with.
      */
@@ -210,8 +189,10 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
         onlyOwner
         whenPaused
     {
-        require(_lots[lotId].exists);
-        require(_lots[lotId].fungibleAmount != fungibleAmount);
+        bytes32 sku = bytes32(lotId);
+
+        require(_hasSku(sku), "FixedSupplyLotSale: non-existent lot");
+        require(_lots[lotId].fungibleAmount != fungibleAmount, "FixedSupplyLotSale: duplicate assignment");
 
         _lots[lotId].fungibleAmount = fungibleAmount;
 
@@ -219,28 +200,8 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
     }
 
     /**
-     * @dev Updates the given Lot's item sale price.
-     * @param lotId Id of the Lot to update.
-     * @param price The new sale price, in payout currency tokens, to update with.
-     */
-    function updateLotPrice(
-        uint256 lotId,
-        uint256 price
-    )
-        external
-        onlyOwner
-        whenPaused
-    {
-        require(_lots[lotId].exists);
-        require(_lots[lotId].price != price);
-
-        _lots[lotId].price = price;
-
-        emit LotPriceUpdated(lotId, price);
-    }
-
-    /**
-     * @dev Returns the given number of next available non-fungible tokens for the specified Lot.
+     * Returns the given number of next available non-fungible tokens for the specified Lot.
+     * @dev Reverts if the lot being peeked does not exist.
      * @dev If the given number is more than the next available non-fungible tokens, then the remaining available is returned.
      * @param lotId Id of the Lot whose non-fungible supply to peek into.
      * @param count Number of next available non-fungible tokens to peek.
@@ -257,9 +218,11 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
         uint256[] memory
     )
     {
-        Lot memory lot = _lots[lotId];
+        bytes32 sku = bytes32(lotId);
 
-        require(lot.exists);
+        require(_hasSku(sku), "FixedSupplyLotSale: non-existent lot");
+
+        Lot memory lot = _lots[lotId];
 
         if (count > lot.numAvailable) {
             count = lot.numAvailable;
@@ -278,134 +241,24 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
     }
 
     /**
-     * @dev Retrieves user purchase price information for the given quantity of Lot items.
-     * @param recipient The user for whom the price information is being retrieved for.
-     * @param lotId Lot id of the items from which the purchase price information will be retrieved.
-     * @param quantity Quantity of Lot items from which the purchase price information will be retrieved.
-     * @param tokenAddress Purchase currency token contract address.
-     * @return minConversionRate Minimum conversion rate from purchase tokens to payout tokens.
-     * @return totalPrice Total price (excluding any discounts), in purchase currency tokens.
-     * @return totalDiscounts Total discounts to apply to the total price, in purchase currency tokens.
-     */
-    function getPrice(
-        address payable recipient,
-        uint256 lotId,
-        uint256 quantity,
-        IERC20 tokenAddress
-    )
-        external
-        view
-        returns
-    (
-        uint256 minConversionRate,
-        uint256 totalPrice,
-        uint256 totalDiscounts
-    )
-    {
-        Lot memory lot = _lots[lotId];
-
-        require(lot.exists);
-        require(tokenAddress != IERC20(0));
-
-        (totalPrice, totalDiscounts) = _getPrice(recipient, lot, quantity);
-
-        if (tokenAddress == payoutToken) {
-            minConversionRate = 1000000000000000000;
-        } else {
-            (, uint tokenAmount) = _convertToken(payoutToken, totalPrice, tokenAddress);
-            (, minConversionRate) = kyber.getExpectedRate(tokenAddress, payoutToken, tokenAmount);
-
-            if (totalPrice > 0) {
-                totalPrice = ceilingDiv(totalPrice.mul(10**36), minConversionRate);
-                totalPrice = _fixTokenDecimals(payoutToken, tokenAddress, totalPrice, true);
-            }
-
-            if (totalDiscounts > 0) {
-                totalDiscounts = ceilingDiv(totalDiscounts.mul(10**36), minConversionRate);
-                totalDiscounts = _fixTokenDecimals(payoutToken, tokenAddress, totalDiscounts, true);
-            }
-        }
-    }
-
-    /**
      * Validates a purchase.
+     * @dev Reverts if the purchaser is the zero address.
+     * @dev Reverts if the purchaser is the sale contract address.
+     * @dev Reverts if the quantity being purchased is zero.
+     * @dev Reverts if the payment token is the zero address.
+     * @dev Reverts if the lot being purchased does not exist.
+     * @dev Reverts if the lot being purchased has an insufficient token supply.
      * @param purchase Purchase conditions (extData[0]:max token amount,
      *  extData[1]:min conversion rate).
      */
     function _validatePurchase(
         Purchase memory purchase
-    ) internal override virtual {
-        require(purchase.purchaser != address(0));
-        require(purchase.purchaser != address(uint160(address(this))));
-        require (purchase.quantity > 0);
-        require(purchase.paymentToken != IERC20(0));
-
+    ) internal override virtual view {
         uint256 lotId = uint256(purchase.sku);
 
-        require(_lots[lotId].exists);
-        require(purchase.quantity <= _lots[lotId].numAvailable);
-    }
-
-    /**
-     * Calculates the purchase price.
-     * @param purchase Purchase conditions (extData[0]:max token amount,
-     *  extData[1]:min conversion rate).
-     * @return priceInfo Implementation-specific calculated purchase price
-     *  information (0:total price, 1:total discounts).
-     */
-    function _calculatePrice(
-        Purchase memory purchase
-    ) internal override virtual returns (bytes32[] memory priceInfo) {
-        uint256 lotId = uint256(purchase.sku);
-
-        (uint256 totalPrice, uint256 totalDiscounts) =
-            _getPrice(
-                purchase.purchaser,
-                _lots[lotId],
-                purchase.quantity);
-
-        require(totalDiscounts <= totalPrice);
-
-        priceInfo = new bytes32[](2);
-        priceInfo[0] = bytes32(totalPrice);
-        priceInfo[1] = bytes32(totalDiscounts);
-    }
-
-    /**
-     * Accepts payment for a purchase.
-     * @param purchase Purchase conditions (extData[0]:max token amount,
-     *  extData[1]:min conversion rate).
-     * @param priceInfo Implementation-specific calculated purchase price
-     *  information (0:total price, 1:total discounts).
-     * @return paymentInfo Implementation-specific accepted purchase payment
-     *  information (0:purchase tokens sent, 1:payout tokens received).
-     */
-    function _acceptPayment(
-        Purchase memory purchase,
-        bytes32[] memory priceInfo
-    ) internal override virtual returns (bytes32[] memory paymentInfo) {
-        uint256 totalPrice = uint256(priceInfo[0]);
-        uint256 totalDiscounts = uint256(priceInfo[1]);
-        uint256 totalDiscountedPrice = totalPrice.sub(totalDiscounts);
-        uint256 maxTokenAmount = uint256(purchase.extData[0]);
-        uint256 minConversionRate = uint256(purchase.extData[1]);
-
-        (uint256 purchaseTokensSent, uint256 payoutTokensReceived) =
-            _swapTokenAndHandleChange(
-                purchase.paymentToken,
-                maxTokenAmount,
-                payoutToken,
-                totalDiscountedPrice,
-                minConversionRate,
-                purchase.operator,
-                address(uint160(address(this))));
-
-        require(payoutTokensReceived >= totalDiscountedPrice);
-        require(payoutToken.transfer(payoutWallet, payoutTokensReceived));
-
-        paymentInfo = new bytes32[](2);
-        paymentInfo[0] = bytes32(purchaseTokensSent);
-        paymentInfo[1] = bytes32(payoutTokensReceived);
+        require(
+            purchase.quantity <= _lots[lotId].numAvailable,
+            "FixedSupplyLotSale: insufficient available lot supply");
     }
 
     /**
@@ -440,7 +293,7 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
      * @param purchase Purchase conditions (extData[0]:max token amount,
      *  extData[1]:min conversion rate).
      * @param *priceInfo* Implementation-specific calculated purchase price
-     *  information (0:total price, 1:total discounts).
+     *  information (0:total price).
      * @param *paymentInfo* Implementation-specific accepted purchase payment
      *  information (0:purchase tokens sent, 1:payout tokens received).
      * @param *deliveryInfo* Implementation-specific purchase delivery
@@ -458,46 +311,5 @@ abstract contract FixedSupplyLotSale is Sale, KyberAdapter {
         uint256 lotId = uint256(purchase.sku);
         _lots[lotId].numAvailable = _lots[lotId].numAvailable.sub(purchase.quantity);
     }
-
-    /**
-     * @dev Retrieves user payout price information for the given quantity of Lot items.
-     * @dev @param recipient The user for whom the price information is being retrieved for.
-     * @param lot Lot of the items from which the purchase price information will be retrieved.
-     * @param quantity Quantity of Lot items from which the purchase price information will be retrieved.
-     * @return totalPrice Total price (excluding any discounts), in payout currency tokens.
-     * @return totalDiscounts Total discounts to apply to the total price, in payout currency tokens.
-     */
-    function _getPrice(
-        address payable /* recipient */,
-        Lot memory lot,
-        uint256 quantity
-    )
-        internal
-        virtual
-        pure
-        returns
-    (
-        uint256 totalPrice,
-        uint256 totalDiscounts
-    )
-    {
-        totalPrice = lot.price.mul(quantity);
-        totalDiscounts = 0;
-    }
-}
-
-interface IInventoryContract {
-
-    /**
-     * @dev Public function to non-safely mint a batch of new tokens
-     * @param to address address that will own the minted tokens
-     * @param ids uint256[] identifiers of the tokens to be minted
-     * @param values uint256[] amounts to be minted
-     */
-    function batchMint(
-        address[] calldata to,
-        uint256[] calldata ids,
-        uint256[] calldata values
-    ) external;
 
 }

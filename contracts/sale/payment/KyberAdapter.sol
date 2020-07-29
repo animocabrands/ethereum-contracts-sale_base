@@ -7,6 +7,11 @@ import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol"
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20Detailed.sol";
 import "./IKyber.sol";
 
+/**
+ * @title KyberAdapter
+ * Contract module that invokes the Kyber Proxy Network contract in order to
+ * provide utility functions for performing Kyber token swaps.
+ */
 contract KyberAdapter {
     using SafeMath for uint256;
 
@@ -30,7 +35,7 @@ contract KyberAdapter {
         return _token != KYBER_ETH_ADDRESS ? _token.balanceOf(_account) : _account.balance;
     }
 
-    function ceilingDiv(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    function _ceilingDiv(uint256 a, uint256 b) internal pure returns (uint256 c) {
         return a.div(b).add(a.mod(b) > 0 ? 1 : 0);
     }
 
@@ -50,7 +55,7 @@ contract KyberAdapter {
         if (_unfixedDecimals > _decimals) {
             // Divide token amount by 10^(_unfixedDecimals - _decimals) to reduce decimals.
             if (_ceiling) {
-                return ceilingDiv(_unfixedDestAmount, (10 ** (_unfixedDecimals - _decimals)));
+                return _ceilingDiv(_unfixedDestAmount, (10 ** (_unfixedDecimals - _decimals)));
             } else {
                 return _unfixedDestAmount.div(10 ** (_unfixedDecimals - _decimals));
             }
@@ -97,18 +102,37 @@ contract KyberAdapter {
     {
         if (_src == _dest) {
             // payment is made with DAI
-            require(_maxSrcAmount >= _maxDestAmount);
+            require(
+                _maxSrcAmount >= _maxDestAmount,
+                "KyberAdapter: insufficient source token amount");
+
             _destAmount = _srcAmount = _maxDestAmount;
-            require(_src.transferFrom(_initiator, address(this), _destAmount));
+
+            require(
+                _src.transferFrom(_initiator, address(this), _destAmount),
+                "KyberAdapter: failure in transferring ERC20 destination token amount");
         } else {
-            require(_src == KYBER_ETH_ADDRESS ? msg.value >= _maxSrcAmount : msg.value == 0);
+            if (_src == KYBER_ETH_ADDRESS) {
+                require(
+                    msg.value >= _maxSrcAmount,
+                    "KyberAdapter: insufficient ETH value");
+            } else {
+                require(
+                    msg.value == 0,
+                    "KyberAdapter: unexpected ETH value");
+            }
 
             // Prepare for handling back the change if there is any.
             uint256 _balanceBefore = _getTokenBalance(_src, address(this));
 
             if (_src != KYBER_ETH_ADDRESS) {
-                require(_src.transferFrom(_initiator, address(this), _maxSrcAmount));
-                require(_src.approve(address(kyber), _maxSrcAmount));
+                require(
+                    _src.transferFrom(_initiator, address(this), _maxSrcAmount),
+                    "KyberAdapter: failure in transferring source token amount");
+
+                require(
+                    _src.approve(address(kyber), _maxSrcAmount),
+                    "KyberAdapter: failure in approving source token transfers");
             } else {
                 // Since we are going to transfer the source amount to Kyber.
                 _balanceBefore = _balanceBefore.sub(_maxSrcAmount);
@@ -133,7 +157,9 @@ contract KyberAdapter {
                 _srcAmount = _srcAmount.sub(_change);
 
                 if (_src != KYBER_ETH_ADDRESS) {
-                    require(_src.transfer(_initiator, _change));
+                    require(
+                        _src.transfer(_initiator, _change),
+                        "KyberAdapter: failure in returning source token amount remainder");
                 } else {
                     _initiator.transfer(_change);
                 }

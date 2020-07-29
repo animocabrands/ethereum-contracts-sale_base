@@ -2,42 +2,53 @@
 
 pragma solidity 0.6.8;
 
-import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-import "../../sale/SimpleSale.sol";
+import "../../sale/KyberLotSale.sol";
 
-contract SimpleSaleMock is SimpleSale {
+contract KyberLotSaleMock is KyberLotSale {
 
     event UnderscoreTransferFundsResult(
         bytes32[] paymentInfo
     );
 
     constructor(
+        address kyberProxy,
         address payable payoutWallet_,
-        IERC20 payoutToken_
+        IERC20 payoutToken_,
+        uint256 fungibleTokenId,
+        address inventoryContract
     )
-        SimpleSale(
+        KyberLotSale(
+            kyberProxy,
             payoutWallet_,
-            payoutToken_
+            payoutToken_,
+            fungibleTokenId,
+            inventoryContract
         )
         public
     {}
 
-    function getPrice(
+    function hasInventorySku(
+        bytes32 sku
+    ) external view returns (bool exists) {
+        exists = _hasSku(sku);
+    }
+
+    function getSkuTokenPrice(
         bytes32 sku,
         IERC20 token
     ) external view returns (uint256 price) {
         price = _getPrice(sku, token);
     }
 
-    function callUnderscoreValidatePurchase(
+    function callUnderscoreCalculatePrice(
         address payable purchaser,
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
         bytes32[] calldata extData
     )
-        external
-        payable
+        external view
+        returns (bytes32[] memory priceInfo)
     {
         Purchase memory purchase =
             _getPurchaseStruct(
@@ -47,7 +58,7 @@ contract SimpleSaleMock is SimpleSale {
                 quantity,
                 extData);
 
-        _validatePurchase(purchase);
+        priceInfo = _calculatePrice(purchase);
     }
 
     function callUnderscoreTransferFunds(
@@ -74,6 +85,21 @@ contract SimpleSaleMock is SimpleSale {
         emit UnderscoreTransferFundsResult(paymentInfo);
     }
 
+    function callUnderscoreGetTotalPriceInfo(
+        address payable purchaser,
+        IERC20 paymentToken,
+        bytes32 sku,
+        uint256 quantity,
+        bytes32[] calldata extData
+    ) external view returns (bytes32[] memory totalPriceInfo) {
+        totalPriceInfo = _getTotalPriceInfo(
+            purchaser,
+            paymentToken,
+            sku,
+            quantity,
+            extData);
+    }
+
     function _getPurchaseStruct(
         address payable purchaser,
         IERC20 paymentToken,
@@ -87,18 +113,6 @@ contract SimpleSaleMock is SimpleSale {
         purchase.sku = sku;
         purchase.quantity = quantity;
         purchase.extData = extData;
-    }
-
-    function _getPurchasedEventExtData(
-        Purchase memory purchase,
-        bytes32[] memory priceInfo,
-        bytes32[] memory /* paymentInfo */,
-        bytes32[] memory /* deliveryInfo */,
-        bytes32[] memory /* finalizeInfo */
-    ) internal override virtual view returns (bytes32[] memory extData) {
-        extData = new bytes32[](2);
-        extData[0] = priceInfo[0];
-        extData[1] = purchase.extData[0];
     }
 
 }
