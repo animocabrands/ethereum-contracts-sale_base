@@ -113,12 +113,12 @@ abstract contract FixedSupplyLotSale is Sale {
     {
         bytes32 sku = bytes32(lotId);
 
-        require(!_skuTokenPrices.hasSku(sku), "FixedSupplyLotSale: lot exists");
+        require(!_hasSku(sku), "FixedSupplyLotSale: lot exists");
 
         bytes32[] memory inventorySkus = new bytes32[](1);
         inventorySkus[0] = sku;
 
-        _skuTokenPrices.addSkus(inventorySkus);
+        _addSkus(inventorySkus);
 
         Lot memory lot;
         lot.nonFungibleSupply = nonFungibleSupply;
@@ -150,7 +150,7 @@ abstract contract FixedSupplyLotSale is Sale {
 
         bytes32 sku = bytes32(lotId);
 
-        require(_skuTokenPrices.hasSku(sku), "FixedSupplyLotSale: non-existent lot");
+        require(_hasSku(sku), "FixedSupplyLotSale: non-existent lot");
 
         Lot memory lot = _lots[lotId];
 
@@ -191,7 +191,7 @@ abstract contract FixedSupplyLotSale is Sale {
     {
         bytes32 sku = bytes32(lotId);
 
-        require(_skuTokenPrices.hasSku(sku), "FixedSupplyLotSale: non-existent lot");
+        require(_hasSku(sku), "FixedSupplyLotSale: non-existent lot");
         require(_lots[lotId].fungibleAmount != fungibleAmount, "FixedSupplyLotSale: duplicate assignment");
 
         _lots[lotId].fungibleAmount = fungibleAmount;
@@ -220,7 +220,7 @@ abstract contract FixedSupplyLotSale is Sale {
     {
         bytes32 sku = bytes32(lotId);
 
-        require(_skuTokenPrices.hasSku(sku), "FixedSupplyLotSale: non-existent lot");
+        require(_hasSku(sku), "FixedSupplyLotSale: non-existent lot");
 
         Lot memory lot = _lots[lotId];
 

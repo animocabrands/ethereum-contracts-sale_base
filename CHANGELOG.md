@@ -10,7 +10,7 @@
  * `Sale.sol`: Added support for managing SKU payout token prices.
  * `Sale.sol`: Added overridable `_getTotalPriceInfo()` for calculating the total payout price information.
  * `SimplePayment.sol`: A new payment contract that derives from `Payment.sol`, which implements simple payment behaviors.
- * `SkuTokenPrice.sol`: A new library contract that manages SKU token prices.
+ * `SkuTokenPrice.sol`: A new contract module that adds support for managing SKU token prices.
 
 ### Breaking changes
  * `FixedSupplyLotSale.sol`: No longer derives from `KyberAdapter.sol`, `PayoutWallet.sol`, and `Pausable.sol`.

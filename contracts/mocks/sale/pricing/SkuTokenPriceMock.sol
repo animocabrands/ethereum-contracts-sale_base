@@ -4,15 +4,11 @@ pragma solidity 0.6.8;
 
 import "../../../sale/pricing/SkuTokenPrice.sol";
 
-contract SkuTokenPriceMock {
+contract SkuTokenPriceMock is SkuTokenPrice {
 
     event AddRemoveResult(bool[] result);
 
     event SetPricesResult(uint256[] prevPrices);
-
-    using SkuTokenPrice for SkuTokenPrice.Manager;
-
-    SkuTokenPrice.Manager private _manager;
 
     function addSkus(
         bytes32[] calldata skus
@@ -20,7 +16,7 @@ contract SkuTokenPriceMock {
         external
         returns (bool[] memory added)
     {
-        added = _manager.addSkus(skus);
+        added = _addSkus(skus);
         emit AddRemoveResult(added);
     }
 
@@ -30,7 +26,7 @@ contract SkuTokenPriceMock {
         external
         returns (bool[] memory removed)
     {
-        removed = _manager.removeSkus(skus);
+        removed = _removeSkus(skus);
         emit AddRemoveResult(removed);
     }
 
@@ -40,14 +36,14 @@ contract SkuTokenPriceMock {
         external view
         returns (bool exists)
     {
-        exists = _manager.hasSku(sku);
+        exists = _hasSku(sku);
     }
 
     function getSkus()
         external view
         returns (bytes32[] memory skus)
     {
-        skus = _manager.getSkus();
+        skus = _getSkus();
     }
 
     function addTokens(
@@ -56,7 +52,7 @@ contract SkuTokenPriceMock {
         external
         returns (bool[] memory added)
     {
-        added = _manager.addTokens(tokens);
+        added = _addTokens(tokens);
         emit AddRemoveResult(added);
     }
 
@@ -66,7 +62,7 @@ contract SkuTokenPriceMock {
         external
         returns (bool[] memory removed)
     {
-        removed = _manager.removeTokens(tokens);
+        removed = _removeTokens(tokens);
         emit AddRemoveResult(removed);
     }
 
@@ -76,14 +72,14 @@ contract SkuTokenPriceMock {
         external view
         returns (bool exists)
     {
-        exists = _manager.hasToken(token);
+        exists = _hasToken(token);
     }
 
     function getTokens()
         external view
         returns (IERC20[] memory tokens)
     {
-        tokens = _manager.getTokens();
+        tokens = _getTokens();
     }
 
     function getPrice(
@@ -93,7 +89,7 @@ contract SkuTokenPriceMock {
         external view
         returns (uint256 price)
     {
-        price = _manager.getPrice(sku, token);
+        price = _getPrice(sku, token);
     }
 
     function setPrices(
@@ -101,7 +97,7 @@ contract SkuTokenPriceMock {
         IERC20[] calldata tokens,
         uint256[] calldata prices
     ) external {
-        uint256[] memory prevPrices = _manager.setPrices(sku, tokens, prices);
+        uint256[] memory prevPrices = _setPrices(sku, tokens, prices);
         emit SetPricesResult(prevPrices);
     }
 

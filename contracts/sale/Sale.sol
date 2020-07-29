@@ -15,10 +15,9 @@ import "./pricing/SkuTokenPrice.sol";
  * An abstract base contract which defines the events, members, and purchase
  * lifecycle methods for a sale contract.
  */
-abstract contract Sale is Context, Ownable, Startable, Pausable   {
+abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
 
     using SafeMath for uint256;
-    using SkuTokenPrice for SkuTokenPrice.Manager;
 
     event InventorySkusAdded(
         bytes32[] skus,
@@ -58,8 +57,6 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
         uint256 quantity;
         bytes32[] extData;
     }
-
-    SkuTokenPrice.Manager internal _skuTokenPrices;
 
     /**
      * Constructor.
@@ -119,7 +116,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
         external onlyOwner whenPaused
         returns (bool[] memory added)
     {
-        added = _skuTokenPrices.addSkus(skus);
+        added = _addSkus(skus);
         emit InventorySkusAdded(skus, added);
     }
 
@@ -139,7 +136,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
         external onlyOwner whenPaused
         returns (bool[] memory added)
     {
-        added = _skuTokenPrices.addTokens(tokens);
+        added = _addTokens(tokens);
         emit SupportedPayoutTokensAdded(tokens, added);
     }
 
@@ -163,7 +160,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
         external onlyOwner whenPaused
         returns (uint256[] memory prevPrices)
     {
-        prevPrices = _skuTokenPrices.setPrices(sku, tokens, prices);
+        prevPrices = _setPrices(sku, tokens, prices);
         emit SkuTokenPricesUpdated(sku, tokens, prices, prevPrices);
     }
 
@@ -242,11 +239,11 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
             "Sale: contract address purchaser");
 
         require(
-            _skuTokenPrices.hasToken(purchase.paymentToken),
+            _hasToken(purchase.paymentToken),
             "Sale: unsupported token");
 
         require(
-            _skuTokenPrices.hasSku(purchase.sku),
+            _hasSku(purchase.sku),
             "Sale: non-existent sku");
 
         require(
@@ -426,7 +423,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable   {
         uint256 quantity,
         bytes32[] memory /* extData */
     ) internal virtual view returns (bytes32[] memory totalPriceInfo) {
-        uint256 unitPrice = _skuTokenPrices.getPrice(sku, paymentToken);
+        uint256 unitPrice = _getPrice(sku, paymentToken);
         uint256 totalPrice = unitPrice.mul(quantity);
 
         totalPriceInfo = new bytes32[](1);

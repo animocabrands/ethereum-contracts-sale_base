@@ -30,14 +30,14 @@ contract KyberLotSaleMock is KyberLotSale {
     function hasInventorySku(
         bytes32 sku
     ) external view returns (bool exists) {
-        exists = _skuTokenPrices.hasSku(sku);
+        exists = _hasSku(sku);
     }
 
     function getSkuTokenPrice(
         bytes32 sku,
         IERC20 token
     ) external view returns (uint256 price) {
-        price = _skuTokenPrices.getPrice(sku, token);
+        price = _getPrice(sku, token);
     }
 
     function callUnderscoreCalculatePrice(
