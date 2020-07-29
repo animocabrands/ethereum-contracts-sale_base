@@ -48,7 +48,6 @@
 
 ### Improvements
  * `FixedSupplyLotSale.sol`: All `require()` function calls are provided with appropriate error messages.
-`_calculatePrice()`, `_acceptPayment()`, `_deliverGoods()`, and `_finalizePurchase()`.
  * `KyberAdapter.sol`: All `require()` function calls are provided with appropriate error messages.
  * `Sale.sol`: Startable and pausable contract API methods are now public and overridable.
  * `Sale.sol`: `_validatePurchase()` provides a default set of validation checks.
