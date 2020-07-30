@@ -1,6 +1,6 @@
 # Changelog
 
-## 4.0.0 (UNRELEASED)
+## 4.0.0 (30/07/2020)
 
 ### New Features
  * `KyberLotSale.sol`: A new lot sale contract that derives from `FixedSupplyLotSale.sol` and `KyberPayment.sol`, which implements Kyber-related sale behaviors.
