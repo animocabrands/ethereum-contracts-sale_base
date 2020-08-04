@@ -1,6 +1,11 @@
 # Changelog
 
-## 4.0.0 (30/07/2020)
+## UNRELEASED
+
+### Breaking changes
+ * `Sale.sol`: Renamed `addSupportedPayoutTokens()`, and associated `SupportedPayoutTokensAdded` event, with `addSupportedPaymentTokens()`, and `SupportedPaymentTokensAdded` event, respectively.
+
+## 4.0.0
 
 ### New Features
  * `KyberLotSale.sol`: A new lot sale contract that derives from `FixedSupplyLotSale.sol` and `KyberPayment.sol`, which implements Kyber-related sale behaviors.
@@ -54,7 +59,7 @@
  * `Sale.sol`: `_getPurchasedEventExtData()` provides a default construction of `Purchase` event extra data.
  * `SimpleSale.sol`: Removed `view` modifier from `_validatePurchase()` to allow state changes in the function.
 
-## 3.0.0 (03/07/2020)
+## 3.0.0
 
 ### New Features
  * `Sale.sol`: A new base sale contract.
@@ -66,7 +71,7 @@
 ### Improvements
  * Updated dependency on `@animoca/ethereum-contracts-core_library` to `3.1.0`.
 
-## 2.0.0 (17/06/2020)
+## 2.0.0
 
 ### Breaking changes
  * Contracts compiler version fixed at solidity 0.6.8.
@@ -81,10 +86,10 @@
  * Added missing package dev dependency `@animoca/ethereum-contracts-core_library`.
  * Added missing package dev dependency `@animoca/ethereum-contracts-erc20_base`.
 
-## 1.0.1 (05/05/2020)
+## 1.0.1
 
 ### Improvements
  * Updated dependency on `@animoca/ethereum-contracts-assets_inventory` to `2.0.1`.
 
-## 1.0.0 (04/05/2020)
+## 1.0.0
  * Initial commit.
