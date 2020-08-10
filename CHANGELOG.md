@@ -5,6 +5,9 @@
 ### Breaking changes
  * `Sale.sol`: Renamed `addSupportedPayoutTokens()`, and associated `SupportedPayoutTokensAdded` event, with `addSupportedPaymentTokens()`, and `SupportedPaymentTokensAdded` event, respectively.
 
+ ### Improvements
+  * Updated dependency on `@animoca/ethereum-contracts-core_library` to `3.1.1`.
+
 ## 4.0.0
 
 ### New Features
