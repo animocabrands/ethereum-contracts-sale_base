@@ -58,7 +58,7 @@ contract('KyberLotSale', function ([
             lotFungibleAmount,
             { from: owner });
 
-        await sale.addSupportedPayoutTokens(
+        await sale.addSupportedPaymentTokens(
             [ PayoutTokenAddress ],
             { from: owner });
 

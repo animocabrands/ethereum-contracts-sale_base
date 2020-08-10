@@ -24,7 +24,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         bool[] added
     );
 
-    event SupportedPayoutTokensAdded(
+    event SupportedPaymentTokensAdded(
         IERC20[] tokens,
         bool[] added
     );
@@ -121,23 +121,23 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
     }
 
     /**
-     * Adds a list of ERC20 tokens to add to the supported list of payout
+     * Adds a list of ERC20 tokens to add to the supported list of payment
      * tokens.
-     * @dev Emits the SupportedPayoutTokensUpdated event.
+     * @dev Emits the SupportedPaymentTokensAdded event.
      * @dev Reverts if called by any other than the owner.
      * @dev Reverts if the contract is not paused.
      * @param tokens List of ERC20 tokens to add.
      * @return added List of state flags indicating whether or not the
      *  corresponding ERC20 token has been added.
      */
-    function addSupportedPayoutTokens(
+    function addSupportedPaymentTokens(
         IERC20[] calldata tokens
     )
         external onlyOwner whenPaused
         returns (bool[] memory added)
     {
         added = _addTokens(tokens);
-        emit SupportedPayoutTokensAdded(tokens, added);
+        emit SupportedPaymentTokensAdded(tokens, added);
     }
 
     /**
