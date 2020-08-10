@@ -1,6 +1,6 @@
 # Changelog
 
-## UNRELEASED
+## 5.0.0
 
 ### Breaking changes
  * `Sale.sol`: Renamed `addSupportedPayoutTokens()`, and associated `SupportedPayoutTokensAdded` event, with `addSupportedPaymentTokens()`, and `SupportedPaymentTokensAdded` event, respectively.
