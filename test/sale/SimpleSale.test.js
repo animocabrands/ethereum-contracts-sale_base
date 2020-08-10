@@ -37,7 +37,7 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
         this.inventorySkus = [sku];
 
         await this.contract.addInventorySkus(this.inventorySkus, { from: params.owner });
-        await this.contract.addSupportedPayoutTokens(this.supportedPayoutTokens, { from: params.owner });
+        await this.contract.addSupportedPaymentTokens(this.supportedPayoutTokens, { from: params.owner });
         await this.contract.setSkuTokenPrices(sku, this.supportedPayoutTokens, this.tokenPrices, { from: params.owner });
         await this.contract.start({ from: params.owner });
     };
