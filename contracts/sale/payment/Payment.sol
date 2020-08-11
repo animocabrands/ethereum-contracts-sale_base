@@ -32,7 +32,7 @@ abstract contract Payment is PayoutWallet {
      * @param operator The address which initiated payment (i.e. msg.sender).
      * @param paymentToken The token currency used for payment.
      * @param paymentAmount The amount of token currency to pay.
-     * @param extData Deriving contract-specific extra input data.
+     * @param auxData Deriving contract-specific auxiliary input data.
      * @return paymentTransfersInfo Implementation-specific payment funds
      *  transfer information.
      */
@@ -40,7 +40,7 @@ abstract contract Payment is PayoutWallet {
         address payable operator,
         IERC20 paymentToken,
         uint256 paymentAmount,
-        bytes32[] memory extData
+        bytes32[] memory auxData
     ) internal virtual returns (bytes32[] memory paymentTransfersInfo);
 
     /**
@@ -49,14 +49,14 @@ abstract contract Payment is PayoutWallet {
      *  amount and/or attach additional related information.
      * @param paymentToken The token currency of the payment amount to handle.
      * @param paymentAmount The payment amount to handle.
-     * @param extData Implementation-specific extra input data.
+     * @param auxData Implementation-specific auxiliary input data.
      * @return paymentAmountInfo Implementation-specific payment amount
      *  information.
      */
     function _handlePaymentAmount(
         IERC20 paymentToken,
         uint256 paymentAmount,
-        bytes32[] memory extData
+        bytes32[] memory auxData
     ) internal virtual view returns (bytes32[] memory paymentAmountInfo) {}
 
 }

@@ -45,7 +45,7 @@ contract KyberLotSaleMock is KyberLotSale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData
+        bytes calldata extData
     )
         external view
         returns (bytes32[] memory priceInfo)
@@ -66,7 +66,7 @@ contract KyberLotSaleMock is KyberLotSale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData,
+        bytes calldata extData,
         bytes32[] calldata priceInfo
     )
         external
@@ -90,7 +90,7 @@ contract KyberLotSaleMock is KyberLotSale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData
+        bytes calldata extData
     ) external view returns (bytes32[] memory totalPriceInfo) {
         totalPriceInfo = _getTotalPriceInfo(
             purchaser,
@@ -105,7 +105,7 @@ contract KyberLotSaleMock is KyberLotSale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] memory extData
+        bytes memory extData
     ) private view returns (Purchase memory purchase) {
         purchase.purchaser = purchaser;
         purchase.operator = _msgSender();

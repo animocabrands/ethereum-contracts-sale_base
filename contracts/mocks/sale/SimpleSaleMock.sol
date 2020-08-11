@@ -34,7 +34,7 @@ contract SimpleSaleMock is SimpleSale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData
+        bytes calldata extData
     )
         external
         payable
@@ -55,7 +55,7 @@ contract SimpleSaleMock is SimpleSale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData,
+        bytes calldata extData,
         bytes32[] calldata priceInfo
     )
         external
@@ -79,7 +79,7 @@ contract SimpleSaleMock is SimpleSale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] memory extData
+        bytes memory extData
     ) private view returns (Purchase memory purchase) {
         purchase.purchaser = purchaser;
         purchase.operator = _msgSender();
@@ -89,16 +89,14 @@ contract SimpleSaleMock is SimpleSale {
         purchase.extData = extData;
     }
 
-    function _getPurchasedEventExtData(
-        Purchase memory purchase,
+    function _getPurchasedEventIntData(
         bytes32[] memory priceInfo,
         bytes32[] memory /* paymentInfo */,
         bytes32[] memory /* deliveryInfo */,
         bytes32[] memory /* finalizeInfo */
-    ) internal override virtual view returns (bytes32[] memory extData) {
-        extData = new bytes32[](2);
-        extData[0] = priceInfo[0];
-        extData[1] = purchase.extData[0];
+    ) internal override virtual view returns (bytes32[] memory intData) {
+        intData = new bytes32[](1);
+        intData[0] = priceInfo[0];
     }
 
 }

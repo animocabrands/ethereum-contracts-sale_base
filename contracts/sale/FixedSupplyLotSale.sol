@@ -248,8 +248,8 @@ abstract contract FixedSupplyLotSale is Sale {
      * @dev Reverts if the payment token is the zero address.
      * @dev Reverts if the lot being purchased does not exist.
      * @dev Reverts if the lot being purchased has an insufficient token supply.
-     * @param purchase Purchase conditions (extData[0]:max token amount,
-     *  extData[1]:min conversion rate).
+     * @param purchase Purchase conditions (extData: max token amount
+     *  (uint256), min conversion rate (uint256)).
      */
     function _validatePurchase(
         Purchase memory purchase
@@ -265,8 +265,8 @@ abstract contract FixedSupplyLotSale is Sale {
      * Delivers the purchased SKU item(s) to the purchaser.
      * @param purchase Purchase conditions.
      * @return deliveryInfo Implementation-specific purchase delivery
-     *  information (0:num non-fungible tokens, 1-n:non-fungible tokens,
-     *  n+1:total fungible amount).
+     *  information (0:num non-fungible tokens (uint256), 1-n:non-fungible
+     *  tokens (uint256), n+1:total fungible amount (uint256)).
      */
     function _deliverGoods(
         Purchase memory purchase
@@ -290,15 +290,16 @@ abstract contract FixedSupplyLotSale is Sale {
     /**
      * Finalizes the completed purchase by performing any remaining purchase
      * housekeeping updates.
-     * @param purchase Purchase conditions (extData[0]:max token amount,
-     *  extData[1]:min conversion rate).
+     * @param purchase Purchase conditions (extData: max token amount (uint256),
+     *  min conversion rate (uint256)).
      * @param *priceInfo* Implementation-specific calculated purchase price
-     *  information (0:total price).
+     *  information (0:total price (uint256)).
      * @param *paymentInfo* Implementation-specific accepted purchase payment
-     *  information (0:purchase tokens sent, 1:payout tokens received).
+     *  information (0:purchase tokens sent (uint256), 1:payout tokens received
+     *  (uint256)).
      * @param *deliveryInfo* Implementation-specific purchase delivery
-     *  information (0:num non-fungible tokens, 1-n:non-fungible tokens,
-     *  n+1:total fungible amount).
+     *  information (0:num non-fungible tokens (uint256), 1-n:non-fungible
+     *  tokens (uint256), n+1:total fungible amount (uint256)).
      * @return *finalizeInfo* Implementation-specific purchase finalization
      *  information.
      */

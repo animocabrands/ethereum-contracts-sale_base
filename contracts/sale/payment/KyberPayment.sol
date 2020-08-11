@@ -51,7 +51,7 @@ contract KyberPayment is Payment, PayoutToken, KyberAdapter {
      * @param operator The address which initiated payment (i.e. msg.sender).
      * @param paymentToken The token currency used for payment.
      * @param paymentAmount The amount of token currency to pay.
-     * @param extData Deriving contract-specific extra input data.
+     * @param auxData Deriving contract-specific auxiliary input data.
      * @return paymentTransfersInfo Implementation-specific payment funds
      *  transfer information.
      */
@@ -59,10 +59,10 @@ contract KyberPayment is Payment, PayoutToken, KyberAdapter {
         address payable operator,
         IERC20 paymentToken,
         uint256 paymentAmount,
-        bytes32[] memory extData
+        bytes32[] memory auxData
     ) internal override returns (bytes32[] memory paymentTransfersInfo) {
-        uint256 payoutAmount = uint256(extData[0]);
-        uint256 minConversionRate = uint256(extData[1]);
+        uint256 payoutAmount = uint256(auxData[0]);
+        uint256 minConversionRate = uint256(auxData[1]);
 
         (uint256 paymentAmountSent, uint256 payoutAmountReceived) =
             _swapTokenAndHandleChange(
@@ -93,19 +93,20 @@ contract KyberPayment is Payment, PayoutToken, KyberAdapter {
      *  currency to the payment token currency.
      * @param paymentToken The token currency of the payment amount to handle.
      * @param paymentAmount The payment amount to handle.
-     * @param extData Implementation-specific extra input data (0:destination
-     *  token).
+     * @param auxData Implementation-specific auxiliary input data
+     *  (0:destination token (IERC20)).
      * @return paymentAmountInfo Implementation-specific payment amount
-     *  information (0:destination token amount, 1:minimum conversion rate).
+     *  information (0:destination token amount (uint256), 1:minimum conversion
+     *  rate (uint256)).
      */
     function _handlePaymentAmount(
         IERC20 paymentToken,
         uint256 paymentAmount,
-        bytes32[] memory extData
+        bytes32[] memory auxData
     ) internal override virtual view returns (bytes32[] memory paymentAmountInfo) {
         IERC20 srcToken = paymentToken;
         uint256 srcAmount = paymentAmount;
-        IERC20 destToken = IERC20(uint256(extData[0]));
+        IERC20 destToken = IERC20(uint256(auxData[0]));
 
         uint256 minConversionRate;
 

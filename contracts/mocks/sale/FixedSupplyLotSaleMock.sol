@@ -66,7 +66,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData
+        bytes calldata extData
     )
         external
         payable
@@ -87,7 +87,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData
+        bytes calldata extData
     )
         external
         payable
@@ -110,7 +110,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData,
+        bytes calldata extData,
         bytes32[] calldata priceInfo,
         bytes32[] calldata paymentInfo,
         bytes32[] calldata deliveryInfo
@@ -142,7 +142,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] memory extData
+        bytes memory extData
     ) private view returns (Purchase memory purchase) {
         purchase.purchaser = purchaser;
         purchase.operator = _msgSender();

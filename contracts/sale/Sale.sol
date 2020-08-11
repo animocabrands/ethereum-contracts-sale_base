@@ -42,7 +42,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         IERC20 paymentToken,
         bytes32 indexed sku,
         uint256 indexed quantity,
-        bytes32[] extData
+        bytes extData,
+        bytes32[] intData
     );
 
     /**
@@ -55,7 +56,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         IERC20 paymentToken;
         bytes32 sku;
         uint256 quantity;
-        bytes32[] extData;
+        bytes extData;
     }
 
     /**
@@ -179,7 +180,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData
+        bytes calldata extData
     ) external payable whenStarted whenNotPaused {
         Purchase memory purchase;
         purchase.purchaser = purchaser;
@@ -338,8 +339,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
             purchase.paymentToken,
             purchase.sku,
             purchase.quantity,
-            _getPurchasedEventExtData(
-                purchase,
+            purchase.extData,
+            _getPurchasedEventIntData(
                 priceInfo,
                 paymentInfo,
                 deliveryInfo,
@@ -347,9 +348,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
     }
 
     /**
-     * Retrieves implementation-specific extra data passed as the Purchased
-     *  event extData argument.
-     * @param purchase Purchase conditions.
+     * Retrieves implementation-specific internal data passed as the Purchased
+     *  event intData argument.
      * @param priceInfo Implementation-specific calculated purchase price
      *  information.
      * @param paymentInfo Implementation-specific purchase payment funds
@@ -358,47 +358,41 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
      *  information.
      * @param finalizeInfo Implementation-specific purchase finalization
      *  information.
-     * @return extData Implementation-specific extra data passed as the Purchased event
-     *  extData argument. By default, returns (in order) the purchase.extData,
+     * @return intData Implementation-specific internal data passed as the
+     *  Purchased event intData argument. By default, returns (in order) the
      *  _calculatePrice() result, _transferFunds() result, _deliverGoods()
      *  result, and _finalizePurchase() result.
      */
-    function _getPurchasedEventExtData(
-        Purchase memory purchase,
+    function _getPurchasedEventIntData(
         bytes32[] memory priceInfo,
         bytes32[] memory paymentInfo,
         bytes32[] memory deliveryInfo,
         bytes32[] memory finalizeInfo
-    ) internal virtual view returns (bytes32[] memory extData) {
+    ) internal virtual view returns (bytes32[] memory intData) {
         uint256 numItems = 0;
-        numItems = numItems.add(purchase.extData.length);
         numItems = numItems.add(priceInfo.length);
         numItems = numItems.add(paymentInfo.length);
         numItems = numItems.add(deliveryInfo.length);
         numItems = numItems.add(finalizeInfo.length);
 
-        extData = new bytes32[](numItems);
+        intData = new bytes32[](numItems);
 
         uint256 offset = 0;
 
-        for (uint256 index = 0; index < purchase.extData.length; index++) {
-            extData[offset++] = purchase.extData[index];
-        }
-
         for (uint256 index = 0; index < priceInfo.length; index++) {
-            extData[offset++] = priceInfo[index];
+            intData[offset++] = priceInfo[index];
         }
 
         for (uint256 index = 0; index < paymentInfo.length; index++) {
-            extData[offset++] = paymentInfo[index];
+            intData[offset++] = paymentInfo[index];
         }
 
         for (uint256 index = 0; index < deliveryInfo.length; index++) {
-            extData[offset++] = deliveryInfo[index];
+            intData[offset++] = deliveryInfo[index];
         }
 
         for (uint256 index = 0; index < finalizeInfo.length; index++) {
-            extData[offset++] = finalizeInfo[index];
+            intData[offset++] = finalizeInfo[index];
         }
     }
 
@@ -412,7 +406,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
      * @param sku The SKU item whose total price information will be retrieved.
      * @param quantity The quantity of SKU items to retrieve the total price
      *  information for.
-     * @param *extData* Implementation-specific extra input data.
+     * @param *auxData* Implementation-specific auxiliary input data.
      * @return totalPriceInfo Implementation-specific total price information
      *  (0:total price).
      */
@@ -421,7 +415,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] memory /* extData */
+        bytes memory /* auxData */
     ) internal virtual view returns (bytes32[] memory totalPriceInfo) {
         uint256 unitPrice = _getPrice(sku, paymentToken);
         uint256 totalPrice = unitPrice.mul(quantity);

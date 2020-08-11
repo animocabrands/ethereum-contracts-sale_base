@@ -43,7 +43,7 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
      * Calculates the purchase price.
      * @param purchase Purchase conditions.
      * @return priceInfo Implementation-specific calculated purchase price
-     *  information (0:total payout price).
+     *  information (0:total payout price (uint256)).
      */
     function _calculatePrice(
         Purchase memory purchase
@@ -62,26 +62,37 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
     /**
      * Transfers the funds of a purchase payment from the purchaser to the
      * payout wallet.
-     * @param purchase Purchase conditions (extData[0]:max token amount,
-     *  extData[1]:min conversion rate).
+     * @param purchase Purchase conditions (extData: max token amount (uint256),
+     *  min conversion rate (uint256)).
      * @param priceInfo Implementation-specific calculated purchase price
-     *  information (0:total payout price).
+     *  information (0:total payout price (uint256)).
      * @return paymentInfo Implementation-specific purchase payment funds
-     *  transfer information (0:purchase tokens sent, 1:payout tokens received).
+     *  transfer information (0:purchase tokens sent (uint256), 1:payout tokens
+     *  received (uint256)).
      */
     function _transferFunds(
         Purchase memory purchase,
         bytes32[] memory priceInfo
     ) internal override virtual returns (bytes32[] memory paymentInfo) {
-        bytes32[] memory extData = new bytes32[](2);
-        extData[0] = priceInfo[0];
-        extData[1] = purchase.extData[1];
+        uint256 maxTokenAmount;
+        uint256 minConversionRate;
+
+        bytes memory data = purchase.extData;
+
+        assembly {
+            maxTokenAmount := mload(add(data, 32))
+            minConversionRate := mload(add(data, 64))
+        }
+
+        bytes32[] memory auxData = new bytes32[](2);
+        auxData[0] = priceInfo[0];
+        auxData[1] = bytes32(minConversionRate);
 
         paymentInfo = _handlePaymentTransfers(
             purchase.operator,
             purchase.paymentToken,
-            uint256(purchase.extData[0]),
-            extData);
+            maxTokenAmount,
+            auxData);
     }
 
     /**
@@ -96,14 +107,14 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
      *  information for.
      * @param extData Implementation-specific extra input data.
      * @return totalPriceInfo Implementation-specific total price information
-     *  (0:total payment amount, 1:minimum conversion rate).
+     *  (0:total payment amount (uint256), 1:minimum conversion rate (uint256)).
      */
     function _getTotalPriceInfo(
         address payable purchaser,
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] memory extData
+        bytes memory extData
     ) internal override virtual view returns (bytes32[] memory totalPriceInfo) {
         bytes32[] memory superTotalPriceInfo = super._getTotalPriceInfo(
             purchaser,
@@ -114,13 +125,13 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
 
         uint256 payoutAmount = uint256(superTotalPriceInfo[0]);
 
-        bytes32[] memory paymentAmountExtData = new bytes32[](1);
-        paymentAmountExtData[0] = bytes32(uint256(address(paymentToken)));
+        bytes32[] memory auxData = new bytes32[](1);
+        auxData[0] = bytes32(uint256(address(paymentToken)));
 
         totalPriceInfo = _handlePaymentAmount(
             payoutToken,
             payoutAmount,
-            paymentAmountExtData);
+            auxData);
     }
 
 }

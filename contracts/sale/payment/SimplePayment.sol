@@ -38,7 +38,7 @@ contract SimplePayment is Payment, PayoutToken {
      * @param operator The address which initiated payment (i.e. msg.sender).
      * @param paymentToken The token currency used for payment.
      * @param paymentAmount The amount of token currency to pay.
-     * @param *extData* Deriving contract-specific extra input data.
+     * @param *auxData* Deriving contract-specific auxiliary input data.
      * @return *paymentTransfersInfo* Implementation-specific payment amount
      *  information.
      */
@@ -46,7 +46,7 @@ contract SimplePayment is Payment, PayoutToken {
         address payable operator,
         IERC20 paymentToken,
         uint256 paymentAmount,
-        bytes32[] memory /* extData */
+        bytes32[] memory /* auxData */
     ) internal override returns (bytes32[] memory /* paymentTransfersInfo */) {
         if (paymentToken == ETH_ADDRESS) {
             require(

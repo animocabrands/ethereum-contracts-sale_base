@@ -38,7 +38,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData
+        bytes calldata extData
     )
         external
         payable
@@ -59,7 +59,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData
+        bytes calldata extData
     )
         external
         payable
@@ -80,7 +80,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData
+        bytes calldata extData
     )
         external
         payable
@@ -103,7 +103,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData,
+        bytes calldata extData,
         bytes32[] calldata priceInfo
     )
         external
@@ -127,7 +127,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData
+        bytes calldata extData
     )
         external
         payable
@@ -150,7 +150,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData,
+        bytes calldata extData,
         bytes32[] calldata priceInfo,
         bytes32[] calldata paymentInfo,
         bytes32[] calldata deliveryInfo
@@ -177,7 +177,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData,
+        bytes calldata extData,
         bytes32[] calldata priceInfo,
         bytes32[] calldata paymentInfo,
         bytes32[] calldata deliveryInfo,
@@ -202,21 +202,8 @@ contract SaleMock is Sale {
             finalizeInfo);
     }
 
-    function callUnderscoreGetPurchasedEventExtData(
-        address payable purchaser,
-        IERC20 paymentToken,
-        bytes32 sku,
-        uint256 quantity,
-        bytes32[] calldata extData
-    ) external view returns (bytes32[] memory extData_) {
-        Purchase memory purchase =
-            _getPurchaseStruct(
-                purchaser,
-                paymentToken,
-                sku,
-                quantity,
-                extData);
-
+    function callUnderscoreGetPurchasedEventIntData(
+    ) external view returns (bytes32[] memory) {
         bytes32[] memory priceInfo = new bytes32[](1);
         priceInfo[0] = bytes32(uint256(0));
 
@@ -235,8 +222,7 @@ contract SaleMock is Sale {
         finalizeInfo[2] = bytes32(uint256(8));
         finalizeInfo[3] = bytes32(uint256(9));
 
-        return _getPurchasedEventExtData(
-            purchase,
+        return _getPurchasedEventIntData(
             priceInfo,
             paymentInfo,
             deliveryInfo,
@@ -248,7 +234,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] calldata extData
+        bytes calldata extData
     ) external view returns (bytes32[] memory totalPriceInfo) {
         totalPriceInfo = _getTotalPriceInfo(
             purchaser,
@@ -263,7 +249,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] memory extData
+        bytes memory extData
     ) private view returns (Purchase memory purchase) {
         purchase.purchaser = purchaser;
         purchase.operator = _msgSender();
@@ -345,7 +331,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes32[] memory extData
+        bytes memory extData
     ) internal override view returns (bytes32[] memory totalPriceInfo) {}
 
 }
