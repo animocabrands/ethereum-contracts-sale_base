@@ -406,7 +406,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
      * @param sku The SKU item whose total price information will be retrieved.
      * @param quantity The quantity of SKU items to retrieve the total price
      *  information for.
-     * @param *paymentData* Implementation-specific internal payment data.
+     * @param *userData* Implementation-specific extra user data.
      * @return totalPriceInfo Implementation-specific total price information
      *  (0:total price).
      */
@@ -415,7 +415,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes memory /* paymentData */
+        bytes memory /* userData */
     ) internal virtual view returns (bytes32[] memory totalPriceInfo) {
         uint256 unitPrice = _getPrice(sku, paymentToken);
         uint256 totalPrice = unitPrice.mul(quantity);

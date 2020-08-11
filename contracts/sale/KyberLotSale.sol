@@ -84,15 +84,15 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
             minConversionRate := mload(add(data, 64))
         }
 
-        bytes32[] memory paymentData = new bytes32[](2);
-        paymentData[0] = priceInfo[0];
-        paymentData[1] = bytes32(minConversionRate);
+        bytes32[] memory extData = new bytes32[](2);
+        extData[0] = priceInfo[0];
+        extData[1] = bytes32(minConversionRate);
 
         paymentInfo = _handlePaymentTransfers(
             purchase.operator,
             purchase.paymentToken,
             maxTokenAmount,
-            paymentData);
+            extData);
     }
 
     /**
@@ -125,13 +125,13 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
 
         uint256 payoutAmount = uint256(superTotalPriceInfo[0]);
 
-        bytes32[] memory paymentData = new bytes32[](1);
-        paymentData[0] = bytes32(uint256(address(paymentToken)));
+        bytes32[] memory extData = new bytes32[](1);
+        extData[0] = bytes32(uint256(address(paymentToken)));
 
         totalPriceInfo = _handlePaymentAmount(
             payoutToken,
             payoutAmount,
-            paymentData);
+            extData);
     }
 
 }
