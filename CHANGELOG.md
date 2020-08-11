@@ -1,5 +1,16 @@
 # Changelog
 
+## 6.0.0
+
+### Breaking changes
+ * `KyberLotSale.sol`: `_getTotalPriceInfo()` argument `bytes32[] extData` has been replaced with `bytes userData`.
+ * `Sale.sol`: `Purchased` event parameter `bytes32[] extData` has been replaced with `bytes userData` and `bytes32[] purchaseData`.
+ * `Sale.sol`: `Purchase` struct field `bytes32[] extData` has been replaced with `bytes userData`.
+ * `Sale.sol`: `purchaseFor()` argument `bytes32[] extData` has been replaced with `bytes userData`.
+ * `Sale.sol`: `_getPurchasedEventExtData()` argument `Purchase purchase` has been removed
+ * `Sale.sol`: `_getPurchasedEventExtData()` has been renamed to `_getPurchasedEventPurchaseData`.
+ * `Sale.sol`: `_getTotalPriceInfo()` argument `bytes32[] extData` has been replaced with `bytes userData`.
+
 ## 5.0.0
 
 ### Breaking changes
