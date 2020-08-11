@@ -51,7 +51,8 @@ contract KyberPayment is Payment, PayoutToken, KyberAdapter {
      * @param operator The address which initiated payment (i.e. msg.sender).
      * @param paymentToken The token currency used for payment.
      * @param paymentAmount The amount of token currency to pay.
-     * @param extData Implementation-specific extra input data.
+     * @param extData Implementation-specific extra input data (0:payout amount
+     *  (uint256), 1:minimum conversion rate (uint256)).
      * @return paymentTransfersInfo Implementation-specific payment funds
      *  transfer information.
      */

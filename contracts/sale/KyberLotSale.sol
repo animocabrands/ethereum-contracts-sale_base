@@ -43,7 +43,7 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
      * Calculates the purchase price.
      * @param purchase Purchase conditions.
      * @return priceInfo Implementation-specific calculated purchase price
-     *  information (0:total payout price (uint256)).
+     *  information (0:total payout amount (uint256)).
      */
     function _calculatePrice(
         Purchase memory purchase
