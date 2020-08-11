@@ -42,8 +42,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         IERC20 paymentToken,
         bytes32 indexed sku,
         uint256 indexed quantity,
-        bytes extData,
-        bytes32[] intData
+        bytes userData,
+        bytes32[] purchaseData
     );
 
     /**
@@ -56,7 +56,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         IERC20 paymentToken;
         bytes32 sku;
         uint256 quantity;
-        bytes extData;
+        bytes userData;
     }
 
     /**
@@ -173,14 +173,14 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
      * @param sku The SKU of the item being purchased.
      * @param quantity The quantity of SKU items being purchased.
      *  purchase.
-     * @param extData Deriving contract-specific extra input data.
+     * @param userData Implementation-specific extra user data.
      */
     function purchaseFor(
         address payable purchaser,
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData
+        bytes calldata userData
     ) external payable whenStarted whenNotPaused {
         Purchase memory purchase;
         purchase.purchaser = purchaser;
@@ -188,7 +188,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         purchase.paymentToken = paymentToken;
         purchase.sku = sku;
         purchase.quantity = quantity;
-        purchase.extData = extData;
+        purchase.userData = userData;
 
         _purchaseFor(purchase);
     }
@@ -266,7 +266,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
             purchase.paymentToken,
             purchase.sku,
             purchase.quantity,
-            purchase.extData);
+            purchase.userData);
     }
 
     /**
@@ -339,8 +339,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
             purchase.paymentToken,
             purchase.sku,
             purchase.quantity,
-            purchase.extData,
-            _getPurchasedEventIntData(
+            purchase.userData,
+            _getPurchasedEventPurchaseData(
                 priceInfo,
                 paymentInfo,
                 deliveryInfo,
@@ -348,8 +348,8 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
     }
 
     /**
-     * Retrieves implementation-specific internal data passed as the Purchased
-     *  event intData argument.
+     * Retrieves implementation-specific derived purchase data passed as the
+     *  Purchased event purchaseData argument.
      * @param priceInfo Implementation-specific calculated purchase price
      *  information.
      * @param paymentInfo Implementation-specific purchase payment funds
@@ -358,41 +358,41 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
      *  information.
      * @param finalizeInfo Implementation-specific purchase finalization
      *  information.
-     * @return intData Implementation-specific internal data passed as the
-     *  Purchased event intData argument. By default, returns (in order) the
-     *  _calculatePrice() result, _transferFunds() result, _deliverGoods()
-     *  result, and _finalizePurchase() result.
+     * @return purchaseData Implementation-specific derived purchase data
+     *  passed as the Purchased event purchaseData argument. By default, returns
+     *  (in order) the _calculatePrice() result, _transferFunds() result,
+     *  _deliverGoods() result, and _finalizePurchase() result.
      */
-    function _getPurchasedEventIntData(
+    function _getPurchasedEventPurchaseData(
         bytes32[] memory priceInfo,
         bytes32[] memory paymentInfo,
         bytes32[] memory deliveryInfo,
         bytes32[] memory finalizeInfo
-    ) internal virtual view returns (bytes32[] memory intData) {
+    ) internal virtual view returns (bytes32[] memory purchaseData) {
         uint256 numItems = 0;
         numItems = numItems.add(priceInfo.length);
         numItems = numItems.add(paymentInfo.length);
         numItems = numItems.add(deliveryInfo.length);
         numItems = numItems.add(finalizeInfo.length);
 
-        intData = new bytes32[](numItems);
+        purchaseData = new bytes32[](numItems);
 
         uint256 offset = 0;
 
         for (uint256 index = 0; index < priceInfo.length; index++) {
-            intData[offset++] = priceInfo[index];
+            purchaseData[offset++] = priceInfo[index];
         }
 
         for (uint256 index = 0; index < paymentInfo.length; index++) {
-            intData[offset++] = paymentInfo[index];
+            purchaseData[offset++] = paymentInfo[index];
         }
 
         for (uint256 index = 0; index < deliveryInfo.length; index++) {
-            intData[offset++] = deliveryInfo[index];
+            purchaseData[offset++] = deliveryInfo[index];
         }
 
         for (uint256 index = 0; index < finalizeInfo.length; index++) {
-            intData[offset++] = finalizeInfo[index];
+            purchaseData[offset++] = finalizeInfo[index];
         }
     }
 
@@ -406,7 +406,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
      * @param sku The SKU item whose total price information will be retrieved.
      * @param quantity The quantity of SKU items to retrieve the total price
      *  information for.
-     * @param *auxData* Implementation-specific auxiliary input data.
+     * @param *paymentData* Implementation-specific internal payment data.
      * @return totalPriceInfo Implementation-specific total price information
      *  (0:total price).
      */
@@ -415,7 +415,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes memory /* auxData */
+        bytes memory /* paymentData */
     ) internal virtual view returns (bytes32[] memory totalPriceInfo) {
         uint256 unitPrice = _getPrice(sku, paymentToken);
         uint256 totalPrice = unitPrice.mul(quantity);

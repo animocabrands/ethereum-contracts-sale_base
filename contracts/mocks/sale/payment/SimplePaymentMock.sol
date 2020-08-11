@@ -25,13 +25,13 @@ contract SimplePaymentMock is SimplePayment {
         address payable operator,
         IERC20 paymentToken,
         uint256 paymentAmount,
-        bytes32[] calldata auxData
+        bytes32[] calldata paymentData
     ) external payable {
         bytes32[] memory paymentTransfersInfo = _handlePaymentTransfers(
             operator,
             paymentToken,
             paymentAmount,
-            auxData);
+            paymentData);
 
         emit UnderscoreHandlePaymentTransfersResult(paymentTransfersInfo);
     }

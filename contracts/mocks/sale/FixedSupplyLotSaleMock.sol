@@ -66,7 +66,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData
+        bytes calldata userData
     )
         external
         payable
@@ -77,7 +77,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
                 paymentToken,
                 sku,
                 quantity,
-                extData);
+                userData);
 
         _validatePurchase(purchase);
     }
@@ -87,7 +87,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData
+        bytes calldata userData
     )
         external
         payable
@@ -98,7 +98,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
                 paymentToken,
                 sku,
                 quantity,
-                extData);
+                userData);
 
         bytes32[] memory deliveryInfo = _deliverGoods(purchase);
 
@@ -110,7 +110,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData,
+        bytes calldata userData,
         bytes32[] calldata priceInfo,
         bytes32[] calldata paymentInfo,
         bytes32[] calldata deliveryInfo
@@ -124,7 +124,7 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
                 paymentToken,
                 sku,
                 quantity,
-                extData);
+                userData);
 
         bytes32[] memory finalizeInfo =
             _finalizePurchase(purchase, priceInfo, paymentInfo, deliveryInfo);
@@ -142,14 +142,14 @@ contract FixedSupplyLotSaleMock is FixedSupplyLotSale, PaymentMock {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes memory extData
+        bytes memory userData
     ) private view returns (Purchase memory purchase) {
         purchase.purchaser = purchaser;
         purchase.operator = _msgSender();
         purchase.paymentToken = paymentToken;
         purchase.sku = sku;
         purchase.quantity = quantity;
-        purchase.extData = extData;
+        purchase.userData = userData;
     }
 
 }

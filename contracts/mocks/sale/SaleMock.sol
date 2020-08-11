@@ -38,7 +38,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData
+        bytes calldata userData
     )
         external
         payable
@@ -49,7 +49,7 @@ contract SaleMock is Sale {
                 paymentToken,
                 sku,
                 quantity,
-                extData);
+                userData);
 
         _purchaseFor(purchase);
     }
@@ -59,7 +59,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData
+        bytes calldata userData
     )
         external
         payable
@@ -70,7 +70,7 @@ contract SaleMock is Sale {
                 paymentToken,
                 sku,
                 quantity,
-                extData);
+                userData);
 
         _validatePurchase(purchase);
     }
@@ -80,7 +80,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData
+        bytes calldata userData
     )
         external
         payable
@@ -91,7 +91,7 @@ contract SaleMock is Sale {
                 paymentToken,
                 sku,
                 quantity,
-                extData);
+                userData);
 
         bytes32[] memory priceInfo = _calculatePrice(purchase);
 
@@ -103,7 +103,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData,
+        bytes calldata userData,
         bytes32[] calldata priceInfo
     )
         external
@@ -115,7 +115,7 @@ contract SaleMock is Sale {
                 paymentToken,
                 sku,
                 quantity,
-                extData);
+                userData);
 
         bytes32[] memory paymentInfo = _transferFunds(purchase, priceInfo);
 
@@ -127,7 +127,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData
+        bytes calldata userData
     )
         external
         payable
@@ -138,7 +138,7 @@ contract SaleMock is Sale {
                 paymentToken,
                 sku,
                 quantity,
-                extData);
+                userData);
 
         bytes32[] memory deliveryInfo = _deliverGoods(purchase);
 
@@ -150,7 +150,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData,
+        bytes calldata userData,
         bytes32[] calldata priceInfo,
         bytes32[] calldata paymentInfo,
         bytes32[] calldata deliveryInfo
@@ -164,7 +164,7 @@ contract SaleMock is Sale {
                 paymentToken,
                 sku,
                 quantity,
-                extData);
+                userData);
 
         bytes32[] memory finalizeInfo =
             _finalizePurchase(purchase, priceInfo, paymentInfo, deliveryInfo);
@@ -177,7 +177,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData,
+        bytes calldata userData,
         bytes32[] calldata priceInfo,
         bytes32[] calldata paymentInfo,
         bytes32[] calldata deliveryInfo,
@@ -192,7 +192,7 @@ contract SaleMock is Sale {
                 paymentToken,
                 sku,
                 quantity,
-                extData);
+                userData);
 
         _notifyPurchased(
             purchase,
@@ -202,7 +202,7 @@ contract SaleMock is Sale {
             finalizeInfo);
     }
 
-    function callUnderscoreGetPurchasedEventIntData(
+    function callUnderscoreGetPurchasedEventPurchaseData(
     ) external view returns (bytes32[] memory) {
         bytes32[] memory priceInfo = new bytes32[](1);
         priceInfo[0] = bytes32(uint256(0));
@@ -222,7 +222,7 @@ contract SaleMock is Sale {
         finalizeInfo[2] = bytes32(uint256(8));
         finalizeInfo[3] = bytes32(uint256(9));
 
-        return _getPurchasedEventIntData(
+        return _getPurchasedEventPurchaseData(
             priceInfo,
             paymentInfo,
             deliveryInfo,
@@ -234,14 +234,14 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData
+        bytes calldata userData
     ) external view returns (bytes32[] memory totalPriceInfo) {
         totalPriceInfo = _getTotalPriceInfo(
             purchaser,
             paymentToken,
             sku,
             quantity,
-            extData);
+            userData);
     }
 
     function _getPurchaseStruct(
@@ -249,14 +249,14 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes memory extData
+        bytes memory userData
     ) private view returns (Purchase memory purchase) {
         purchase.purchaser = purchaser;
         purchase.operator = _msgSender();
         purchase.paymentToken = paymentToken;
         purchase.sku = sku;
         purchase.quantity = quantity;
-        purchase.extData = extData;
+        purchase.userData = userData;
     }
 
     function _purchaseFor(
@@ -331,7 +331,7 @@ contract SaleMock is Sale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes memory extData
+        bytes memory userData
     ) internal override view returns (bytes32[] memory totalPriceInfo) {}
 
 }

@@ -34,7 +34,7 @@ contract SimpleSaleMock is SimpleSale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData
+        bytes calldata userData
     )
         external
         payable
@@ -45,7 +45,7 @@ contract SimpleSaleMock is SimpleSale {
                 paymentToken,
                 sku,
                 quantity,
-                extData);
+                userData);
 
         _validatePurchase(purchase);
     }
@@ -55,7 +55,7 @@ contract SimpleSaleMock is SimpleSale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData,
+        bytes calldata userData,
         bytes32[] calldata priceInfo
     )
         external
@@ -67,7 +67,7 @@ contract SimpleSaleMock is SimpleSale {
                 paymentToken,
                 sku,
                 quantity,
-                extData);
+                userData);
 
         bytes32[] memory paymentInfo = _transferFunds(purchase, priceInfo);
 
@@ -79,24 +79,24 @@ contract SimpleSaleMock is SimpleSale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes memory extData
+        bytes memory userData
     ) private view returns (Purchase memory purchase) {
         purchase.purchaser = purchaser;
         purchase.operator = _msgSender();
         purchase.paymentToken = paymentToken;
         purchase.sku = sku;
         purchase.quantity = quantity;
-        purchase.extData = extData;
+        purchase.userData = userData;
     }
 
-    function _getPurchasedEventIntData(
+    function _getPurchasedEventPurchaseData(
         bytes32[] memory priceInfo,
         bytes32[] memory /* paymentInfo */,
         bytes32[] memory /* deliveryInfo */,
         bytes32[] memory /* finalizeInfo */
-    ) internal override virtual view returns (bytes32[] memory intData) {
-        intData = new bytes32[](1);
-        intData[0] = priceInfo[0];
+    ) internal override virtual view returns (bytes32[] memory purchaseData) {
+        purchaseData = new bytes32[](1);
+        purchaseData[0] = priceInfo[0];
     }
 
 }

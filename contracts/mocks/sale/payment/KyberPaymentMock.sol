@@ -33,13 +33,13 @@ contract KyberPaymentMock is KyberPayment {
         address payable operator,
         IERC20 paymentToken,
         uint256 paymentAmount,
-        bytes32[] calldata auxData
+        bytes32[] calldata paymentData
     ) external payable {
         bytes32[] memory paymentTransfersInfo = _handlePaymentTransfers(
             operator,
             paymentToken,
             paymentAmount,
-            auxData);
+            paymentData);
 
         emit UnderscoreHandlePaymentTransfersResult(paymentTransfersInfo);
     }
@@ -47,12 +47,12 @@ contract KyberPaymentMock is KyberPayment {
     function callUnderscoreHandlePaymentAmount(
         IERC20 paymentToken,
         uint256 paymentAmount,
-        bytes32[] calldata auxData
+        bytes32[] calldata paymentData
     ) external view returns (bytes32[] memory paymentAmountInfo) {
         paymentAmountInfo = _handlePaymentAmount(
             paymentToken,
             paymentAmount,
-            auxData);
+            paymentData);
     }
 
 }

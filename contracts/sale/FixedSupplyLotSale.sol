@@ -248,7 +248,7 @@ abstract contract FixedSupplyLotSale is Sale {
      * @dev Reverts if the payment token is the zero address.
      * @dev Reverts if the lot being purchased does not exist.
      * @dev Reverts if the lot being purchased has an insufficient token supply.
-     * @param purchase Purchase conditions (extData: max token amount
+     * @param purchase Purchase conditions (userData: max token amount
      *  (uint256), min conversion rate (uint256)).
      */
     function _validatePurchase(
@@ -290,8 +290,8 @@ abstract contract FixedSupplyLotSale is Sale {
     /**
      * Finalizes the completed purchase by performing any remaining purchase
      * housekeeping updates.
-     * @param purchase Purchase conditions (extData: max token amount (uint256),
-     *  min conversion rate (uint256)).
+     * @param purchase Purchase conditions (userData: max token amount
+     *  (uint256), min conversion rate (uint256)).
      * @param *priceInfo* Implementation-specific calculated purchase price
      *  information (0:total price (uint256)).
      * @param *paymentInfo* Implementation-specific accepted purchase payment

@@ -53,7 +53,7 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
             payoutToken,
             purchase.sku,
             purchase.quantity,
-            purchase.extData);
+            purchase.userData);
 
         priceInfo = new bytes32[](1);
         priceInfo[0] = totalPriceInfo[0];
@@ -62,8 +62,8 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
     /**
      * Transfers the funds of a purchase payment from the purchaser to the
      * payout wallet.
-     * @param purchase Purchase conditions (extData: max token amount (uint256),
-     *  min conversion rate (uint256)).
+     * @param purchase Purchase conditions (userData: max token amount
+     *  (uint256), min conversion rate (uint256)).
      * @param priceInfo Implementation-specific calculated purchase price
      *  information (0:total payout price (uint256)).
      * @return paymentInfo Implementation-specific purchase payment funds
@@ -77,22 +77,22 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
         uint256 maxTokenAmount;
         uint256 minConversionRate;
 
-        bytes memory data = purchase.extData;
+        bytes memory data = purchase.userData;
 
         assembly {
             maxTokenAmount := mload(add(data, 32))
             minConversionRate := mload(add(data, 64))
         }
 
-        bytes32[] memory auxData = new bytes32[](2);
-        auxData[0] = priceInfo[0];
-        auxData[1] = bytes32(minConversionRate);
+        bytes32[] memory paymentData = new bytes32[](2);
+        paymentData[0] = priceInfo[0];
+        paymentData[1] = bytes32(minConversionRate);
 
         paymentInfo = _handlePaymentTransfers(
             purchase.operator,
             purchase.paymentToken,
             maxTokenAmount,
-            auxData);
+            paymentData);
     }
 
     /**
@@ -105,7 +105,7 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
      * @param sku The SKU item whose total price information will be retrieved.
      * @param quantity The quantity of SKU items to retrieve the total price
      *  information for.
-     * @param extData Implementation-specific extra input data.
+     * @param userData Implementation-specific extra user data.
      * @return totalPriceInfo Implementation-specific total price information
      *  (0:total payment amount (uint256), 1:minimum conversion rate (uint256)).
      */
@@ -114,24 +114,24 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes memory extData
+        bytes memory userData
     ) internal override virtual view returns (bytes32[] memory totalPriceInfo) {
         bytes32[] memory superTotalPriceInfo = super._getTotalPriceInfo(
             purchaser,
             payoutToken,
             sku,
             quantity,
-            extData);
+            userData);
 
         uint256 payoutAmount = uint256(superTotalPriceInfo[0]);
 
-        bytes32[] memory auxData = new bytes32[](1);
-        auxData[0] = bytes32(uint256(address(paymentToken)));
+        bytes32[] memory paymentData = new bytes32[](1);
+        paymentData[0] = bytes32(uint256(address(paymentToken)));
 
         totalPriceInfo = _handlePaymentAmount(
             payoutToken,
             payoutAmount,
-            auxData);
+            paymentData);
     }
 
 }

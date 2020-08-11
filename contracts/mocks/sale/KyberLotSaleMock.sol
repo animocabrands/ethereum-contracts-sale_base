@@ -45,7 +45,7 @@ contract KyberLotSaleMock is KyberLotSale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData
+        bytes calldata userData
     )
         external view
         returns (bytes32[] memory priceInfo)
@@ -56,7 +56,7 @@ contract KyberLotSaleMock is KyberLotSale {
                 paymentToken,
                 sku,
                 quantity,
-                extData);
+                userData);
 
         priceInfo = _calculatePrice(purchase);
     }
@@ -66,7 +66,7 @@ contract KyberLotSaleMock is KyberLotSale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData,
+        bytes calldata userData,
         bytes32[] calldata priceInfo
     )
         external
@@ -78,7 +78,7 @@ contract KyberLotSaleMock is KyberLotSale {
                 paymentToken,
                 sku,
                 quantity,
-                extData);
+                userData);
 
         bytes32[] memory paymentInfo = _transferFunds(purchase, priceInfo);
 
@@ -90,14 +90,14 @@ contract KyberLotSaleMock is KyberLotSale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes calldata extData
+        bytes calldata userData
     ) external view returns (bytes32[] memory totalPriceInfo) {
         totalPriceInfo = _getTotalPriceInfo(
             purchaser,
             paymentToken,
             sku,
             quantity,
-            extData);
+            userData);
     }
 
     function _getPurchaseStruct(
@@ -105,14 +105,14 @@ contract KyberLotSaleMock is KyberLotSale {
         IERC20 paymentToken,
         bytes32 sku,
         uint256 quantity,
-        bytes memory extData
+        bytes memory userData
     ) private view returns (Purchase memory purchase) {
         purchase.purchaser = purchaser;
         purchase.operator = _msgSender();
         purchase.paymentToken = paymentToken;
         purchase.sku = sku;
         purchase.quantity = quantity;
-        purchase.extData = extData;
+        purchase.userData = userData;
     }
 
 }

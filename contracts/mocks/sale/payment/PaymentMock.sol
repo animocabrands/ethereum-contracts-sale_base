@@ -16,19 +16,19 @@ contract PaymentMock is Payment {
     function callUnderscoreHandlePaymentAmount(
         IERC20 paymentToken,
         uint256 paymentAmount,
-        bytes32[] calldata auxData
+        bytes32[] calldata paymentData
     ) external view returns (bytes32[] memory paymentAmountInfo) {
         paymentAmountInfo = _handlePaymentAmount(
             paymentToken,
             paymentAmount,
-            auxData);
+            paymentData);
     }
 
     function _handlePaymentTransfers(
         address payable /* operator */,
         IERC20 /* paymentToken */,
         uint256 /* paymentAmount */,
-        bytes32[] memory /* auxData */
+        bytes32[] memory /* paymentData */
     ) internal override returns (bytes32[] memory /* paymentTransfersInfo */) {}
 
 }
