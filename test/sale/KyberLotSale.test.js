@@ -4,7 +4,7 @@ const Constants = require('@animoca/ethereum-contracts-core_library').constants;
 const { shouldBeEqualWithPercentPrecision } = require('@animoca/ethereum-contracts-core_library').fixtures
 const { toBN } = require('web3-utils');
 
-const { stringToBytes32, uintToBytes32 } = require('../utils/bytes32');
+const { stringToBytes32, uintToBytes32, bytes32ArrayToBytes } = require('../utils/bytes32');
 
 const IERC20 = artifacts.require('IERC20');
 const AssetsInventory = artifacts.require('AssetsInventoryMock');
@@ -35,7 +35,7 @@ contract('KyberLotSale', function ([
     const lotPrice = ether('0.00001'); // must be at least 0.00001
 
     const sku = uintToBytes32(lotId);
-    const extDataString = 'extData';
+    const userData = bytes32ArrayToBytes([ stringToBytes32('userData') ]);
 
     const unknownLotId = Constants.One;
 
@@ -81,7 +81,7 @@ contract('KyberLotSale', function ([
                 tokenAddress,
                 sku,
                 quantity,
-                [], // extData
+                [], // userData
                 { from: operator });
 
             this.totalPrice = toBN(priceInfo[0]);
@@ -105,7 +105,7 @@ contract('KyberLotSale', function ([
                     tokenAddress,
                     uintToBytes32(lotId),
                     quantity,
-                    []);
+                    userData);
             }
 
             const sku = uintToBytes32(lotId);
@@ -121,11 +121,11 @@ contract('KyberLotSale', function ([
                     tokenAddress,
                     sku,
                     quantity,
-                    [
+                    bytes32ArrayToBytes([
                         uintToBytes32(totalPrice),
                         uintToBytes32(minConversionRate),
-                        stringToBytes32(extDataString)
-                    ],
+                        userData
+                    ]),
                     [ uintToBytes32(payoutTotalPrice) ],
                     txParams));
         }
@@ -149,7 +149,7 @@ contract('KyberLotSale', function ([
                     tokenAddress,
                     uintToBytes32(lotId),
                     quantity,
-                    []);
+                    userData);
 
                 totalPrice = toBN(priceInfo[0]).divn(2);
                 priceInfo[0] = uintToBytes32(totalPrice);
@@ -297,7 +297,7 @@ contract('KyberLotSale', function ([
                         tokenAddress,
                         sku,
                         quantity,
-                        []);
+                        userData);
 
                     this.totalPrice = toBN(priceInfo[0]);
                     this.minConversionRate = toBN(priceInfo[1]);
@@ -315,11 +315,11 @@ contract('KyberLotSale', function ([
                             tokenAddress,
                             sku,
                             quantity,
-                            [
+                            bytes32ArrayToBytes([
                                 uintToBytes32(this.maxTokenAmount),
                                 uintToBytes32(this.minConversionRate),
-                                stringToBytes32(extDataString)
-                            ],
+                                userData
+                            ]),
                             [ uintToBytes32(this.payoutTotalPrice) ],
                             {
                                 from: operator,
@@ -360,11 +360,11 @@ contract('KyberLotSale', function ([
                             tokenAddress,
                             sku,
                             quantity,
-                            [
+                            bytes32ArrayToBytes([
                                 uintToBytes32(this.totalPrice),
                                 uintToBytes32(this.minConversionRate),
-                                stringToBytes32(extDataString)
-                            ],
+                                userData
+                            ]),
                             [ uintToBytes32(this.payoutTotalPrice) ],
                             {
                                 from: operator,
@@ -458,7 +458,7 @@ contract('KyberLotSale', function ([
                             tokenAddress,
                             sku,
                             quantity,
-                            []);
+                            userData);
 
                         this.totalPrice = toBN(priceInfo[0]);
                         this.minConversionRate = toBN(priceInfo[1]);
@@ -482,11 +482,11 @@ contract('KyberLotSale', function ([
                                 tokenAddress,
                                 sku,
                                 quantity,
-                                [
+                                bytes32ArrayToBytes([
                                     uintToBytes32(this.maxTokenAmount),
                                     uintToBytes32(this.minConversionRate),
-                                    stringToBytes32(extDataString)
-                                ],
+                                    userData
+                                ]),
                                 [ uintToBytes32(this.payoutTotalPrice) ],
                                 { from: operator });
 
@@ -563,11 +563,11 @@ contract('KyberLotSale', function ([
                                 tokenAddress,
                                 sku,
                                 quantity,
-                                [
+                                bytes32ArrayToBytes([
                                     uintToBytes32(this.totalPrice),
                                     uintToBytes32(this.minConversionRate),
-                                    stringToBytes32(extDataString)
-                                ],
+                                    userData
+                                ]),
                                 [ uintToBytes32(this.payoutTotalPrice) ],
                                 { from: operator });
 
@@ -679,7 +679,7 @@ contract('KyberLotSale', function ([
                             tokenAddress,
                             sku,
                             quantity,
-                            []);
+                            userData);
 
                         this.totalPrice = toBN(priceInfo[0]);
                         this.minConversionRate = toBN(priceInfo[1]);
@@ -703,11 +703,11 @@ contract('KyberLotSale', function ([
                                 tokenAddress,
                                 sku,
                                 quantity,
-                                [
+                                bytes32ArrayToBytes([
                                     uintToBytes32(this.maxTokenAmount),
                                     uintToBytes32(this.minConversionRate),
-                                    stringToBytes32(extDataString)
-                                ],
+                                    userData
+                                ]),
                                 [ uintToBytes32(this.payoutTotalPrice) ],
                                 { from: operator });
 
@@ -740,11 +740,11 @@ contract('KyberLotSale', function ([
                                 tokenAddress,
                                 sku,
                                 quantity,
-                                [
+                                bytes32ArrayToBytes([
                                     uintToBytes32(this.totalPrice),
                                     uintToBytes32(this.minConversionRate),
-                                    stringToBytes32(extDataString)
-                                ],
+                                    userData
+                                ]),
                                 [ uintToBytes32(this.payoutTotalPrice) ],
                                 { from: operator });
 
@@ -785,7 +785,7 @@ contract('KyberLotSale', function ([
                     tokenAddress,
                     sku,
                     quantity,
-                    []);
+                    userData);
 
                 this.totalPrice = toBN(priceInfo[0]);
                 this.minConversionRate = toBN(priceInfo[1]);
@@ -819,7 +819,7 @@ contract('KyberLotSale', function ([
         //             tokenAddress,
         //             uintToBytes32(unknownLotId),
         //             quantity,
-        //             []),
+        //             userData),
         //         'KyberLotSale: non-existent lot');
         // });
 
@@ -830,7 +830,7 @@ contract('KyberLotSale', function ([
         //             Constants.ZeroAddress,
         //             sku,
         //             quantity,
-        //             []),
+        //             userData),
         //         'zero address payment token');
         // });
 

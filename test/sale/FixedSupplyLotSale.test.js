@@ -3,7 +3,7 @@ const InventoryIds = require('@animoca/blockchain-inventory_metadata').inventory
 const Constants = require('@animoca/ethereum-contracts-core_library').constants;
 const { toBN } = require('web3-utils');
 
-const { stringToBytes32, uintToBytes32 } = require('../utils/bytes32');
+const { stringToBytes32, uintToBytes32, bytes32ArrayToBytes } = require('../utils/bytes32');
 
 const AssetsInventory = artifacts.require('AssetsInventoryMock');
 const Sale = artifacts.require('FixedSupplyLotSaleMock');
@@ -31,7 +31,7 @@ contract('FixedSupplyLotSale', function ([
     const lotPrice = ether('0.00001'); // must be at least 0.00001
 
     const sku = uintToBytes32(lotId);
-    const extDataString = 'extData';
+    const userData = bytes32ArrayToBytes([ stringToBytes32('userData') ]);
 
     const unknownLotId = Constants.One;
 
@@ -572,7 +572,7 @@ contract('FixedSupplyLotSale', function ([
                     tokenAddress,
                     sku,
                     lot.numAvailable.add(quantity),
-                    [ stringToBytes32(extDataString) ],
+                    userData,
                     { from: operator }),
                 'FixedSupplyLotSale: insufficient available lot supply');
         });
@@ -591,7 +591,7 @@ contract('FixedSupplyLotSale', function ([
                 tokenAddress,
                 sku,
                 quantity,
-                [], // extData
+                [], // userData
                 { from: operator });
 
             const deliverGoodsEvents = await this.sale.getPastEvents(
@@ -631,7 +631,7 @@ contract('FixedSupplyLotSale', function ([
                 tokenAddress,
                 sku,
                 quantity,
-                [], // extData
+                [], // userData
                 [], // priceInfo
                 [], // paymentInfo
                 [], // deliveryInfo

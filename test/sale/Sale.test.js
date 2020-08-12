@@ -1,7 +1,7 @@
 const { BN, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const Constants = require('@animoca/ethereum-contracts-core_library').constants;
 
-const { stringToBytes32, uintToBytes32 } = require('../utils/bytes32');
+const { stringToBytes32, uintToBytes32, bytes32ArrayToBytes } = require('../utils/bytes32');
 
 const Sale = artifacts.require('SaleMock');
 
@@ -29,7 +29,7 @@ contract('Sale', function ([
         ether('10')
     ].map(item => item.toString());
 
-    const extData = [ stringToBytes32('extData') ];
+    const userData = bytes32ArrayToBytes([ stringToBytes32('userData') ]);
 
     async function shouldHaveStartedTheSale(state) {
         const startedAt = await this.contract.startedAt();
@@ -408,7 +408,7 @@ contract('Sale', function ([
                         paymentToken,
                         sku,
                         quantity,
-                        extData,
+                        userData,
                         { value: quantity }),
                     'Startable: not started');
             });
@@ -430,7 +430,7 @@ contract('Sale', function ([
                         paymentToken,
                         sku,
                         quantity,
-                        extData,
+                        userData,
                         { value: quantity }),
                     'Pausable: paused');
             });
@@ -441,7 +441,7 @@ contract('Sale', function ([
                     paymentToken,
                     sku,
                     quantity,
-                    extData,
+                    userData,
                     { value: quantity });
 
                 expectEvent(
@@ -466,7 +466,7 @@ contract('Sale', function ([
                 paymentToken,
                 sku,
                 quantity,
-                extData,
+                userData,
                 { value: quantity });
         });
 
@@ -494,7 +494,7 @@ contract('Sale', function ([
                     paymentToken,
                     sku,
                     quantity,
-                    extData,
+                    userData,
                     { from: operator }),
                 'Sale: zero address purchaser');
         });
@@ -506,7 +506,7 @@ contract('Sale', function ([
                     paymentToken,
                     sku,
                     quantity,
-                    extData,
+                    userData,
                     { from: operator }),
                 'Sale: contract address purchaser');
         });
@@ -518,7 +518,7 @@ contract('Sale', function ([
                     Constants.ZeroAddress,
                     sku,
                     quantity,
-                    extData,
+                    userData,
                     { from: operator }),
                 'Sale: unsupported token');
         });
@@ -530,7 +530,7 @@ contract('Sale', function ([
                     paymentToken,
                     uintToBytes32(Constants.Two),
                     quantity,
-                    extData,
+                    userData,
                     { from: operator }),
                 'Sale: non-existent sku');
         });
@@ -542,7 +542,7 @@ contract('Sale', function ([
                     paymentToken,
                     sku,
                     Constants.Zero,
-                    extData,
+                    userData,
                     { from: operator }),
                 'Sale: zero quantity purchase');
         });
@@ -560,7 +560,7 @@ contract('Sale', function ([
                 paymentToken,
                 sku,
                 quantity,
-                extData,
+                userData,
                 { value: quantity });
 
             expectEvent(
@@ -581,7 +581,7 @@ contract('Sale', function ([
                 paymentToken,
                 sku,
                 quantity,
-                extData,
+                userData,
                 [], // priceInfo
                 { value: quantity });
 
@@ -603,7 +603,7 @@ contract('Sale', function ([
                 paymentToken,
                 sku,
                 quantity,
-                extData,
+                userData,
                 { value: quantity });
 
             expectEvent(
@@ -624,7 +624,7 @@ contract('Sale', function ([
                 paymentToken,
                 sku,
                 quantity,
-                extData,
+                userData,
                 [], // priceInfo
                 [], // paymentInfo
                 [], // deliveryInfo
@@ -648,7 +648,7 @@ contract('Sale', function ([
                 paymentToken,
                 sku,
                 quantity,
-                extData,
+                userData,
                 [
                     uintToBytes32(new BN(9)),
                     uintToBytes32(new BN(8)),
@@ -681,8 +681,8 @@ contract('Sale', function ([
                     sku: sku,
                     quantity: quantity,
                     paymentToken: paymentToken,
-                    extData: [
-                        extData[0],
+                    userData: userData,
+                    purchaseData: [
                         uintToBytes32(new BN(9)),
                         uintToBytes32(new BN(8)),
                         uintToBytes32(new BN(7)),
@@ -698,26 +698,17 @@ contract('Sale', function ([
         });
     });
 
-    describe('_getPurchasedEventExtData()', function () {
+    describe('_getPurchasedEventPurchaseData()', function () {
         const paymentToken = EthAddress;
         const sku = allSkus[0];
         const quantity = Constants.One;
 
         it('should return the correct Purchased event extra data', async function () {
-            const purchasedEventExtData =
-                await this.contract.callUnderscoreGetPurchasedEventExtData(
-                    purchaser,
-                    paymentToken,
-                    sku,
-                    quantity,
-                    extData);
+            const purchasedEventPurchaseData =
+                await this.contract.callUnderscoreGetPurchasedEventPurchaseData();
 
-            let offset = 0;
-
-            purchasedEventExtData[offset].should.be.equal(extData[0]);
-
-            for (let index = 0; index < 10; index++) {
-                purchasedEventExtData[++offset].should.be.equal(uintToBytes32(index));
+            for (let index = 0; index < 10; ++index) {
+                purchasedEventPurchaseData[index].should.be.equal(uintToBytes32(index));
             }
         });
     });
@@ -746,7 +737,7 @@ contract('Sale', function ([
                             token,
                             sku,
                             quantity,
-                            extData);
+                            userData);
 
                     totalPriceInfo.length.should.be.equal(0);
 
