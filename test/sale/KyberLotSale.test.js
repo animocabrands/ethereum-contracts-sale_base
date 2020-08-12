@@ -2,7 +2,9 @@ const { BN, balance, ether, expectEvent, expectRevert } = require('@openzeppelin
 const InventoryIds = require('@animoca/blockchain-inventory_metadata').inventoryIds;
 const Constants = require('@animoca/ethereum-contracts-core_library').constants;
 const { shouldBeEqualWithPercentPrecision } = require('@animoca/ethereum-contracts-core_library').fixtures
-const { toHex, padLeft, toBN } = require('web3-utils');
+const { toBN } = require('web3-utils');
+
+const { stringToBytes32, uintToBytes32 } = require('../utils/bytes32');
 
 const IERC20 = artifacts.require('IERC20');
 const AssetsInventory = artifacts.require('AssetsInventoryMock');
@@ -32,14 +34,10 @@ contract('KyberLotSale', function ([
     const lotFungibleAmount = new BN('100');
     const lotPrice = ether('0.00001'); // must be at least 0.00001
 
-    const sku = toBytes32(lotId);
+    const sku = uintToBytes32(lotId);
     const extDataString = 'extData';
 
     const unknownLotId = Constants.One;
-
-    function toBytes32(value) {
-        return padLeft(toHex(value), 64);
-    }
 
     beforeEach(async function () {
         this.inventory = await AssetsInventory.new(NF_MASK_LENGTH, { from: owner });
@@ -105,12 +103,12 @@ contract('KyberLotSale', function ([
                 priceInfo = await this.sale.callUnderscoreGetTotalPriceInfo(
                     recipient,
                     tokenAddress,
-                    toBytes32(lotId),
+                    uintToBytes32(lotId),
                     quantity,
                     []);
             }
 
-            const sku = toBytes32(lotId);
+            const sku = uintToBytes32(lotId);
             const payoutUnitPrice = await this.sale.getSkuTokenPrice(sku, PayoutTokenAddress);
             const payoutTotalPrice = payoutUnitPrice.mul(quantity);
 
@@ -124,18 +122,16 @@ contract('KyberLotSale', function ([
                     sku,
                     quantity,
                     [
-                        totalPrice,
-                        minConversionRate,
-                        extDataString
-                    ].map(item => toBytes32(item)),
-                    [
-                        payoutTotalPrice
-                    ].map(item => toBytes32(item)),
+                        uintToBytes32(totalPrice),
+                        uintToBytes32(minConversionRate),
+                        stringToBytes32(extDataString)
+                    ],
+                    [ uintToBytes32(payoutTotalPrice) ],
                     txParams));
         }
 
         async function shouldRevertWithValidatedQuantity(recipient, tokenAddress, lotId, quantity, priceInfo, txParams = {}) {
-            const sku = toBytes32(lotId);
+            const sku = uintToBytes32(lotId);
             const exists = await this.sale.hasInventorySku(sku);
 
             if (exists) {
@@ -151,12 +147,12 @@ contract('KyberLotSale', function ([
                 const priceInfo = await this.sale.callUnderscoreGetTotalPriceInfo(
                     recipient,
                     tokenAddress,
-                    toBytes32(lotId),
+                    uintToBytes32(lotId),
                     quantity,
                     []);
 
                 totalPrice = toBN(priceInfo[0]).divn(2);
-                priceInfo[0] = toBytes32(totalPrice);
+                priceInfo[0] = uintToBytes32(totalPrice);
 
                 await shouldRevertWithValidatedQuantity.bind(
                     this,
@@ -320,13 +316,11 @@ contract('KyberLotSale', function ([
                             sku,
                             quantity,
                             [
-                                this.maxTokenAmount,
-                                this.minConversionRate,
-                                extDataString
-                            ].map(item => toBytes32(item)),
-                            [
-                                this.payoutTotalPrice
-                            ].map(item => toBytes32(item)),
+                                uintToBytes32(this.maxTokenAmount),
+                                uintToBytes32(this.minConversionRate),
+                                stringToBytes32(extDataString)
+                            ],
+                            [ uintToBytes32(this.payoutTotalPrice) ],
                             {
                                 from: operator,
                                 value: this.maxTokenAmount
@@ -367,13 +361,11 @@ contract('KyberLotSale', function ([
                             sku,
                             quantity,
                             [
-                                this.totalPrice,
-                                this.minConversionRate,
-                                extDataString
-                            ].map(item => toBytes32(item)),
-                            [
-                                this.payoutTotalPrice
-                            ].map(item => toBytes32(item)),
+                                uintToBytes32(this.totalPrice),
+                                uintToBytes32(this.minConversionRate),
+                                stringToBytes32(extDataString)
+                            ],
+                            [ uintToBytes32(this.payoutTotalPrice) ],
                             {
                                 from: operator,
                                 value: this.totalPrice
@@ -491,13 +483,11 @@ contract('KyberLotSale', function ([
                                 sku,
                                 quantity,
                                 [
-                                    this.maxTokenAmount,
-                                    this.minConversionRate,
-                                    extDataString
-                                ].map(item => toBytes32(item)),
-                                [
-                                    this.payoutTotalPrice
-                                ].map(item => toBytes32(item)),
+                                    uintToBytes32(this.maxTokenAmount),
+                                    uintToBytes32(this.minConversionRate),
+                                    stringToBytes32(extDataString)
+                                ],
+                                [ uintToBytes32(this.payoutTotalPrice) ],
                                 { from: operator });
 
                             const transferFundsEvents = await this.sale.getPastEvents(
@@ -574,13 +564,11 @@ contract('KyberLotSale', function ([
                                 sku,
                                 quantity,
                                 [
-                                    this.totalPrice,
-                                    this.minConversionRate,
-                                    extDataString
-                                ].map(item => toBytes32(item)),
-                                [
-                                    this.payoutTotalPrice
-                                ].map(item => toBytes32(item)),
+                                    uintToBytes32(this.totalPrice),
+                                    uintToBytes32(this.minConversionRate),
+                                    stringToBytes32(extDataString)
+                                ],
+                                [ uintToBytes32(this.payoutTotalPrice) ],
                                 { from: operator });
 
                             const transferFundsEvents = await this.sale.getPastEvents(
@@ -716,13 +704,11 @@ contract('KyberLotSale', function ([
                                 sku,
                                 quantity,
                                 [
-                                    this.maxTokenAmount,
-                                    this.minConversionRate,
-                                    extDataString
-                                ].map(item => toBytes32(item)),
-                                [
-                                    this.payoutTotalPrice
-                                ].map(item => toBytes32(item)),
+                                    uintToBytes32(this.maxTokenAmount),
+                                    uintToBytes32(this.minConversionRate),
+                                    stringToBytes32(extDataString)
+                                ],
+                                [ uintToBytes32(this.payoutTotalPrice) ],
                                 { from: operator });
 
                             const transferFundsEvents = await this.sale.getPastEvents(
@@ -755,13 +741,11 @@ contract('KyberLotSale', function ([
                                 sku,
                                 quantity,
                                 [
-                                    this.totalPrice,
-                                    this.minConversionRate,
-                                    extDataString
-                                ].map(item => toBytes32(item)),
-                                [
-                                    this.payoutTotalPrice
-                                ].map(item => toBytes32(item)),
+                                    uintToBytes32(this.totalPrice),
+                                    uintToBytes32(this.minConversionRate),
+                                    stringToBytes32(extDataString)
+                                ],
+                                [ uintToBytes32(this.payoutTotalPrice) ],
                                 { from: operator });
 
                             const transferFundsEvents = await this.sale.getPastEvents(
@@ -833,7 +817,7 @@ contract('KyberLotSale', function ([
         //         this.sale.callUnderscoreGetTotalPriceInfo(
         //             recipient,
         //             tokenAddress,
-        //             toBytes32(unknownLotId),
+        //             uintToBytes32(unknownLotId),
         //             quantity,
         //             []),
         //         'KyberLotSale: non-existent lot');

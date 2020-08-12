@@ -1,6 +1,7 @@
 const { BN, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const Constants = require('@animoca/ethereum-contracts-core_library').constants;
-const { toHex, padLeft } = require('web3-utils');
+
+const { stringToBytes32, uintToBytes32 } = require('../utils/bytes32');
 
 const Sale = artifacts.require('SaleMock');
 
@@ -16,7 +17,7 @@ contract('Sale', function ([
     const allSkus = [
         Constants.Zero,
         Constants.One
-    ].map(item => toBytes32(item));
+    ].map(item => uintToBytes32(item));
 
     const allTokens = [
         Constants.ZeroAddress,
@@ -28,11 +29,7 @@ contract('Sale', function ([
         ether('10')
     ].map(item => item.toString());
 
-    const extData = [ toBytes32('extData') ];
-
-    function toBytes32(value) {
-        return padLeft(toHex(value), 64);
-    }
+    const extData = [ stringToBytes32('extData') ];
 
     async function shouldHaveStartedTheSale(state) {
         const startedAt = await this.contract.startedAt();
@@ -531,7 +528,7 @@ contract('Sale', function ([
                 this.contract.callUnderscoreValidatePurchase(
                     purchaser,
                     paymentToken,
-                    toBytes32(Constants.Two),
+                    uintToBytes32(Constants.Two),
                     quantity,
                     extData,
                     { from: operator }),
@@ -569,7 +566,7 @@ contract('Sale', function ([
             expectEvent(
                 receipt,
                 'UnderscoreCalculatePriceResult',
-                { priceInfo: [ toBytes32(Constants.One) ] });
+                { priceInfo: [ uintToBytes32(Constants.One) ] });
         });
     });
 
@@ -591,7 +588,7 @@ contract('Sale', function ([
             expectEvent(
                 receipt,
                 'UnderscoreTransferFundsResult',
-                { paymentInfo: [ toBytes32(Constants.Two) ] });
+                { paymentInfo: [ uintToBytes32(Constants.Two) ] });
         });
     });
 
@@ -612,7 +609,7 @@ contract('Sale', function ([
             expectEvent(
                 receipt,
                 'UnderscoreDeliverGoodsResult',
-                { deliveryInfo: [ toBytes32(Constants.Three) ] });
+                { deliveryInfo: [ uintToBytes32(Constants.Three) ] });
         });
     });
 
@@ -636,7 +633,7 @@ contract('Sale', function ([
             expectEvent(
                 receipt,
                 'UnderscoreFinalizePurchaseResult',
-                { finalizeInfo: [ toBytes32(Constants.Four) ] });
+                { finalizeInfo: [ uintToBytes32(Constants.Four) ] });
         });
     });
 
@@ -653,22 +650,22 @@ contract('Sale', function ([
                 quantity,
                 extData,
                 [
-                    toBytes32(new BN(9)),
-                    toBytes32(new BN(8)),
-                    toBytes32(new BN(7)),
-                    toBytes32(new BN(6))
+                    uintToBytes32(new BN(9)),
+                    uintToBytes32(new BN(8)),
+                    uintToBytes32(new BN(7)),
+                    uintToBytes32(new BN(6))
                 ],
                 [
-                    toBytes32(Constants.Five),
-                    toBytes32(Constants.Four),
-                    toBytes32(Constants.Three)
+                    uintToBytes32(Constants.Five),
+                    uintToBytes32(Constants.Four),
+                    uintToBytes32(Constants.Three)
                 ],
                 [
-                    toBytes32(Constants.Two),
-                    toBytes32(Constants.One)
+                    uintToBytes32(Constants.Two),
+                    uintToBytes32(Constants.One)
                 ],
                 [
-                    toBytes32(Constants.Zero)
+                    uintToBytes32(Constants.Zero)
                 ],
                 {
                     from: operator,
@@ -686,16 +683,16 @@ contract('Sale', function ([
                     paymentToken: paymentToken,
                     extData: [
                         extData[0],
-                        toBytes32(new BN(9)),
-                        toBytes32(new BN(8)),
-                        toBytes32(new BN(7)),
-                        toBytes32(new BN(6)),
-                        toBytes32(Constants.Five),
-                        toBytes32(Constants.Four),
-                        toBytes32(Constants.Three),
-                        toBytes32(Constants.Two),
-                        toBytes32(Constants.One),
-                        toBytes32(Constants.Zero)
+                        uintToBytes32(new BN(9)),
+                        uintToBytes32(new BN(8)),
+                        uintToBytes32(new BN(7)),
+                        uintToBytes32(new BN(6)),
+                        uintToBytes32(Constants.Five),
+                        uintToBytes32(Constants.Four),
+                        uintToBytes32(Constants.Three),
+                        uintToBytes32(Constants.Two),
+                        uintToBytes32(Constants.One),
+                        uintToBytes32(Constants.Zero)
                     ]
                 });
         });
@@ -720,7 +717,7 @@ contract('Sale', function ([
             purchasedEventExtData[offset].should.be.equal(extData[0]);
 
             for (let index = 0; index < 10; index++) {
-                purchasedEventExtData[++offset].should.be.equal(toBytes32(index));
+                purchasedEventExtData[++offset].should.be.equal(uintToBytes32(index));
             }
         });
     });

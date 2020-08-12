@@ -1,16 +1,18 @@
 const { BN, balance, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const { EthAddress, ZeroAddress, Zero, One, Two } = require('@animoca/ethereum-contracts-core_library').constants;
-const { fromWei, toChecksumAddress, asciiToHex, padRight } = require('web3-utils');
+const { fromWei, toChecksumAddress } = require('web3-utils');
+
+const { stringToBytes32 } = require('../utils/bytes32');
 
 const Sale = artifacts.require('SimpleSaleMock.sol');
 const ERC20 = artifacts.require('ERC20Mock.sol');
 const IERC20 = artifacts.require('IERC20.sol');
 
-const sku = asciiToHex('sku');
+const sku = stringToBytes32('sku');
 const ethPrice = ether('0.01');
 const erc20Price = ether('1');
 
-const purchaseData = asciiToHex('some data');
+const purchaseData = stringToBytes32('some data');
 
 contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
     async function doFreshDeploy(params) {
@@ -115,12 +117,13 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                             {
                                 purchaser: purchaser,
                                 operator: operator,
-                                sku: padRight(sku, 64),
+                                sku: sku,
                                 quantity: quantity,
                                 paymentToken: toChecksumAddress(this.payoutToken),
                                 extData: [
                                     '0x' + totalPrice.toString(16, 64),
-                                    padRight(purchaseData, 64)]
+                                    purchaseData
+                                ]
                             });
 
                         const balanceAfter =

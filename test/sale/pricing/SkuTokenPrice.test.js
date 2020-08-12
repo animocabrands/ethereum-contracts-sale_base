@@ -1,6 +1,7 @@
 const { BN, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const { ZeroAddress, Zero, One, Two, Three } = require('@animoca/ethereum-contracts-core_library').constants;
-const { toHex, padLeft } = require('web3-utils');
+
+const { uintToBytes32 } = require('../../utils/bytes32');
 
 const SkuTokenPrice = artifacts.require('SkuTokenPriceMock');
 const ERC20 = artifacts.require('ERC20Mock.sol');
@@ -10,10 +11,6 @@ contract('SkuTokenPrice', function ([
     owner,
     ...accounts
 ]) {
-    function toBytes32(value) {
-        return padLeft(toHex(value), 64);
-    }
-
     async function setAllSkuTokenPrices() {
         await this.contract.addSkus(this.skus);
         await this.contract.addTokens(this.tokens);
@@ -35,12 +32,12 @@ contract('SkuTokenPrice', function ([
 
     beforeEach(async function () {
         this.skus = [
-            toBytes32(One),
-            toBytes32(Two),
-            toBytes32(Three)
+            uintToBytes32(One),
+            uintToBytes32(Two),
+            uintToBytes32(Three)
         ];
 
-        this.unknownSku = toBytes32(Zero);
+        this.unknownSku = uintToBytes32(Zero);
 
         this.tokens = [
             (await ERC20.new(Zero, { from: owner })).address,
