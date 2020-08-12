@@ -1,6 +1,8 @@
 const {
-    asciiToHex,
-    hexToAscii,
+    utf8ToHex,
+    hexToUtf8,
+    bytesToHex,
+    hexToBytes,
     toHex,
     padLeft,
     padRight,
@@ -12,7 +14,7 @@ function addressToBytes32(value) {
 }
 
 function stringToBytes32(value) {
-    return padRight(asciiToHex(value.slice(0, 32)), 64);
+    return padRight(utf8ToHex(value.slice(0, 32)), 64);
 }
 
 function uintToBytes32(value) {
@@ -24,11 +26,15 @@ function bytes32ToAddress(value) {
 }
 
 function bytes32ToString(value) {
-    return hexToAscii(value);
+    return hexToUtf8(value);
 }
 
 function bytes32ToUint(value) {
     return toBN(value);
+}
+
+function bytes32ArrayToBytes(values) {
+    return bytesToHex([].concat(...values.map(value => hexToBytes(value))));
 }
 
 module.exports = {
@@ -37,5 +43,6 @@ module.exports = {
     uintToBytes32,
     bytes32ToAddress,
     bytes32ToString,
-    bytes32ToUint
+    bytes32ToUint,
+    bytes32ArrayToBytes
 }
