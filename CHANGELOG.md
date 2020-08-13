@@ -3,8 +3,8 @@
 ## 6.0.0
 
 ### New Features
- * `Sale.sol`: Added `isInventorySku()` for validating whether or not a SKU has been added to the purchase inventory..
- * `Sale.sol`: Added `isSupportedPaymentToken()` for validating whether or not an ERC20 token is a supported payment token.
+ * `Sale.sol`: Added `getSkus()` for retrieving the list of inventory SKUs available for purchase.
+ * `Sale.sol`: Added `getPaymentTokens()` for retrieving the list of supported ERC20 payment tokens.
  * `Sale.sol`: Added `getSkuTokenPrice()` for retrieving the undiscounted unit price of an inventory SKU.
  * `Sale.sol`: Added `getPrice()` for calculating the total purchase price amount of a given quantity of a specified inventory SKU item.
 
@@ -16,6 +16,10 @@
  * `Sale.sol`: `_getPurchasedEventExtData()` argument `Purchase purchase` has been removed
  * `Sale.sol`: `_getPurchasedEventExtData()` has been renamed to `_getPurchasedEventPurchaseData`.
  * `Sale.sol`: `_getTotalPriceInfo()` argument `bytes32[] extData` has been replaced with `bytes userData`.
+ * `Sale.sol`: Renamed `addInventorySkus()` to `addSkus()`.
+ * `Sale.sol`: Renamed `addSupportedPaymentTokens()` to `addPaymentTokens()`.
+ * `Sale.sol`: Renamed the `InventorySkusAdded` event to `SkusAdded`.
+ * `Sale.sol`: Renamed the `SupportedPaymentTokensAdded` event to `PaymentTokensAdded`.
 
 ## 5.0.0
 

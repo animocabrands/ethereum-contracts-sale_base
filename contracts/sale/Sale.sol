@@ -104,66 +104,61 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
 
     /**
      * Adds a list of inventory SKUs to make available for purchase.
-     * @dev Emits the InventorySkusUpdated event.
+     * @dev Emits the SkusAdded event.
      * @dev Reverts if called by any other than the owner.
      * @dev Reverts if the contract is not paused.
      * @param skus List of inventory SKUs to add.
      * @return added List of state flags indicating whether or not the
      *  corresponding inventory SKU has been added.
      */
-    function addInventorySkus(
+    function addSkus(
         bytes32[] calldata skus
-    )
-        external onlyOwner whenPaused
-        returns (bool[] memory added)
-    {
+    ) external override onlyOwner whenPaused returns (
+        bool[] memory added
+    ) {
         added = _addSkus(skus);
-        emit InventorySkusAdded(skus, added);
+        emit SkusAdded(skus, added);
     }
 
     /**
-     * Validates whether or not the purchase inventory includes the given SKU.
-     * @param sku The SKU to validate.
-     * @return True if the purchase inventory includes the given SKU, false
-     *  otherwise.
+     * Retrieves the list of inventory SKUs available for purchase.
+     * @return skus The list of inventory SKUs available for purchase.
      */
-    function isInventorySku(
-        bytes32 sku
-    ) external view returns (bool) {
-        return _hasSku(sku);
+    function getSkus(
+    ) external override view returns (
+        bytes32[] memory skus
+    ) {
+        skus = _getSkus();
     }
 
     /**
      * Adds a list of ERC20 tokens to add to the supported list of payment
      * tokens.
-     * @dev Emits the SupportedPaymentTokensAdded event.
+     * @dev Emits the PaymentTokensAdded event.
      * @dev Reverts if called by any other than the owner.
      * @dev Reverts if the contract is not paused.
      * @param tokens List of ERC20 tokens to add.
      * @return added List of state flags indicating whether or not the
      *  corresponding ERC20 token has been added.
      */
-    function addSupportedPaymentTokens(
+    function addPaymentTokens(
         IERC20[] calldata tokens
-    )
-        external onlyOwner whenPaused
-        returns (bool[] memory added)
-    {
+    ) external override onlyOwner whenPaused returns (
+        bool[] memory added
+    ) {
         added = _addTokens(tokens);
-        emit SupportedPaymentTokensAdded(tokens, added);
+        emit PaymentTokensAdded(tokens, added);
     }
 
     /**
-     * Validates whether or not the given ERC20 token is a supported payment
-     * token.
-     * @param token The ERC20 token to validate.
-     * @return True if the given ERC20 token is a supported payment token,
-     *  false otherwise.
+     * Retrieves the list of supported ERC20 payment tokens.
+     * @return tokens The list of supported ERC20 payment tokens.
      */
-    function isSupportedPaymentToken(
-        IERC20 token
-    ) external view returns (bool) {
-        return _hasToken(token);
+    function getPaymentTokens(
+    ) external override view returns (
+        IERC20[] memory tokens
+    ) {
+        tokens = _getTokens();
     }
 
     /**
