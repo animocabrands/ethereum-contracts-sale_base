@@ -9,42 +9,16 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./pricing/SkuTokenPrice.sol";
+import "./ISale.sol";
 
 /**
  * @title Sale
  * An abstract base contract which defines the events, members, and purchase
  * lifecycle methods for a sale contract.
  */
-abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
+abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuTokenPrice {
 
     using SafeMath for uint256;
-
-    event InventorySkusAdded(
-        bytes32[] skus,
-        bool[] added
-    );
-
-    event SupportedPaymentTokensAdded(
-        IERC20[] tokens,
-        bool[] added
-    );
-
-    event SkuTokenPricesUpdated(
-        bytes32 sku,
-        IERC20[] tokens,
-        uint256[] prices,
-        uint256[] prevPrices
-    );
-
-    event Purchased(
-        address indexed purchaser,
-        address operator,
-        IERC20 paymentToken,
-        bytes32 indexed sku,
-        uint256 indexed quantity,
-        bytes userData,
-        bytes32[] purchaseData
-    );
 
     /**
      * Used to wrap the purchase conditions passed to the purchase lifecycle

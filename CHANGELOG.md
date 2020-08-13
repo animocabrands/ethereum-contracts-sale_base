@@ -4,6 +4,7 @@
 
 ### New Features
  * `ISale.sol`: A new interface contract which defines the events and public API for sale contracts.
+ * `Sale.sol`: Implements the new `ISale.sol` interface.
  * `Sale.sol`: Added `getSkus()` for retrieving the list of inventory SKUs available for purchase.
  * `Sale.sol`: Added `getPaymentTokens()` for retrieving the list of supported ERC20 payment tokens.
  * `Sale.sol`: Added `getSkuTokenPrice()` for retrieving the undiscounted unit price of an inventory SKU.
