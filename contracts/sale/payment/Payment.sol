@@ -41,7 +41,9 @@ abstract contract Payment is PayoutWallet {
         IERC20 paymentToken,
         uint256 paymentAmount,
         bytes32[] memory extData
-    ) internal virtual returns (bytes32[] memory paymentTransfersInfo);
+    ) internal virtual returns (
+        bytes32[] memory paymentTransfersInfo
+    );
 
     /**
      * Handles the payment amount according to the implementing payment
@@ -57,6 +59,8 @@ abstract contract Payment is PayoutWallet {
         IERC20 paymentToken,
         uint256 paymentAmount,
         bytes32[] memory extData
-    ) internal virtual view returns (bytes32[] memory paymentAmountInfo) {}
+    ) internal virtual view returns (
+        bytes32[] memory paymentAmountInfo
+    ) {}
 
 }

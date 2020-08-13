@@ -41,7 +41,9 @@ abstract contract SimpleSale is Sale, SimplePayment {
     function _transferFunds(
         Purchase memory purchase,
         bytes32[] memory priceInfo
-    ) internal override virtual returns (bytes32[] memory paymentInfo) {
+    ) internal override virtual returns (
+        bytes32[] memory paymentInfo
+    ) {
         paymentInfo = _handlePaymentTransfers(
             purchase.operator,
             purchase.paymentToken,

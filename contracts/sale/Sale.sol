@@ -177,15 +177,15 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
      * @param sku The SKU whose token prices will be set.
      * @param tokens The list of SKU payout tokens to set the price for.
      * @param prices The list of SKU token prices to set with.
+     * @return prevPrices The list of sku token prices before the update.
      */
     function setSkuTokenPrices(
         bytes32 sku,
         IERC20[] calldata tokens,
         uint256[] calldata prices
-    )
-        external onlyOwner whenPaused
-        returns (uint256[] memory prevPrices)
-    {
+    ) external override onlyOwner whenPaused returns (
+        uint256[] memory prevPrices
+    ) {
         prevPrices = _setPrices(sku, tokens, prices);
         emit SkuTokenPricesUpdated(sku, tokens, prices, prevPrices);
     }
@@ -202,7 +202,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
     function getSkuTokenPrice(
         bytes32 sku,
         IERC20 token
-    ) external view returns (uint256 price) {
+    ) external view returns (
+        uint256 price
+    ) {
         price = _getPrice(sku, token);
     }
 
@@ -227,7 +229,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         bytes32 sku,
         uint256 quantity,
         bytes calldata userData
-    ) external view returns (uint256 price) {
+    ) external view returns (
+        uint256 price
+    ) {
         bytes32[] memory totalPriceInfo =
             _getTotalPriceInfo(
                 purchaser,
@@ -334,7 +338,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
      */
     function _calculatePrice(
         Purchase memory purchase
-    ) internal virtual view returns (bytes32[] memory priceInfo) {
+    ) internal virtual view returns (
+        bytes32[] memory priceInfo
+    ) {
         priceInfo = _getTotalPriceInfo(
             purchase.purchaser,
             purchase.paymentToken,
@@ -355,7 +361,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
     function _transferFunds(
         Purchase memory purchase,
         bytes32[] memory priceInfo
-    ) internal virtual returns (bytes32[] memory paymentInfo);
+    ) internal virtual returns (
+        bytes32[] memory paymentInfo
+    );
 
     /**
      * Delivers the purchased SKU item(s) to the purchaser.
@@ -365,7 +373,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
      */
     function _deliverGoods(
         Purchase memory purchase
-    ) internal virtual returns (bytes32[] memory deliveryInfo) {}
+    ) internal virtual returns (
+        bytes32[] memory deliveryInfo
+    ) {}
 
     /**
      * Finalizes the completed purchase by performing any remaining purchase
@@ -385,7 +395,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         bytes32[] memory priceInfo,
         bytes32[] memory paymentInfo,
         bytes32[] memory deliveryInfo
-    ) internal virtual returns (bytes32[] memory finalizeInfo) {}
+    ) internal virtual returns (
+        bytes32[] memory finalizeInfo
+    ) {}
 
     /**
      * Triggers a notification(s) that the purchase has been complete.
@@ -442,7 +454,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         bytes32[] memory paymentInfo,
         bytes32[] memory deliveryInfo,
         bytes32[] memory finalizeInfo
-    ) internal virtual view returns (bytes32[] memory purchaseData) {
+    ) internal virtual view returns (
+        bytes32[] memory purchaseData
+    ) {
         uint256 numItems = 0;
         numItems = numItems.add(priceInfo.length);
         numItems = numItems.add(paymentInfo.length);
@@ -490,7 +504,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         bytes32 sku,
         uint256 quantity,
         bytes memory /* userData */
-    ) internal virtual view returns (bytes32[] memory totalPriceInfo) {
+    ) internal virtual view returns (
+        bytes32[] memory totalPriceInfo
+    ) {
         uint256 unitPrice = _getPrice(sku, paymentToken);
         uint256 totalPrice = unitPrice.mul(quantity);
 

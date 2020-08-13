@@ -47,7 +47,9 @@ contract SimplePayment is Payment, PayoutToken {
         IERC20 paymentToken,
         uint256 paymentAmount,
         bytes32[] memory /* extData */
-    ) internal override returns (bytes32[] memory /* paymentTransfersInfo */) {
+    ) internal override returns (
+        bytes32[] memory /* paymentTransfersInfo */
+    ) {
         if (paymentToken == ETH_ADDRESS) {
             require(
                 msg.value >= paymentAmount,

@@ -93,20 +93,19 @@ contract SkuTokenPrice {
      */
     function _hasSku(
         bytes32 sku
-    )
-        internal view
-        returns (bool exists)
-    {
+    ) internal view returns (
+        bool exists
+    ) {
         exists = _skus.contains(sku);
     }
 
     /**
      * Retrieves the entire list of supported SKUs.
      */
-    function _getSkus()
-        internal view
-        returns (bytes32[] memory skus)
-    {
+    function _getSkus(
+    ) internal view returns (
+        bytes32[] memory skus
+    ) {
         uint256 numSkus = _skus.length();
 
         skus = new bytes32[](numSkus);
@@ -124,10 +123,9 @@ contract SkuTokenPrice {
      */
     function _addTokens(
         IERC20[] memory tokens
-    )
-        internal
-        returns (bool[] memory added)
-    {
+    ) internal returns (
+        bool[] memory added
+    ) {
         uint256 numTokens = tokens.length;
 
         added = new bool[](numTokens);
@@ -147,10 +145,9 @@ contract SkuTokenPrice {
      */
     function _removeTokens(
         IERC20[] memory tokens
-    )
-        internal
-        returns (bool[] memory removed)
-    {
+    ) internal returns (
+        bool[] memory removed
+    ) {
         uint256 numTokens = tokens.length;
 
         removed = new bool[](numTokens);
@@ -180,20 +177,19 @@ contract SkuTokenPrice {
      */
     function _hasToken(
         IERC20 token
-    )
-        internal view
-        returns (bool exists)
-    {
+    ) internal view returns (
+        bool exists
+    ) {
         exists = _tokens.contains(bytes32(uint256(address(token))));
     }
 
     /**
      * Retrieves the entire list of supported ERC20 tokens.
      */
-    function _getTokens()
-        internal view
-        returns (IERC20[] memory tokens)
-    {
+    function _getTokens(
+    ) internal view returns (
+        IERC20[] memory tokens
+    ) {
         uint256 numTokens = _tokens.length();
 
         tokens = new IERC20[](numTokens);
@@ -215,10 +211,9 @@ contract SkuTokenPrice {
     function _getPrice(
         bytes32 sku,
         IERC20 token
-    )
-        internal view
-        returns (uint256 price)
-    {
+    ) internal view returns (
+        uint256 price
+    ) {
         require(
             _skus.contains(sku),
             "SkuTokenPrice: non-existent sku");
@@ -244,10 +239,9 @@ contract SkuTokenPrice {
         bytes32 sku,
         IERC20[] memory tokens,
         uint256[] memory prices
-    )
-        internal
-        returns (uint256[] memory prevPrices)
-    {
+    ) internal returns (
+        uint256[] memory prevPrices
+    ) {
         require(
             _skus.contains(sku),
             "SkuTokenPrice: non-existent sku");
