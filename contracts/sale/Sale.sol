@@ -207,6 +207,39 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
     }
 
     /**
+     * Calculates the total price amount for the given quantity of the specified
+     *  SKU item.
+     * @param purchaser The account for whome the queried total price amount is
+     *  for.
+     * @param paymentToken The ERC20 token payment currency of the calculated
+     *  total price amount.
+     * @param sku The SKU item whose unit price is used to calculate the total
+     *  price amount.
+     * @param quantity The quantity of SKU items used to calculate the total
+     *  price amount.
+     * @param userData Implementation-specific extra user data.
+     * @return price The calculated total price amount for the given quantity of
+     *  the specified SKU item.
+     */
+    function getPrice(
+        address payable purchaser,
+        IERC20 paymentToken,
+        bytes32 sku,
+        uint256 quantity,
+        bytes calldata userData
+    ) external view returns (uint256 price) {
+        bytes32[] memory totalPriceInfo =
+            _getTotalPriceInfo(
+                purchaser,
+                paymentToken,
+                sku,
+                quantity,
+                userData);
+
+        price = uint256(totalPriceInfo[0]);
+    }
+
+    /**
      * Performs a purchase based on the given purchase conditions.
      * @dev Emits the Purchased event.
      * @param purchaser The initiating account making the purchase.

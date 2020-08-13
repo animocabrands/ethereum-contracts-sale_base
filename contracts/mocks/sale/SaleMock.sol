@@ -319,12 +319,4 @@ contract SaleMock is Sale {
         finalizeInfo[superFinalizeInfo.length] = bytes32(uint256(4));
     }
 
-    function _getTotalPriceInfo(
-        address payable purchaser,
-        IERC20 paymentToken,
-        bytes32 sku,
-        uint256 quantity,
-        bytes memory userData
-    ) internal override view returns (bytes32[] memory totalPriceInfo) {}
-
 }

@@ -1,7 +1,7 @@
 const { BN, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const Constants = require('@animoca/ethereum-contracts-core_library').constants;
 
-const { stringToBytes32, uintToBytes32, bytes32ArrayToBytes } = require('../utils/bytes32');
+const { stringToBytes32, uintToBytes32, bytes32ArrayToBytes, bytes32ToUint } = require('../utils/bytes32');
 
 const Sale = artifacts.require('SaleMock');
 
@@ -442,6 +442,43 @@ contract('Sale', function ([
         });
     });
 
+    describe('getPrice()', function () {
+        const quantity = Constants.One;
+
+        beforeEach(async function () {
+            await this.contract.addInventorySkus(allSkus, { from: owner});
+            await this.contract.addSupportedPaymentTokens(allTokens, { from: owner});
+
+            for (const sku of allSkus) {
+                await this.contract.setSkuTokenPrices(sku, allTokens, allPrices, { from: owner});
+            }
+        });
+
+        it('should return correct price', async function () {
+            allTokens.length.should.be.equal(allPrices.length);
+
+            const numTokenPrices = allTokens.length;
+
+            for (const sku of allSkus) {
+                for (let index = 0; index < numTokenPrices; ++index) {
+                    const token = allTokens[index];
+                    const price = new BN(allPrices[index]);
+
+                    const totalPrice =
+                        await this.contract.getPrice(
+                            purchaser,
+                            token,
+                            sku,
+                            quantity,
+                            userData);
+
+                    const expectedTotalPrice = price.mul(quantity);
+                    totalPrice.should.be.bignumber.equal(expectedTotalPrice);
+                }
+            }
+        });
+    });
+
     describe('purchaseFor()', function () {
         const paymentToken = EthAddress;
         const sku = allSkus[0];
@@ -766,6 +803,10 @@ contract('Sale', function ([
         beforeEach(async function () {
             await this.contract.addInventorySkus(allSkus, { from: owner});
             await this.contract.addSupportedPaymentTokens(allTokens, { from: owner});
+
+            for (const sku of allSkus) {
+                await this.contract.setSkuTokenPrices(sku, allTokens, allPrices, { from: owner});
+            }
         });
 
         it('should return correct total price pricing info', async function () {
@@ -786,11 +827,8 @@ contract('Sale', function ([
                             quantity,
                             userData);
 
-                    totalPriceInfo.length.should.be.equal(0);
-
-                    const unitPrice = await this.contract.getSkuTokenPrice(sku, token);
-                    const totalPrice = unitPrice.mul(quantity);
-                    totalPrice.should.be.bignumber.equal(new BN(totalPriceInfo[0]));
+                    const expectedTotalPrice = new BN(price).mul(quantity);
+                    bytes32ToUint(totalPriceInfo[0]).should.be.bignumber.equal(expectedTotalPrice);
                 }
             }
         });
