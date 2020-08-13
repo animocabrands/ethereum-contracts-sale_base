@@ -262,20 +262,6 @@ contract SaleMock is Sale {
         emit UnderscorePurchaseForCalled();
     }
 
-    function _calculatePrice(
-        Purchase memory purchase
-    ) internal override view returns (bytes32[] memory priceInfo) {
-        bytes32[] memory superPriceInfo = super._calculatePrice(purchase);
-
-        priceInfo = new bytes32[](superPriceInfo.length + 1);
-
-        for (uint256 index = 0; index < superPriceInfo.length; ++index) {
-            priceInfo[index] = superPriceInfo[index];
-        }
-
-        priceInfo[superPriceInfo.length] = bytes32(uint256(1));
-    }
-
     function _transferFunds(
         Purchase memory /* purchase */,
         bytes32[] memory /* priceInfo */

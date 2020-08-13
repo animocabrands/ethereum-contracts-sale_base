@@ -633,24 +633,32 @@ contract('Sale', function ([
     });
 
     describe('_calculatePrice()', function () {
-        const paymentToken = EthAddress;
+        const paymentToken = allTokens[0];
         const sku = allSkus[0];
+        const price = new BN(allPrices[0]);
         const quantity = Constants.One;
 
-        it('should return the correct price info', async function () {
+        beforeEach(async function () {
+            await this.contract.addInventorySkus(allSkus, { from: owner});
+            await this.contract.addSupportedPaymentTokens(allTokens, { from: owner});
 
+            for (const sku of allSkus) {
+                await this.contract.setSkuTokenPrices(sku, allTokens, allPrices, { from: owner});
+            }
+        });
+
+        it('should return the correct price info', async function () {
             const receipt = await this.contract.callUnderscoreCalculatePrice(
                 purchaser,
                 paymentToken,
                 sku,
                 quantity,
-                userData,
-                { value: quantity });
+                userData);
 
             expectEvent(
                 receipt,
                 'UnderscoreCalculatePriceResult',
-                { priceInfo: [ uintToBytes32(Constants.One) ] });
+                { priceInfo: [ uintToBytes32(price.mul(quantity)) ] });
         });
     });
 
