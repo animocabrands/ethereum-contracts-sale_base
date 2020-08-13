@@ -171,7 +171,7 @@ abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuToken
     function getSkuTokenPrice(
         bytes32 sku,
         IERC20 token
-    ) external view returns (
+    ) external override view returns (
         uint256 price
     ) {
         price = _getPrice(sku, token);
@@ -198,7 +198,7 @@ abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuToken
         bytes32 sku,
         uint256 quantity,
         bytes calldata userData
-    ) external view returns (
+    ) external override view returns (
         uint256 price
     ) {
         bytes32[] memory totalPriceInfo =
@@ -228,7 +228,7 @@ abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuToken
         bytes32 sku,
         uint256 quantity,
         bytes calldata userData
-    ) external payable whenStarted whenNotPaused {
+    ) external override payable whenStarted whenNotPaused {
         Purchase memory purchase;
         purchase.purchaser = purchaser;
         purchase.operator = _msgSender();
