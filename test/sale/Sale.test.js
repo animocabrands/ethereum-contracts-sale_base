@@ -24,6 +24,9 @@ contract('Sale', function ([
         EthAddress
     ];
 
+    const unknownSku = uintToBytes32(Constants.Two);
+    const unknownToken = '0x1111222233334444555566667777888899990000';
+
     const allPrices = [
         ether('1'),
         ether('10')
@@ -148,7 +151,7 @@ contract('Sale', function ([
     describe('addInventorySkus()', function () {
         beforeEach(async function () {
             await this.contract.start({ from: owner });
-            await this.contract.pause({ from: owner })
+            await this.contract.pause({ from: owner });
         });
 
         it('reverts if called by any other than the owner', async function () {
@@ -221,10 +224,32 @@ contract('Sale', function ([
         });
     });
 
+    describe('isInventorySku()', function () {
+        beforeEach(async function () {
+            await this.contract.start({ from: owner });
+            await this.contract.pause({ from: owner });
+            await this.contract.addInventorySkus(allSkus, { from: owner });
+        });
+
+        it('should return `false` for an unknown inventory SKU', async function () {
+            const isInventorySku =
+                await this.contract.isInventorySku(unknownSku, { from: purchaser });
+
+            isInventorySku.should.be.false;
+        });
+
+        it('should return `true` for an added inventory SKU', async function () {
+            const isInventorySku =
+                await this.contract.isInventorySku(allSkus[0], { from: purchaser });
+
+            isInventorySku.should.be.true;
+        });
+    });
+
     describe('addSupportedPaymentTokens()', function () {
         beforeEach(async function () {
             await this.contract.start({ from: owner });
-            await this.contract.pause({ from: owner })
+            await this.contract.pause({ from: owner });
         });
 
         it('reverts if called by any other than the owner', async function () {
@@ -294,6 +319,28 @@ contract('Sale', function ([
                         added: [true, true]
                     });
             });
+        });
+    });
+
+    describe('isSupportedPaymentToken()', function () {
+        beforeEach(async function () {
+            await this.contract.start({ from: owner });
+            await this.contract.pause({ from: owner });
+            await this.contract.addSupportedPaymentTokens(allTokens, { from: owner });
+        });
+
+        it('should return `false` for an unknown payment token', async function () {
+            const isSupportedPaymentToken =
+                await this.contract.isSupportedPaymentToken(unknownToken, { from: purchaser });
+
+            isSupportedPaymentToken.should.be.false;
+        });
+
+        it('should return `true` for a supported payment token', async function () {
+            const isSupportedPaymentToken =
+                await this.contract.isSupportedPaymentToken(allTokens[0], { from: purchaser });
+
+            isSupportedPaymentToken.should.be.true;
         });
     });
 

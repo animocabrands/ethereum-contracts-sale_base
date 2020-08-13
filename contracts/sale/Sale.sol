@@ -122,6 +122,18 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
     }
 
     /**
+     * Validates whether or not the purchase inventory includes the given SKU.
+     * @param sku The SKU to validate.
+     * @return True if the purchase inventory includes the given SKU, false
+     *  otherwise.
+     */
+    function isInventorySku(
+        bytes32 sku
+    ) external view returns (bool) {
+        return _hasSku(sku);
+    }
+
+    /**
      * Adds a list of ERC20 tokens to add to the supported list of payment
      * tokens.
      * @dev Emits the SupportedPaymentTokensAdded event.
@@ -139,6 +151,19 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
     {
         added = _addTokens(tokens);
         emit SupportedPaymentTokensAdded(tokens, added);
+    }
+
+    /**
+     * Validates whether or not the given ERC20 token is a supported payment
+     * token.
+     * @param token The ERC20 token to validate.
+     * @return True if the given ERC20 token is a supported payment token,
+     *  false otherwise.
+     */
+    function isSupportedPaymentToken(
+        IERC20 token
+    ) external view returns (bool) {
+        return _hasToken(token);
     }
 
     /**
@@ -163,6 +188,22 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
     {
         prevPrices = _setPrices(sku, tokens, prices);
         emit SkuTokenPricesUpdated(sku, tokens, prices, prevPrices);
+    }
+
+    /**
+     * Retrieves the undiscounted unit price of the given inventory SKU item, in
+     * the specified supported ERC20 payment token currency.
+     * @param sku The inventory SKU item whose undiscounted unit price will be
+     *  retrieved.
+     * @param token The ERC20 token currency of the retrieved price.
+     * @return price The undiscounted unit price of the given inventory SKU item, in
+     *  the specified supported ERC20 payment token currency.
+     */
+    function getSkuTokenPrice(
+        bytes32 sku,
+        IERC20 token
+    ) external view returns (uint256 price) {
+        price = _getPrice(sku, token);
     }
 
     /**

@@ -26,13 +26,6 @@ contract SaleMock is Sale {
 
     constructor() public {}
 
-    function getSkuTokenPrice(
-        bytes32 sku,
-        IERC20 token
-    ) external view returns (uint256 price) {
-        price = _getPrice(sku, token);
-    }
-
     function callUnderscorePurchaseFor(
         address payable purchaser,
         IERC20 paymentToken,

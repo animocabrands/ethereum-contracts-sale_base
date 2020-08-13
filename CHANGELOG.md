@@ -2,6 +2,10 @@
 
 ## 6.0.0
 
+### New Features
+ * `Sale.sol`: Added `isInventorySku()` for validating whether or not a SKU has been added to the purchase inventory..
+ * `Sale.sol`: Added `isSupportedPaymentToken()` for validating whether or not an ERC20 token is a supported payment token.
+ * `Sale.sol`: Added `getSkuTokenPrice()` for retrieving the undiscounted unit price of an inventory SKU.
 ### Breaking changes
  * `KyberLotSale.sol`: `_getTotalPriceInfo()` argument `bytes32[] extData` has been replaced with `bytes userData`.
  * `Sale.sol`: `Purchased` event parameter `bytes32[] extData` has been replaced with `bytes userData` and `bytes32[] purchaseData`.
