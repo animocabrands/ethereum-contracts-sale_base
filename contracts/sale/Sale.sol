@@ -20,6 +20,23 @@ abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuToken
 
     using SafeMath for uint256;
 
+    event SkusAdded(
+        bytes32[] skus,
+        bool[] added
+    );
+
+    event PaymentTokensAdded(
+        IERC20[] tokens,
+        bool[] added
+    );
+
+    event SkuTokenPricesUpdated(
+        bytes32 sku,
+        IERC20[] tokens,
+        uint256[] prices,
+        uint256[] prevPrices
+    );
+
     /**
      * Used to wrap the purchase conditions passed to the purchase lifecycle
      * functions.
@@ -87,7 +104,7 @@ abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuToken
      */
     function addSkus(
         bytes32[] calldata skus
-    ) external override onlyOwner whenPaused returns (
+    ) external onlyOwner whenPaused returns (
         bool[] memory added
     ) {
         added = _addSkus(skus);
@@ -117,7 +134,7 @@ abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuToken
      */
     function addPaymentTokens(
         IERC20[] calldata tokens
-    ) external override onlyOwner whenPaused returns (
+    ) external onlyOwner whenPaused returns (
         bool[] memory added
     ) {
         added = _addTokens(tokens);
@@ -152,7 +169,7 @@ abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuToken
         bytes32 sku,
         IERC20[] calldata tokens,
         uint256[] calldata prices
-    ) external override onlyOwner whenPaused returns (
+    ) external onlyOwner whenPaused returns (
         uint256[] memory prevPrices
     ) {
         prevPrices = _setPrices(sku, tokens, prices);
