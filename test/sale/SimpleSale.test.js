@@ -18,7 +18,7 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
     async function doFreshDeploy(params) {
         let payoutToken;
 
-        this.supportedPayoutTokens = [EthAddress];
+        this.paymentTokens = [EthAddress];
         this.tokenPrices = [ethPrice];
 
         if (params.useErc20) {
@@ -27,7 +27,7 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
             await erc20Token.transfer(params.purchaser, ether('100000'), { from: params.owner });
             payoutToken = erc20Token.address;
             this.payoutToken = payoutToken;
-            this.supportedPayoutTokens.push(payoutToken);
+            this.paymentTokens.push(payoutToken);
             this.tokenPrices.push(erc20Price);
         } else {
             payoutToken = ZeroAddress;
@@ -36,11 +36,11 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
 
         this.contract = await Sale.new(params.payout, payoutToken, { from: params.owner });
 
-        this.inventorySkus = [sku];
+        this.skus = [sku];
 
-        await this.contract.addInventorySkus(this.inventorySkus, { from: params.owner });
-        await this.contract.addSupportedPaymentTokens(this.supportedPayoutTokens, { from: params.owner });
-        await this.contract.setSkuTokenPrices(sku, this.supportedPayoutTokens, this.tokenPrices, { from: params.owner });
+        await this.contract.addSkus(this.skus, { from: params.owner });
+        await this.contract.addPaymentTokens(this.paymentTokens, { from: params.owner });
+        await this.contract.setSkuTokenPrices(sku, this.paymentTokens, this.tokenPrices, { from: params.owner });
         await this.contract.start({ from: params.owner });
     };
 
