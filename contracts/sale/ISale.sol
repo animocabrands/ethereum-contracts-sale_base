@@ -2,6 +2,8 @@
 
 pragma solidity 0.6.8;
 
+import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
+
 /**
  * @title ISale
  * An interface contract which defines the events and public API for a sale
