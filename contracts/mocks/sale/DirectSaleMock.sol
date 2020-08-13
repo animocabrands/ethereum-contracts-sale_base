@@ -3,9 +3,9 @@
 pragma solidity 0.6.8;
 
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-import "../../sale/SimpleSale.sol";
+import "../../sale/DirectSale.sol";
 
-contract SimpleSaleMock is SimpleSale {
+contract DirectSaleMock is DirectSale {
 
     event UnderscoreTransferFundsResult(
         bytes32[] paymentInfo
@@ -15,7 +15,7 @@ contract SimpleSaleMock is SimpleSale {
         address payable payoutWallet_,
         IERC20 payoutToken_
     )
-        SimpleSale(
+        DirectSale(
             payoutWallet_,
             payoutToken_
         )

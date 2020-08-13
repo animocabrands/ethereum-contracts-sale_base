@@ -23,6 +23,7 @@
  * `Sale.sol`: Renamed the `InventorySkusAdded` event to `SkusAdded`.
  * `Sale.sol`: Renamed the `SupportedPaymentTokensAdded` event to `PaymentTokensAdded`.
  * `SimplePayment.sol`: Renamed to `DirectPayment.sol`.
+ * `SimpleSale.sol`: Renamed to `DirectSale.sol`.
 
 ## 5.0.0
 

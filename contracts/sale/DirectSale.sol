@@ -6,11 +6,11 @@ import "./payment/DirectPayment.sol";
 import "./Sale.sol";
 
 /**
- * @title SimpleSale
+ * @title DirectSale
  * An abstract sale contract that supports purchases made by ETH and/or an
  * ERC20-compatible token.
  */
-abstract contract SimpleSale is Sale, DirectPayment {
+abstract contract DirectSale is Sale, DirectPayment {
 
     /**
      * Constructor.
