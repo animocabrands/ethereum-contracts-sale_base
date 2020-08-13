@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.8;
 
-import "./payment/SimplePayment.sol";
+import "./payment/DirectPayment.sol";
 import "./Sale.sol";
 
 /**
@@ -10,7 +10,7 @@ import "./Sale.sol";
  * An abstract sale contract that supports purchases made by ETH and/or an
  * ERC20-compatible token.
  */
-abstract contract SimpleSale is Sale, SimplePayment {
+abstract contract SimpleSale is Sale, DirectPayment {
 
     /**
      * Constructor.
@@ -22,7 +22,7 @@ abstract contract SimpleSale is Sale, SimplePayment {
         address payable payoutWallet_,
         IERC20 payoutToken_
     )
-        SimplePayment(
+        DirectPayment(
             payoutWallet_,
             payoutToken_
         )
