@@ -6,11 +6,11 @@ import "./PayoutToken.sol";
 import "./Payment.sol";
 
 /**
- * @title SimplePayment
- * A contract module that adds support for simple payment mechanisms to sale
+ * @title DirectPayment
+ * A contract module that adds support for direct payment mechanisms to sale
  * contracts.
  */
-contract SimplePayment is Payment, PayoutToken {
+contract DirectPayment is Payment, PayoutToken {
 
     // special address value to represent a payment in ETH
     IERC20 public constant ETH_ADDRESS = IERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
@@ -53,7 +53,7 @@ contract SimplePayment is Payment, PayoutToken {
         if (paymentToken == ETH_ADDRESS) {
             require(
                 msg.value >= paymentAmount,
-                "SimplePayment: insufficient ETH provided");
+                "DirectPayment: insufficient ETH provided");
 
             payoutWallet.transfer(paymentAmount);
 
@@ -65,7 +65,7 @@ contract SimplePayment is Payment, PayoutToken {
         } else {
             require(
                 payoutToken.transferFrom(operator, payoutWallet, paymentAmount),
-                "SimplePayment: failure in transferring ERC20 payment");
+                "DirectPayment: failure in transferring ERC20 payment");
         }
     }
 

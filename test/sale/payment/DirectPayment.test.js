@@ -1,10 +1,10 @@
 const { BN, balance, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const { EthAddress, ZeroAddress, Zero, One, Two } = require('@animoca/ethereum-contracts-core_library').constants;
 
-const SimplePayment = artifacts.require('SimplePaymentMock');
+const DirectPayment = artifacts.require('DirectPaymentMock');
 const ERC20 = artifacts.require('ERC20Mock.sol');
 
-contract('SimplePayment', function ([_, payout, owner, operator]) {
+contract('DirectPayment', function ([_, payout, owner, operator]) {
     async function doFreshDeploy(params) {
         let payoutToken;
 
@@ -18,7 +18,7 @@ contract('SimplePayment', function ([_, payout, owner, operator]) {
             this.payoutToken = EthAddress;
         }
 
-        this.contract = await SimplePayment.new(params.payout, payoutToken, { from: params.owner });
+        this.contract = await DirectPayment.new(params.payout, payoutToken, { from: params.owner });
     };
 
     describe('_handlePaymentTransfers', function () {
@@ -44,7 +44,7 @@ contract('SimplePayment', function ([_, payout, owner, operator]) {
                                 from: operator,
                                 value: Zero
                             }),
-                        'SimplePayment: insufficient ETH provided');
+                        'DirectPayment: insufficient ETH provided');
                 });
             });
 
