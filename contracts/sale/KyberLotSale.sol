@@ -64,6 +64,11 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
     /**
      * Transfers the funds of a purchase payment from the purchaser to the
      * payout wallet.
+     * @dev Reverts if the payment token amount is insufficient to swap for the
+     *  required payout token amount.
+     * @dev Reverts if the contract has an insufficient allowance to perform
+     *  token transfers from the operator.
+     * @dev Reverts if the operator has an insufficient payment token balance.
      * @param purchase Purchase conditions (userData: max token amount
      *  (uint256), min conversion rate (uint256)).
      * @param priceInfo Implementation-specific calculated purchase price
@@ -102,6 +107,8 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
     /**
      * Retrieves the total price information for the given quantity of the
      *  specified SKU item.
+     * @dev Reverts if the specified SKU does not exist.
+     * @dev Reverts is the specified ERC20 token is unsupported.
      * @param purchaser The account for whome the queried total price
      *  information is for.
      * @param paymentToken The ERC20 token payment currency of the total price

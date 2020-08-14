@@ -473,6 +473,8 @@ abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuToken
     /**
      * Retrieves the total price information for the given quantity of the
      *  specified SKU item.
+     * @dev Reverts if the specified SKU does not exist.
+     * @dev Reverts is the specified ERC20 token is unsupported.
      * @param *purchaser* The account for whome the queried total price
      *  information is for.
      * @param paymentToken The ERC20 token payment currency of the total price

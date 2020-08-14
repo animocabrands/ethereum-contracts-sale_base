@@ -50,6 +50,11 @@ contract KyberPayment is Payment, PayoutToken, KyberAdapter {
 
     /**
      * Handles the transfer of payment funds.
+     * @dev Reverts if the payment token amount is insufficient to swap for the
+     *  required payout token amount.
+     * @dev Reverts if the contract has an insufficient allowance to perform
+     *  token transfers from the operator.
+     * @dev Reverts if the operator has an insufficient payment token balance.
      * @param operator The address which initiated payment (i.e. msg.sender).
      * @param paymentToken The token currency used for payment.
      * @param paymentAmount The amount of token currency to pay.
