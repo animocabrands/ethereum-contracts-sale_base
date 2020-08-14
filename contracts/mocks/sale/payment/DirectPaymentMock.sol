@@ -2,9 +2,9 @@
 
 pragma solidity 0.6.8;
 
-import "../../../sale/payment/SimplePayment.sol";
+import "../../../sale/payment/DirectPayment.sol";
 
-contract SimplePaymentMock is SimplePayment {
+contract DirectPaymentMock is DirectPayment {
 
     event UnderscoreHandlePaymentTransfersResult(
         bytes32[] paymentTransfersInfo
@@ -14,7 +14,7 @@ contract SimplePaymentMock is SimplePayment {
         address payable payoutWallet_,
         IERC20 payoutToken_
     )
-        SimplePayment(
+        DirectPayment(
             payoutWallet_,
             payoutToken_
         )

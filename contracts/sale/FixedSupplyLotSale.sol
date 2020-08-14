@@ -64,11 +64,7 @@ abstract contract FixedSupplyLotSale is Sale {
      */
     function setFungibleTokenId(
         uint256 fungibleTokenId
-    )
-        public
-        onlyOwner
-        whenNotStarted
-    {
+    ) public onlyOwner whenNotStarted {
         require(fungibleTokenId != 0, "FixedSupplyLotSale: zero fungible token ID");
         require(fungibleTokenId != _fungibleTokenId, "FixedSupplyLotSale: duplicate assignment");
 
@@ -83,11 +79,7 @@ abstract contract FixedSupplyLotSale is Sale {
      */
     function setInventoryContract(
         address inventoryContract
-    )
-        public
-        onlyOwner
-        whenNotStarted
-    {
+    ) public onlyOwner whenNotStarted {
         require(inventoryContract != address(0), "FixedSupplyLotSale: zero inventory contract");
         require(inventoryContract != _inventoryContract, "FixedSupplyLotSale: duplicate assignment");
 
@@ -106,11 +98,7 @@ abstract contract FixedSupplyLotSale is Sale {
         uint256 lotId,
         uint256[] memory nonFungibleSupply,
         uint256 fungibleAmount
-    )
-        public
-        onlyOwner
-        whenNotStarted
-    {
+    ) public onlyOwner whenNotStarted {
         bytes32 sku = bytes32(lotId);
 
         require(!_hasSku(sku), "FixedSupplyLotSale: lot exists");
@@ -141,11 +129,7 @@ abstract contract FixedSupplyLotSale is Sale {
     function updateLotNonFungibleSupply(
         uint256 lotId,
         uint256[] calldata nonFungibleTokens
-    )
-        external
-        onlyOwner
-        whenNotStarted
-    {
+    ) external onlyOwner whenNotStarted {
         require(nonFungibleTokens.length != 0, "FixedSupplyLotSale: zero length non-fungible supply");
 
         bytes32 sku = bytes32(lotId);
@@ -184,11 +168,7 @@ abstract contract FixedSupplyLotSale is Sale {
     function updateLotFungibleAmount(
         uint256 lotId,
         uint256 fungibleAmount
-    )
-        external
-        onlyOwner
-        whenPaused
-    {
+    ) external onlyOwner whenPaused {
         bytes32 sku = bytes32(lotId);
 
         require(_hasSku(sku), "FixedSupplyLotSale: non-existent lot");
@@ -210,14 +190,9 @@ abstract contract FixedSupplyLotSale is Sale {
     function peekLotAvailableNonFungibleSupply(
         uint256 lotId,
         uint256 count
-    )
-        external
-        view
-        returns
-    (
+    ) external view returns (
         uint256[] memory
-    )
-    {
+    ) {
         bytes32 sku = bytes32(lotId);
 
         require(_hasSku(sku), "FixedSupplyLotSale: non-existent lot");
@@ -270,7 +245,9 @@ abstract contract FixedSupplyLotSale is Sale {
      */
     function _deliverGoods(
         Purchase memory purchase
-    ) internal override virtual returns (bytes32[] memory deliveryInfo) {
+    ) internal override virtual returns (
+        bytes32[] memory deliveryInfo
+    ) {
         deliveryInfo = new bytes32[](purchase.quantity.add(2));
         deliveryInfo[0] = bytes32(purchase.quantity);
 
@@ -308,7 +285,9 @@ abstract contract FixedSupplyLotSale is Sale {
         bytes32[] memory /* priceInfo */,
         bytes32[] memory /* paymentInfo */,
         bytes32[] memory /* deliveryInfo */
-    ) internal override virtual returns (bytes32[] memory /* finalizeInfo */) {
+    ) internal override virtual returns (
+        bytes32[] memory /* finalizeInfo */
+    ) {
         uint256 lotId = uint256(purchase.sku);
         _lots[lotId].numAvailable = _lots[lotId].numAvailable.sub(purchase.quantity);
     }

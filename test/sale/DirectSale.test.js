@@ -4,7 +4,7 @@ const { fromWei, toChecksumAddress } = require('web3-utils');
 
 const { stringToBytes32, uintToBytes32 } = require('../utils/bytes32');
 
-const Sale = artifacts.require('SimpleSaleMock.sol');
+const Sale = artifacts.require('DirectSaleMock.sol');
 const ERC20 = artifacts.require('ERC20Mock.sol');
 const IERC20 = artifacts.require('IERC20.sol');
 
@@ -14,11 +14,11 @@ const erc20Price = ether('1');
 
 const userData = stringToBytes32('userData');
 
-contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
+contract('DirectSale', function ([_, payout, owner, operator, purchaser]) {
     async function doFreshDeploy(params) {
         let payoutToken;
 
-        this.supportedPayoutTokens = [EthAddress];
+        this.paymentTokens = [EthAddress];
         this.tokenPrices = [ethPrice];
 
         if (params.useErc20) {
@@ -27,7 +27,7 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
             await erc20Token.transfer(params.purchaser, ether('100000'), { from: params.owner });
             payoutToken = erc20Token.address;
             this.payoutToken = payoutToken;
-            this.supportedPayoutTokens.push(payoutToken);
+            this.paymentTokens.push(payoutToken);
             this.tokenPrices.push(erc20Price);
         } else {
             payoutToken = ZeroAddress;
@@ -36,16 +36,16 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
 
         this.contract = await Sale.new(params.payout, payoutToken, { from: params.owner });
 
-        this.inventorySkus = [sku];
+        this.skus = [sku];
 
-        await this.contract.addInventorySkus(this.inventorySkus, { from: params.owner });
-        await this.contract.addSupportedPaymentTokens(this.supportedPayoutTokens, { from: params.owner });
-        await this.contract.setSkuTokenPrices(sku, this.supportedPayoutTokens, this.tokenPrices, { from: params.owner });
+        await this.contract.addSkus(this.skus, { from: params.owner });
+        await this.contract.addPaymentTokens(this.paymentTokens, { from: params.owner });
+        await this.contract.setSkuTokenPrices(sku, this.paymentTokens, this.tokenPrices, { from: params.owner });
         await this.contract.start({ from: params.owner });
     };
 
     describe('Purchasing', async function () {
-        function simplePurchase(payout, owner, operator, purchaser, useErc20) {
+        function directPurchase(payout, owner, operator, purchaser, useErc20) {
             async function getPrice(sale, paymentToken, quantity) {
                 const unitPrice = await sale.getPrice(sku, paymentToken)
                 return unitPrice.mul(new BN(quantity));
@@ -164,7 +164,7 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
                             { value: unitPrice }),
                         useErc20 ?
                             'ERC20: transfer amount exceeds allowance' :
-                            'SimplePayment: insufficient ETH provided');
+                            'DirectPayment: insufficient ETH provided');
                 });
             });
 
@@ -223,11 +223,11 @@ contract('SimpleSale', function ([_, payout, owner, operator, purchaser]) {
         }
 
         describe('purchase with ether', async function () {
-            simplePurchase(payout, owner, operator, purchaser, false);
+            directPurchase(payout, owner, operator, purchaser, false);
         });
 
         describe('purchase with ERC20', async function () {
-            simplePurchase(payout, owner, operator, purchaser, true);
+            directPurchase(payout, owner, operator, purchaser, true);
         });
     });
 });

@@ -47,7 +47,9 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
      */
     function _calculatePrice(
         Purchase memory purchase
-    ) internal override virtual view returns (bytes32[] memory priceInfo) {
+    ) internal override virtual view returns (
+        bytes32[] memory priceInfo
+    ) {
         bytes32[] memory totalPriceInfo = _getTotalPriceInfo(
             purchase.purchaser,
             payoutToken,
@@ -73,7 +75,9 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
     function _transferFunds(
         Purchase memory purchase,
         bytes32[] memory priceInfo
-    ) internal override virtual returns (bytes32[] memory paymentInfo) {
+    ) internal override virtual returns (
+        bytes32[] memory paymentInfo
+    ) {
         uint256 maxTokenAmount;
         uint256 minConversionRate;
 
@@ -115,7 +119,9 @@ abstract contract KyberLotSale is FixedSupplyLotSale, KyberPayment {
         bytes32 sku,
         uint256 quantity,
         bytes memory userData
-    ) internal override virtual view returns (bytes32[] memory totalPriceInfo) {
+    ) internal override virtual view returns (
+        bytes32[] memory totalPriceInfo
+    ) {
         bytes32[] memory superTotalPriceInfo = super._getTotalPriceInfo(
             purchaser,
             payoutToken,
