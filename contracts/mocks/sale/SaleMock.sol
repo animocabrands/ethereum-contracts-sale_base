@@ -26,13 +26,6 @@ contract SaleMock is Sale {
 
     constructor() public {}
 
-    function getSkuTokenPrice(
-        bytes32 sku,
-        IERC20 token
-    ) external view returns (uint256 price) {
-        price = _getPrice(sku, token);
-    }
-
     function callUnderscorePurchaseFor(
         address payable purchaser,
         IERC20 paymentToken,
@@ -269,20 +262,6 @@ contract SaleMock is Sale {
         emit UnderscorePurchaseForCalled();
     }
 
-    function _calculatePrice(
-        Purchase memory purchase
-    ) internal override view returns (bytes32[] memory priceInfo) {
-        bytes32[] memory superPriceInfo = super._calculatePrice(purchase);
-
-        priceInfo = new bytes32[](superPriceInfo.length + 1);
-
-        for (uint256 index = 0; index < superPriceInfo.length; ++index) {
-            priceInfo[index] = superPriceInfo[index];
-        }
-
-        priceInfo[superPriceInfo.length] = bytes32(uint256(1));
-    }
-
     function _transferFunds(
         Purchase memory /* purchase */,
         bytes32[] memory /* priceInfo */
@@ -325,13 +304,5 @@ contract SaleMock is Sale {
 
         finalizeInfo[superFinalizeInfo.length] = bytes32(uint256(4));
     }
-
-    function _getTotalPriceInfo(
-        address payable purchaser,
-        IERC20 paymentToken,
-        bytes32 sku,
-        uint256 quantity,
-        bytes memory userData
-    ) internal override view returns (bytes32[] memory totalPriceInfo) {}
 
 }

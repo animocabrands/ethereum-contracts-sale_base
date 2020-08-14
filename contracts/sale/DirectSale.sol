@@ -2,15 +2,15 @@
 
 pragma solidity 0.6.8;
 
-import "./payment/SimplePayment.sol";
+import "./payment/DirectPayment.sol";
 import "./Sale.sol";
 
 /**
- * @title SimpleSale
+ * @title DirectSale
  * An abstract sale contract that supports purchases made by ETH and/or an
  * ERC20-compatible token.
  */
-abstract contract SimpleSale is Sale, SimplePayment {
+abstract contract DirectSale is Sale, DirectPayment {
 
     /**
      * Constructor.
@@ -22,7 +22,7 @@ abstract contract SimpleSale is Sale, SimplePayment {
         address payable payoutWallet_,
         IERC20 payoutToken_
     )
-        SimplePayment(
+        DirectPayment(
             payoutWallet_,
             payoutToken_
         )
@@ -41,7 +41,9 @@ abstract contract SimpleSale is Sale, SimplePayment {
     function _transferFunds(
         Purchase memory purchase,
         bytes32[] memory priceInfo
-    ) internal override virtual returns (bytes32[] memory paymentInfo) {
+    ) internal override virtual returns (
+        bytes32[] memory paymentInfo
+    ) {
         paymentInfo = _handlePaymentTransfers(
             purchase.operator,
             purchase.paymentToken,

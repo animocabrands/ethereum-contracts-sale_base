@@ -41,7 +41,9 @@ contract KyberPayment is Payment, PayoutToken, KyberAdapter {
      * @param payoutToken_ The new ERC20 token currency accepted by the payout
      *  wallet for purchase payments.
      */
-     function _setPayoutToken(IERC20 payoutToken_) internal override virtual {
+     function _setPayoutToken(
+         IERC20 payoutToken_
+     ) internal override virtual {
         require(payoutToken_ != IERC20(0), "KyberPayment: zero address payout token");
         super._setPayoutToken(payoutToken_);
     }
@@ -61,7 +63,9 @@ contract KyberPayment is Payment, PayoutToken, KyberAdapter {
         IERC20 paymentToken,
         uint256 paymentAmount,
         bytes32[] memory extData
-    ) internal override returns (bytes32[] memory paymentTransfersInfo) {
+    ) internal override returns (
+        bytes32[] memory paymentTransfersInfo
+    ) {
         uint256 payoutAmount = uint256(extData[0]);
         uint256 minConversionRate = uint256(extData[1]);
 
@@ -104,7 +108,9 @@ contract KyberPayment is Payment, PayoutToken, KyberAdapter {
         IERC20 paymentToken,
         uint256 paymentAmount,
         bytes32[] memory extData
-    ) internal override virtual view returns (bytes32[] memory paymentAmountInfo) {
+    ) internal override virtual view returns (
+        bytes32[] memory paymentAmountInfo
+    ) {
         IERC20 srcToken = paymentToken;
         uint256 srcAmount = paymentAmount;
         IERC20 destToken = IERC20(uint256(extData[0]));

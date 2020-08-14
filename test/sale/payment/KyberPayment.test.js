@@ -1,7 +1,9 @@
 const { BN, balance, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const { ZeroAddress, Zero, One, Two } = require('@animoca/ethereum-contracts-core_library').constants;
 const { shouldBeEqualWithPercentPrecision } = require('@animoca/ethereum-contracts-core_library').fixtures
-const { toHex, padLeft, toBN } = require('web3-utils');
+const { toBN } = require('web3-utils');
+
+const { addressToBytes32, stringToBytes32, uintToBytes32 } = require('../../utils/bytes32');
 
 const KyberPayment = artifacts.require('KyberPaymentMock');
 const ERC20 = artifacts.require('ERC20Mock.sol');
@@ -14,10 +16,6 @@ contract('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]
     const EthAddress = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
     const payoutAmount = ether('1');
-
-    function toBytes32(value) {
-        return padLeft(toHex(value), 64);
-    }
 
     beforeEach(async function () {
         this.contract = await KyberPayment.new(
@@ -43,7 +41,7 @@ contract('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]
                 priceInfo = await this.contract.callUnderscoreHandlePaymentAmount(
                     PayoutTokenAddress,
                     payoutAmount,
-                    [ paymentToken ].map(item => toBytes32(item)));
+                    [ addressToBytes32(paymentToken) ]);
             }
 
             const paymentAmount = toBN(priceInfo[0]);
@@ -56,9 +54,9 @@ contract('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]
                         paymentToken,
                         paymentAmount,
                         [
-                            payoutAmount,
-                            minConversionRate
-                        ].map(item => toBytes32(item)),
+                            uintToBytes32(payoutAmount),
+                            uintToBytes32(minConversionRate)
+                        ],
                         txParams),
                     error);
             } else {
@@ -68,9 +66,9 @@ contract('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]
                         paymentToken,
                         paymentAmount,
                         [
-                            payoutAmount,
-                            minConversionRate
-                        ].map(item => toBytes32(item)),
+                            uintToBytes32(payoutAmount),
+                            uintToBytes32(minConversionRate)
+                        ],
                         txParams));
             }
         }
@@ -80,10 +78,10 @@ contract('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]
                 const priceInfo = await this.contract.callUnderscoreHandlePaymentAmount(
                     PayoutTokenAddress,
                     payoutAmount,
-                    [ paymentToken ].map(item => toBytes32(item)));
+                    [ addressToBytes32(paymentToken) ]);
 
                 const paymentAmount = toBN(priceInfo[0]).divn(2);
-                priceInfo[0] = toBytes32(paymentAmount);
+                priceInfo[0] = uintToBytes32(paymentAmount);
 
                 await shouldRevert.bind(
                     this,
@@ -220,7 +218,7 @@ contract('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]
                     const priceInfo = await this.contract.callUnderscoreHandlePaymentAmount(
                         PayoutTokenAddress,
                         payoutAmount,
-                        [ tokenAddress ].map(item => toBytes32(item)));
+                        [ addressToBytes32(tokenAddress) ]);
 
                     this.paymentAmount = toBN(priceInfo[0]);
                     this.minConversionRate = toBN(priceInfo[1]);
@@ -235,9 +233,9 @@ contract('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]
                             tokenAddress,
                             paymentAmount,
                             [
-                                payoutAmount,
-                                this.minConversionRate
-                            ].map(item => toBytes32(item)),
+                                uintToBytes32(payoutAmount),
+                                uintToBytes32(this.minConversionRate)
+                            ],
                             {
                                 from: operator,
                                 value: paymentAmount
@@ -277,9 +275,9 @@ contract('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]
                             tokenAddress,
                             this.paymentAmount,
                             [
-                                payoutAmount,
-                                this.minConversionRate
-                            ].map(item => toBytes32(item)),
+                                uintToBytes32(payoutAmount),
+                                uintToBytes32(this.minConversionRate)
+                            ],
                             {
                                 from: operator,
                                 value: this.paymentAmount
@@ -364,7 +362,7 @@ contract('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]
                         const priceInfo = await this.contract.callUnderscoreHandlePaymentAmount(
                             PayoutTokenAddress,
                             payoutAmount,
-                            [ tokenAddress ].map(item => toBytes32(item)));
+                            [ addressToBytes32(tokenAddress) ]);
 
                         this.paymentAmount = toBN(priceInfo[0]);
                         this.minConversionRate = toBN(priceInfo[1]);
@@ -385,9 +383,9 @@ contract('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]
                                 tokenAddress,
                                 this.maxTokenAmount,
                                 [
-                                    payoutAmount,
-                                    this.minConversionRate
-                                ].map(item => toBytes32(item)),
+                                    uintToBytes32(payoutAmount),
+                                    uintToBytes32(this.minConversionRate)
+                                ],
                                 { from: operator });
 
                             const handlePaymentTransfersEvent = await this.contract.getPastEvents(
@@ -463,9 +461,9 @@ contract('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]
                                 tokenAddress,
                                 this.paymentAmount,
                                 [
-                                    payoutAmount,
-                                    this.minConversionRate
-                                ].map(item => toBytes32(item)),
+                                    uintToBytes32(payoutAmount),
+                                    uintToBytes32(this.minConversionRate)
+                                ],
                                 { from: operator });
 
                             const handlePaymentTransfersEvent = await this.contract.getPastEvents(
@@ -569,7 +567,7 @@ contract('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]
                         const priceInfo = await this.contract.callUnderscoreHandlePaymentAmount(
                             PayoutTokenAddress,
                             payoutAmount,
-                            [ tokenAddress ].map(item => toBytes32(item)));
+                            [ addressToBytes32(tokenAddress) ]);
 
                         this.paymentAmount = toBN(priceInfo[0]);
                         this.minConversionRate = toBN(priceInfo[1]);
@@ -590,9 +588,9 @@ contract('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]
                                 tokenAddress,
                                 this.maxTokenAmount,
                                 [
-                                    payoutAmount,
-                                    this.minConversionRate
-                                ].map(item => toBytes32(item)),
+                                    uintToBytes32(payoutAmount),
+                                    uintToBytes32(this.minConversionRate)
+                                ],
                                 { from: operator });
 
                             const handlePaymentTransfersEvent = await this.contract.getPastEvents(
@@ -624,9 +622,9 @@ contract('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]
                                 tokenAddress,
                                 this.paymentAmount,
                                 [
-                                    payoutAmount,
-                                    this.minConversionRate
-                                ].map(item => toBytes32(item)),
+                                    uintToBytes32(payoutAmount),
+                                    uintToBytes32(this.minConversionRate)
+                                ],
                                 { from: operator });
 
                             const handlePaymentTransfersEvent = await this.contract.getPastEvents(
@@ -661,7 +659,7 @@ contract('KyberPayment', function ([_, payoutWallet, owner, operator, recipient]
                 const paymentAmountInfo = await this.contract.callUnderscoreHandlePaymentAmount(
                     PayoutTokenAddress,
                     payoutAmount,
-                    [ tokenAddress ].map(item => toBytes32(item)));
+                    [ addressToBytes32(tokenAddress) ]);
 
                 this.paymentAmount = toBN(paymentAmountInfo[0]);
                 this.minConversionRate = toBN(paymentAmountInfo[1]);

@@ -9,22 +9,23 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./pricing/SkuTokenPrice.sol";
+import "./ISale.sol";
 
 /**
  * @title Sale
  * An abstract base contract which defines the events, members, and purchase
  * lifecycle methods for a sale contract.
  */
-abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
+abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuTokenPrice {
 
     using SafeMath for uint256;
 
-    event InventorySkusAdded(
+    event SkusAdded(
         bytes32[] skus,
         bool[] added
     );
 
-    event SupportedPaymentTokensAdded(
+    event PaymentTokensAdded(
         IERC20[] tokens,
         bool[] added
     );
@@ -34,16 +35,6 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         IERC20[] tokens,
         uint256[] prices,
         uint256[] prevPrices
-    );
-
-    event Purchased(
-        address indexed purchaser,
-        address operator,
-        IERC20 paymentToken,
-        bytes32 indexed sku,
-        uint256 indexed quantity,
-        bytes userData,
-        bytes32[] purchaseData
     );
 
     /**
@@ -104,41 +95,61 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
 
     /**
      * Adds a list of inventory SKUs to make available for purchase.
-     * @dev Emits the InventorySkusUpdated event.
+     * @dev Emits the SkusAdded event.
      * @dev Reverts if called by any other than the owner.
      * @dev Reverts if the contract is not paused.
      * @param skus List of inventory SKUs to add.
      * @return added List of state flags indicating whether or not the
      *  corresponding inventory SKU has been added.
      */
-    function addInventorySkus(
+    function addSkus(
         bytes32[] calldata skus
-    )
-        external onlyOwner whenPaused
-        returns (bool[] memory added)
-    {
+    ) external onlyOwner whenPaused returns (
+        bool[] memory added
+    ) {
         added = _addSkus(skus);
-        emit InventorySkusAdded(skus, added);
+        emit SkusAdded(skus, added);
+    }
+
+    /**
+     * Retrieves the list of inventory SKUs available for purchase.
+     * @return skus The list of inventory SKUs available for purchase.
+     */
+    function getSkus(
+    ) external override view returns (
+        bytes32[] memory skus
+    ) {
+        skus = _getSkus();
     }
 
     /**
      * Adds a list of ERC20 tokens to add to the supported list of payment
      * tokens.
-     * @dev Emits the SupportedPaymentTokensAdded event.
+     * @dev Emits the PaymentTokensAdded event.
      * @dev Reverts if called by any other than the owner.
      * @dev Reverts if the contract is not paused.
      * @param tokens List of ERC20 tokens to add.
      * @return added List of state flags indicating whether or not the
      *  corresponding ERC20 token has been added.
      */
-    function addSupportedPaymentTokens(
+    function addPaymentTokens(
         IERC20[] calldata tokens
-    )
-        external onlyOwner whenPaused
-        returns (bool[] memory added)
-    {
+    ) external onlyOwner whenPaused returns (
+        bool[] memory added
+    ) {
         added = _addTokens(tokens);
-        emit SupportedPaymentTokensAdded(tokens, added);
+        emit PaymentTokensAdded(tokens, added);
+    }
+
+    /**
+     * Retrieves the list of supported ERC20 payment tokens.
+     * @return tokens The list of supported ERC20 payment tokens.
+     */
+    function getPaymentTokens(
+    ) external override view returns (
+        IERC20[] memory tokens
+    ) {
+        tokens = _getTokens();
     }
 
     /**
@@ -152,17 +163,70 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
      * @param sku The SKU whose token prices will be set.
      * @param tokens The list of SKU payout tokens to set the price for.
      * @param prices The list of SKU token prices to set with.
+     * @return prevPrices The list of sku token prices before the update.
      */
     function setSkuTokenPrices(
         bytes32 sku,
         IERC20[] calldata tokens,
         uint256[] calldata prices
-    )
-        external onlyOwner whenPaused
-        returns (uint256[] memory prevPrices)
-    {
+    ) external onlyOwner whenPaused returns (
+        uint256[] memory prevPrices
+    ) {
         prevPrices = _setPrices(sku, tokens, prices);
         emit SkuTokenPricesUpdated(sku, tokens, prices, prevPrices);
+    }
+
+    /**
+     * Retrieves the undiscounted unit price of the given inventory SKU item, in
+     * the specified supported ERC20 payment token currency.
+     * @param sku The inventory SKU item whose undiscounted unit price will be
+     *  retrieved.
+     * @param token The ERC20 token currency of the retrieved price.
+     * @return price The undiscounted unit price of the given inventory SKU item, in
+     *  the specified supported ERC20 payment token currency.
+     */
+    function getSkuTokenPrice(
+        bytes32 sku,
+        IERC20 token
+    ) external override view returns (
+        uint256 price
+    ) {
+        price = _getPrice(sku, token);
+    }
+
+    /**
+     * Calculates the total price amount for the given quantity of the specified
+     *  SKU item.
+     * @param purchaser The account for whome the queried total price amount is
+     *  for.
+     * @param paymentToken The ERC20 token payment currency of the calculated
+     *  total price amount.
+     * @param sku The SKU item whose unit price is used to calculate the total
+     *  price amount.
+     * @param quantity The quantity of SKU items used to calculate the total
+     *  price amount.
+     * @param userData Implementation-specific extra user data.
+     * @return price The calculated total price amount for the given quantity of
+     *  the specified SKU item.
+     */
+    function getPrice(
+        address payable purchaser,
+        IERC20 paymentToken,
+        bytes32 sku,
+        uint256 quantity,
+        bytes calldata userData
+    ) external override view returns (
+        uint256 price
+    ) {
+        bytes32[] memory totalPriceInfo =
+            _getTotalPriceInfo(
+                purchaser,
+                paymentToken,
+                sku,
+                quantity,
+                userData);
+
+        price = uint256(totalPriceInfo[0]);
     }
 
     /**
@@ -181,7 +245,7 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         bytes32 sku,
         uint256 quantity,
         bytes calldata userData
-    ) external payable whenStarted whenNotPaused {
+    ) external override payable whenStarted whenNotPaused {
         Purchase memory purchase;
         purchase.purchaser = purchaser;
         purchase.operator = _msgSender();
@@ -260,7 +324,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
      */
     function _calculatePrice(
         Purchase memory purchase
-    ) internal virtual view returns (bytes32[] memory priceInfo) {
+    ) internal virtual view returns (
+        bytes32[] memory priceInfo
+    ) {
         priceInfo = _getTotalPriceInfo(
             purchase.purchaser,
             purchase.paymentToken,
@@ -281,7 +347,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
     function _transferFunds(
         Purchase memory purchase,
         bytes32[] memory priceInfo
-    ) internal virtual returns (bytes32[] memory paymentInfo);
+    ) internal virtual returns (
+        bytes32[] memory paymentInfo
+    );
 
     /**
      * Delivers the purchased SKU item(s) to the purchaser.
@@ -291,7 +359,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
      */
     function _deliverGoods(
         Purchase memory purchase
-    ) internal virtual returns (bytes32[] memory deliveryInfo) {}
+    ) internal virtual returns (
+        bytes32[] memory deliveryInfo
+    ) {}
 
     /**
      * Finalizes the completed purchase by performing any remaining purchase
@@ -311,7 +381,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         bytes32[] memory priceInfo,
         bytes32[] memory paymentInfo,
         bytes32[] memory deliveryInfo
-    ) internal virtual returns (bytes32[] memory finalizeInfo) {}
+    ) internal virtual returns (
+        bytes32[] memory finalizeInfo
+    ) {}
 
     /**
      * Triggers a notification(s) that the purchase has been complete.
@@ -368,7 +440,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         bytes32[] memory paymentInfo,
         bytes32[] memory deliveryInfo,
         bytes32[] memory finalizeInfo
-    ) internal virtual view returns (bytes32[] memory purchaseData) {
+    ) internal virtual view returns (
+        bytes32[] memory purchaseData
+    ) {
         uint256 numItems = 0;
         numItems = numItems.add(priceInfo.length);
         numItems = numItems.add(paymentInfo.length);
@@ -416,7 +490,9 @@ abstract contract Sale is Context, Ownable, Startable, Pausable, SkuTokenPrice {
         bytes32 sku,
         uint256 quantity,
         bytes memory /* userData */
-    ) internal virtual view returns (bytes32[] memory totalPriceInfo) {
+    ) internal virtual view returns (
+        bytes32[] memory totalPriceInfo
+    ) {
         uint256 unitPrice = _getPrice(sku, paymentToken);
         uint256 totalPrice = unitPrice.mul(quantity);
 

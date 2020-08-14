@@ -31,7 +31,9 @@ contract PayoutToken is Ownable
      * @param payoutToken_ The new ERC20 token to accept as the payment
      *  currency.
      */
-    function setPayoutToken(IERC20 payoutToken_) public virtual onlyOwner {
+    function setPayoutToken(
+        IERC20 payoutToken_
+    ) public virtual onlyOwner {
         require(payoutToken_ != payoutToken, "PayoutToken: duplicate assignment");
         _setPayoutToken(payoutToken_);
     }
@@ -43,7 +45,9 @@ contract PayoutToken is Ownable
      * @param payoutToken_ The new ERC20 token to accept as the payment
      *  currency.
      */
-    function _setPayoutToken(IERC20 payoutToken_) internal virtual {
+    function _setPayoutToken(
+        IERC20 payoutToken_
+    ) internal virtual {
         payoutToken = payoutToken_;
         emit PayoutTokenSet(payoutToken_);
     }
