@@ -87,6 +87,8 @@ interface ISale {
      * @param userData Implementation-specific extra user data.
      * @return price The calculated total price amount for the given quantity of
      *  the specified SKU item.
+     * @return priceInfo Implementation-specific calculated total price
+     *  information.
      */
     function getPrice(
         address payable purchaser,
@@ -95,7 +97,8 @@ interface ISale {
         uint256 quantity,
         bytes calldata userData
     ) external view returns (
-        uint256 price
+        uint256 price,
+        bytes32[] memory priceInfo
     );
 
 }

@@ -208,6 +208,8 @@ abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuToken
      * @param userData Implementation-specific extra user data.
      * @return price The calculated total price amount for the given quantity of
      *  the specified SKU item.
+     * @return priceInfo Implementation-specific calculated total price
+     *  information.
      */
     function getPrice(
         address payable purchaser,
@@ -216,7 +218,8 @@ abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuToken
         uint256 quantity,
         bytes calldata userData
     ) external override view returns (
-        uint256 price
+        uint256 price,
+        bytes32[] memory priceInfo
     ) {
         bytes32[] memory totalPriceInfo =
             _getTotalPriceInfo(
@@ -226,7 +229,25 @@ abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuToken
                 quantity,
                 userData);
 
+        uint256 numPriceInfo = totalPriceInfo.length;
+
+        // _getTotalPriceInfo() should always at least return the total
+        // calculated price
+        assert(numPriceInfo != 0);
+
         price = uint256(totalPriceInfo[0]);
+
+        if (numPriceInfo == 1) {
+            priceInfo = new bytes32[](0);
+        } else {
+            priceInfo = new bytes32[](numPriceInfo - 1);
+
+            uint256 offset = 0;
+
+            for (uint256 index = 1; index < numPriceInfo; ++index) {
+                priceInfo[offset++] = totalPriceInfo[index];
+            }
+        }
     }
 
     /**
