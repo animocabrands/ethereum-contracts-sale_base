@@ -20,23 +20,6 @@ abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuToken
 
     using SafeMath for uint256;
 
-    event SkusAdded(
-        bytes32[] skus,
-        bool[] added
-    );
-
-    event PaymentTokensAdded(
-        IERC20[] tokens,
-        bool[] added
-    );
-
-    event SkuTokenPricesUpdated(
-        bytes32 sku,
-        IERC20[] tokens,
-        uint256[] prices,
-        uint256[] prevPrices
-    );
-
     /**
      * Used to wrap the purchase conditions passed to the purchase lifecycle
      * functions.
@@ -91,107 +74,6 @@ abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuToken
      */
     function unpause() public virtual onlyOwner whenStarted {
         _unpause();
-    }
-
-    /**
-     * Adds a list of inventory SKUs to make available for purchase.
-     * @dev Emits the SkusAdded event.
-     * @dev Reverts if called by any other than the owner.
-     * @dev Reverts if the contract is not paused.
-     * @param skus List of inventory SKUs to add.
-     * @return added List of state flags indicating whether or not the
-     *  corresponding inventory SKU has been added.
-     */
-    function addSkus(
-        bytes32[] calldata skus
-    ) external onlyOwner whenPaused returns (
-        bool[] memory added
-    ) {
-        added = _addSkus(skus);
-        emit SkusAdded(skus, added);
-    }
-
-    /**
-     * Retrieves the list of inventory SKUs available for purchase.
-     * @return skus The list of inventory SKUs available for purchase.
-     */
-    function getSkus(
-    ) external override view returns (
-        bytes32[] memory skus
-    ) {
-        skus = _getSkus();
-    }
-
-    /**
-     * Adds a list of ERC20 tokens to add to the supported list of payment
-     * tokens.
-     * @dev Emits the PaymentTokensAdded event.
-     * @dev Reverts if called by any other than the owner.
-     * @dev Reverts if the contract is not paused.
-     * @param tokens List of ERC20 tokens to add.
-     * @return added List of state flags indicating whether or not the
-     *  corresponding ERC20 token has been added.
-     */
-    function addPaymentTokens(
-        IERC20[] calldata tokens
-    ) external onlyOwner whenPaused returns (
-        bool[] memory added
-    ) {
-        added = _addTokens(tokens);
-        emit PaymentTokensAdded(tokens, added);
-    }
-
-    /**
-     * Retrieves the list of supported ERC20 payment tokens.
-     * @return tokens The list of supported ERC20 payment tokens.
-     */
-    function getPaymentTokens(
-    ) external override view returns (
-        IERC20[] memory tokens
-    ) {
-        tokens = _getTokens();
-    }
-
-    /**
-     * Sets the token prices for the specified inventory SKU.
-     * @dev Emits the SkuTokenPricesUpdated event.
-     * @dev Reverts if called by any other than the owner.
-     * @dev Reverts if the contract is not paused.
-     * @dev Reverts if the specified SKU does not exist.
-     * @dev Reverts if the token/price list lengths are not aligned.
-     * @dev Reverts if any of the specified ERC20 tokens are unsupported.
-     * @param sku The SKU whose token prices will be set.
-     * @param tokens The list of SKU payout tokens to set the price for.
-     * @param prices The list of SKU token prices to set with.
-     * @return prevPrices The list of sku token prices before the update.
-     */
-    function setSkuTokenPrices(
-        bytes32 sku,
-        IERC20[] calldata tokens,
-        uint256[] calldata prices
-    ) external onlyOwner whenPaused returns (
-        uint256[] memory prevPrices
-    ) {
-        prevPrices = _setPrices(sku, tokens, prices);
-        emit SkuTokenPricesUpdated(sku, tokens, prices, prevPrices);
-    }
-
-    /**
-     * Retrieves the undiscounted unit price of the given inventory SKU item, in
-     * the specified supported ERC20 payment token currency.
-     * @param sku The inventory SKU item whose undiscounted unit price will be
-     *  retrieved.
-     * @param token The ERC20 token currency of the retrieved price.
-     * @return price The undiscounted unit price of the given inventory SKU item, in
-     *  the specified supported ERC20 payment token currency.
-     */
-    function getSkuTokenPrice(
-        bytes32 sku,
-        IERC20 token
-    ) external override view returns (
-        uint256 price
-    ) {
-        price = _getPrice(sku, token);
     }
 
     /**

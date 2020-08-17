@@ -3,267 +3,196 @@
 pragma solidity 0.6.8;
 
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-import "@animoca/ethereum-contracts-core_library/contracts/algo/EnumSet.sol";
 
 /**
  * @title SkuTokenPrice
  * A contract module that adds support for managing the token prices for a set
  * of product SKUs.
- *
- * Sku Token Price managers have the following properites:
- *
- * - Add, remove, and check the existence of supported SKUs and tokens.
- * - There are no guarantees on the ordering of elements in the list of SKUs and
- *  tokens.
- * - Set and get the price for a given SKU and token.
  */
 contract SkuTokenPrice {
 
-    using EnumSet for EnumSet.Set;
+    bytes32[] private _skus;
 
-    // mapping of SKUs to their mapping of token prices
-    mapping(bytes32 => mapping(IERC20 => uint256)) private _skuTokenPrices;
+    // position of the entry defined by a key in the `_skus` array, plus 1
+    // because index 0 means that the SKU does not exist.
+    mapping(bytes32 => uint256) private _skuIndexes;
 
-    // list of supported SKUs
-    EnumSet.Set private _skus;
-
-    // list of supported tokens
-    EnumSet.Set private _tokens;
+    // mapping of SKUs to their mapping of token prices (SKU => token => price)
+    mapping(bytes32 => EnumMap.Map) private _skuTokenPrices;
 
     /**
-     * Adds a batch of SKUs to the list of supported product SKUs.
-     * @param skus The list of additional SKUs to support.
-     * @return added A list of flags, corresponding to the input list of SKUs,
-     *  indicating whether or not each SKU list element has been added.
+     * Retrieves the list of added product SKUs.
+     * @return skus The list of added product SKUs.
      */
-    function _addSkus(
-        bytes32[] memory skus
-    )
-        internal
-        returns (bool[] memory added)
-    {
-        uint256 numSkus = skus.length;
-
-        added = new bool[](numSkus);
-
-        for (uint256 index = 0; index < numSkus; ++index) {
-            bytes32 sku = skus[index];
-            added[index] = _skus.add(sku);
-        }
-    }
-
-    /**
-     * Removes a batch of SKUs from the list of supported product SKUs.
-     * @param skus The list of SKUs to remove.
-     * @return removed A list of flags, corresponding to the input list of SKUs,
-     *  indicating whether or not each SKU list element has been removed.
-     */
-    function _removeSkus(
-        bytes32[] memory skus
-    )
-        internal
-        returns (bool[] memory removed)
-    {
-        uint256 numSkus = skus.length;
-
-        removed = new bool[](numSkus);
-
-        for (uint256 skuIndex = 0; skuIndex < numSkus; ++skuIndex) {
-            bytes32 sku = skus[skuIndex];
-
-            if (_skus.remove(sku)) {
-                uint256 numTokens = _tokens.length();
-
-                for (uint256 tokenIndex = 0; tokenIndex != numTokens; ++tokenIndex) {
-                    IERC20 token = IERC20(address(uint256(_tokens.at(tokenIndex))));
-                    delete _skuTokenPrices[sku][token];
-                }
-
-                removed[skuIndex] = true;
-            } else {
-                removed[skuIndex] = false;
-            }
-        }
-    }
-
-    /**
-     * Validates whether or not the specified SKU is supported.
-     * @param sku The SKU to validate.
-     * @return exists True if the specified SKU is supported, false otherwise.
-     */
-    function _hasSku(
-        bytes32 sku
-    ) internal view returns (
-        bool exists
-    ) {
-        exists = _skus.contains(sku);
-    }
-
-    /**
-     * Retrieves the entire list of supported SKUs.
-     */
-    function _getSkus(
-    ) internal view returns (
+    function getSkus(
+    ) external virtual view returns (
         bytes32[] memory skus
     ) {
-        uint256 numSkus = _skus.length();
+        uint256 numSkus = _skus.length;
 
         skus = new bytes32[](numSkus);
 
         for (uint256 index = 0; index != numSkus; ++index) {
-            skus[index] = _skus.at(index);
+            skus[index] = _skus[index];
         }
     }
 
     /**
-     * Adds a batch of IERC20 tokens to the list of supported tokens.
-     * @param tokens The list of additional IERC20 tokens to support.
-     * @return added A list of flags, corresponding to the input list of tokens,
-     *  indicating whether or not each token list element has been added.
+     * Retrieves the list of token prices set for the specified product SKU.
+     * @dev Reverts if the specified product SKU does not exist.
+     * @param sku The product SKU whose token prices will be retrieved.
+     * @return tokens The list of tokens supported by the specified product SKU.
+     * @return prices The list of associated prices for each supported token of
+     *  the specified product SKU.
      */
-    function _addTokens(
-        IERC20[] memory tokens
-    ) internal returns (
-        bool[] memory added
-    ) {
-        uint256 numTokens = tokens.length;
-
-        added = new bool[](numTokens);
-
-        for (uint256 index = 0; index < numTokens; ++index) {
-            IERC20 token = tokens[index];
-            added[index] = _tokens.add(bytes32(uint256(address(token))));
-        }
-    }
-
-    /**
-     * Removes a batch of IERC20 tokens from the list of supported tokens.
-     * @param tokens The list of IERC20 tokens to remove.
-     * @return removed A list of flags, corresponding to the input list of
-     *  IERC20 tokens, indicating whether or not each token list element has been
-     *  removed.
-     */
-    function _removeTokens(
-        IERC20[] memory tokens
-    ) internal returns (
-        bool[] memory removed
-    ) {
-        uint256 numTokens = tokens.length;
-
-        removed = new bool[](numTokens);
-
-        for (uint256 tokenIndex = 0; tokenIndex < numTokens; ++tokenIndex) {
-            IERC20 token = tokens[tokenIndex];
-
-            if (_tokens.remove(bytes32(uint256(address(token))))) {
-                uint256 numSkus = _skus.length();
-
-                for (uint256 skuIndex = 0; skuIndex != numSkus; ++skuIndex) {
-                    bytes32 sku = _skus.at(skuIndex);
-                    delete _skuTokenPrices[sku][token];
-                }
-
-                removed[tokenIndex] = true;
-            } else {
-                removed[tokenIndex] = false;
-            }
-        }
-    }
-
-    /**
-     * Validates whether or not the specified ERC20 token is supported.
-     * @param token The ERC20 token to validate.
-     * @return exists True if the specified token is supported, false otherwise.
-     */
-    function _hasToken(
-        IERC20 token
-    ) internal view returns (
-        bool exists
-    ) {
-        exists = _tokens.contains(bytes32(uint256(address(token))));
-    }
-
-    /**
-     * Retrieves the entire list of supported ERC20 tokens.
-     */
-    function _getTokens(
-    ) internal view returns (
-        IERC20[] memory tokens
-    ) {
-        uint256 numTokens = _tokens.length();
-
-        tokens = new IERC20[](numTokens);
-
-        for (uint256 index = 0; index != numTokens; ++index) {
-            tokens[index] = IERC20(address(uint256(_tokens.at(index))));
-        }
-    }
-
-    /**
-     * Retrieves the price for the specified supported SKU and token.
-     * @dev Reverts if the specified SKU does not exist.
-     * @dev Reverts is the specified ERC20 token is unsupported.
-     * @param sku The SKU item whose token price will be retrieved.
-     * @param token The ERC20 token whose SKU price will be retrieved.
-     * @return price The retrieved price for the specified supported SKU and
-     *  token.
-     */
-    function _getPrice(
-        bytes32 sku,
-        IERC20 token
-    ) internal view returns (
-        uint256 price
-    ) {
-        require(
-            _skus.contains(sku),
-            "SkuTokenPrice: non-existent sku");
-
-        require(
-            _tokens.contains(bytes32(uint256(address(token)))),
-            "SkuTokenPrice: unsupported token");
-
-        price = _skuTokenPrices[sku][token];
-    }
-
-    /**
-     * Sets the prices for the specified supported SKU and tokens.
-     * @dev Reverts if the specified SKU does not exist.
-     * @dev Reverts if the token/price list lengths are not aligned.
-     * @dev Reverts if any of the specified ERC20 tokens are unsupported.
-     * @param sku The SKU item whose token price will be set.
-     * @param tokens The list of ERC20 tokens whose SKU price will be set.
-     * @param prices The list of prices to set with.
-     * @return prevPrices The list of previous SKU token prices.
-     */
-    function _setPrices(
-        bytes32 sku,
+    function getSkuTokenPrices(
+        bytes32 sku
+    ) external virtual view returns (
         IERC20[] memory tokens,
         uint256[] memory prices
-    ) internal returns (
-        uint256[] memory prevPrices
     ) {
-        require(
-            _skus.contains(sku),
-            "SkuTokenPrice: non-existent sku");
+        require(_skuIndexes[sku] != 0, "SkuTokenPrice: non-existent sku");
+
+        EnumMap.Map memory tokenPrices = _skuTokenPrices[sku];
+        uint256 numTokenPrices = tokenPrices.length;
+
+        tokens = new IERC20[](numTokenPrices);
+        prices = new uint256[](numTokenPrices):
+
+        for (uint256 index = 0; index != numTokenPrices; ++index) {
+            (bytes32 key, bytes32 value) = tokenPrices.at(index);
+            tokens[index] = IERC20(address(uint256(key)));
+            prices[index] = uint256(value);
+        }
+    }
+
+    /**
+     * Retrieves the price for the specified supported token of the given
+     * product SKU.
+     * @dev Reverts if the SKU does not exist.
+     * @dev Reverts if the token is not supported by the specified product SKU.
+     * @param sku The product SKU whose token price will be retrieved.
+     * @param token The supported token of the specified product SKU whose price
+     *  will be retrieved.
+     * @return price The price for the specified supported token of the given
+     *  product SKU.
+     */
+    function getSkuTokenPrice(
+        bytes32 sku,
+        IERC20 token
+    ) external virtual view returns (
+        uint256 price
+    ) {
+        require(_skuIndexes[sku] != 0, "SkuTokenPrice: non-existent sku");
+
+        EnumMap.Map memory tokenPrices = _skuTokenPrices[sku];
+
+        bytes32 key = bytes32(uint256(address(token)));
+
+        require(tokenPrices.contains(key), "SkuTokenPrice: unsupported token");
+
+        price = uint256(tokenPrices.get(key));
+    }
+
+    /**
+     * Sets the token prices for the specified product SKU.
+     * @dev Reverts if the lengths of the `tokens` and `prices` lists are not
+     *  aligned.
+     * @dev A zero token price will remove the token from the supported list of
+     *  tokens for the specified product SKU.
+     * @dev An empty list for the `tokens` and `prices` will remove the SKU from
+     *  the list of added product SKUs.
+     * @dev If a SKU does not exist then the SKU will be added, provided that
+     *  the `tokens` and `prices` lists are non-empty and contain a non-zero
+     *  price.
+     * @dev If a token does not exist for the SKU then the token will be added,
+     *  provided the associated price is non-zero.
+     * @param sku The product SKU to set the given token prices for.
+     * @param tokens The list of tokens whose prices will be set for the
+     *  specified product SKU.
+     * @param prices The list of prices to set.
+     */
+    function setSkuTokenPrices(
+        bytes32 sku,
+        IERC20[] calldata tokens,
+        uint256[] calldata prices
+    ) external virtual {
+        uint256 numTokenPrices = tokens.length;
 
         require(
-            tokens.length == prices.length,
+            numTokenPrices == prices.length,
             "SkuTokenPrice: token/price list mis-match");
 
-        uint256 numItems = tokens.length;
+        uint256 skuIndex = _skuIndexes[sku];
 
-        prevPrices = new uint256[](numItems);
+        if (skuIndex == 0) {
+            if (numTokenPrices == 0) {
+                // attempting to remove all token-prices of a new SKU, nothing
+                // to do
+            } else {
+                EnumMap.Map memory tokenPrices;
 
-        for (uint256 index = 0; index != numItems; ++index) {
-            IERC20 token = tokens[index];
+                for (uint256 index = 0; index != numTokens; ++index) {
+                    uint256 price = prices[index];
+                    IERC20 token = tokens[index];
 
-            require(
-                _tokens.contains(bytes32(uint256(address(token)))),
-                "SkuTokenPrice: unsupported token");
+                    if (price == 0) {
+                        // attemping to remove a token-price of a new SKU,
+                        // nothing to do
+                    } else {
+                        tokenPrices.set(
+                            bytes32(uint256(address(token))),
+                            bytes32(price));
+                    }
+                }
 
-            prevPrices[index] = _skuTokenPrices[sku][token];
+                if (tokenPrices.length != 0) {
+                    _skuTokenPrices[sku] = tokenPrices;
+                    _skus.push(sku);
+                    _skuIndexes[sku] = _skus.length;
+                }
+            }
+        } else {
+            EnumMap.Map storage tokenPrices = _skuTokenPrices[sku];
 
-            _skuTokenPrices[sku][token] = prices[index];
+            for (uint256 index = 0; index != numTokens; ++index) {
+                uint256 price = prices[index];
+                IERC20 token = tokens[index];
+
+                if (price == 0) {
+                    tokenPrices.remove(
+                        bytes32(uint256(address(token))));
+                } else {
+                    tokenPrices.set(
+                        bytes32(uint256(address(token))),
+                        bytes32(price));
+                }
+            }
+
+            if ((numTokenPrices == 0) || (tokenPrices.length == 0)) {
+                delete _skuTokenPrices[sku];
+
+                // to delete a key-value pair from the `_skus` array in O(1), we
+                // swap the entry to delete with the last one in the array, and
+                // then remove the last entry. this modifies the order of the
+                // array
+
+                uint256 toDeleteIndex = skuIndex - 1;
+                uint256 lastIndex = _skus.length - 1;
+
+                // when the entry to delete is the last one, the swap operation
+                // is unnecessary. however, since this occurs so rarely, we
+                // still do the swap anyway to avoid the cost of adding an 'if'
+                // statement
+
+                bytes32 lastEntry = _skus[lastIndex];
+
+                _skus[toDeleteIndex] = lastEntry;
+                _skuIndexes[lastEntry] = toDeleteIndex + 1
+                _skus.pop();
+
+                delete _skuIndexes[sku];
+            }
         }
     }
 
