@@ -68,34 +68,6 @@ contract SkuTokenPrice {
     }
 
     /**
-     * Retrieves the price for the specified supported token of the given
-     * product SKU.
-     * @dev Reverts if the SKU does not exist.
-     * @dev Reverts if the token is not supported by the specified product SKU.
-     * @param sku The product SKU whose token price will be retrieved.
-     * @param token The supported token of the specified product SKU whose price
-     *  will be retrieved.
-     * @return price The price for the specified supported token of the given
-     *  product SKU.
-     */
-    function getSkuTokenPrice(
-        bytes32 sku,
-        IERC20 token
-    ) external virtual view returns (
-        uint256 price
-    ) {
-        require(_skuIndexes[sku] != 0, "SkuTokenPrice: non-existent sku");
-
-        EnumMap.Map memory tokenPrices = _skuTokenPrices[sku];
-
-        bytes32 key = bytes32(uint256(address(token)));
-
-        require(tokenPrices.contains(key), "SkuTokenPrice: unsupported token");
-
-        price = uint256(tokenPrices.get(key));
-    }
-
-    /**
      * Sets the token prices for the specified product SKU.
      * @dev Reverts if the lengths of the `tokens` and `prices` lists are not
      *  aligned.
@@ -195,6 +167,34 @@ contract SkuTokenPrice {
                 delete _skuIndexes[sku];
             }
         }
+    }
+
+    /**
+     * Retrieves the price for the specified supported token of the given
+     * product SKU.
+     * @dev Reverts if the SKU does not exist.
+     * @dev Reverts if the token is not supported by the specified product SKU.
+     * @param sku The product SKU whose token price will be retrieved.
+     * @param token The supported token of the specified product SKU whose price
+     *  will be retrieved.
+     * @return price The price for the specified supported token of the given
+     *  product SKU.
+     */
+    function _getSkuTokenPrice(
+        bytes32 sku,
+        IERC20 token
+    ) internal view returns (
+        uint256 price
+    ) {
+        require(_skuIndexes[sku] != 0, "SkuTokenPrice: non-existent sku");
+
+        EnumMap.Map memory tokenPrices = _skuTokenPrices[sku];
+
+        bytes32 key = bytes32(uint256(address(token)));
+
+        require(tokenPrices.contains(key), "SkuTokenPrice: unsupported token");
+
+        price = uint256(tokenPrices.get(key));
     }
 
 }

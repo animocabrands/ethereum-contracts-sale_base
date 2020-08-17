@@ -207,14 +207,6 @@ abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuToken
             "Sale: contract address purchaser");
 
         require(
-            _hasToken(purchase.paymentToken),
-            "Sale: unsupported token");
-
-        require(
-            _hasSku(purchase.sku),
-            "Sale: non-existent sku");
-
-        require(
             purchase.quantity != 0,
             "Sale: zero quantity purchase");
     }
@@ -398,7 +390,7 @@ abstract contract Sale is ISale, Context, Ownable, Startable, Pausable, SkuToken
     ) internal virtual view returns (
         bytes32[] memory totalPriceInfo
     ) {
-        uint256 unitPrice = _getPrice(sku, paymentToken);
+        uint256 unitPrice = _getSkuTokenPrice(sku, paymentToken);
         uint256 totalPrice = unitPrice.mul(quantity);
 
         totalPriceInfo = new bytes32[](1);
