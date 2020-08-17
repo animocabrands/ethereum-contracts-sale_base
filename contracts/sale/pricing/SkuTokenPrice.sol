@@ -2,6 +2,7 @@
 
 pragma solidity 0.6.8;
 
+import "@animoca/ethereum-contracts-core_library/contracts/algo/EnumMap.sol";
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
 
 /**
@@ -57,7 +58,7 @@ contract SkuTokenPrice {
         uint256 numTokenPrices = tokenPrices.length;
 
         tokens = new IERC20[](numTokenPrices);
-        prices = new uint256[](numTokenPrices):
+        prices = new uint256[](numTokenPrices);
 
         for (uint256 index = 0; index != numTokenPrices; ++index) {
             (bytes32 key, bytes32 value) = tokenPrices.at(index);
@@ -132,7 +133,7 @@ contract SkuTokenPrice {
             } else {
                 EnumMap.Map memory tokenPrices;
 
-                for (uint256 index = 0; index != numTokens; ++index) {
+                for (uint256 index = 0; index != numTokenPrices; ++index) {
                     uint256 price = prices[index];
                     IERC20 token = tokens[index];
 
@@ -155,7 +156,7 @@ contract SkuTokenPrice {
         } else {
             EnumMap.Map storage tokenPrices = _skuTokenPrices[sku];
 
-            for (uint256 index = 0; index != numTokens; ++index) {
+            for (uint256 index = 0; index != numTokenPrices; ++index) {
                 uint256 price = prices[index];
                 IERC20 token = tokens[index];
 
@@ -188,7 +189,7 @@ contract SkuTokenPrice {
                 bytes32 lastEntry = _skus[lastIndex];
 
                 _skus[toDeleteIndex] = lastEntry;
-                _skuIndexes[lastEntry] = toDeleteIndex + 1
+                _skuIndexes[lastEntry] = toDeleteIndex + 1;
                 _skus.pop();
 
                 delete _skuIndexes[sku];
