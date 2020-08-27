@@ -619,44 +619,44 @@ contract('FixedSupplyLotSale', function ([
         });
     });
 
-    describe('_finalizePurchase()', function () {
-        const quantity = Constants.One;
-        const tokenAddress = EthAddress;
+    // describe('_finalizePurchase()', function () {
+    //     const quantity = Constants.One;
+    //     const tokenAddress = EthAddress;
 
-        beforeEach(async function () {
-            this.lot = await this.sale._lots(lotId);
+    //     beforeEach(async function () {
+    //         this.lot = await this.sale._lots(lotId);
 
-            await this.sale.callUnderscoreFinalizePurchase(
-                recipient,
-                tokenAddress,
-                sku,
-                quantity,
-                [], // userData
-                [], // priceInfo
-                [], // paymentInfo
-                [], // deliveryInfo
-                {
-                    from: operator
-                });
+    //         await this.sale.callUnderscoreFinalizePurchase(
+    //             recipient,
+    //             tokenAddress,
+    //             sku,
+    //             quantity,
+    //             [], // userData
+    //             [], // priceInfo
+    //             [], // paymentInfo
+    //             [], // deliveryInfo
+    //             {
+    //                 from: operator
+    //             });
 
-            const finalizePurchaseEvents = await this.sale.getPastEvents(
-                'UnderscoreFinalizePurchaseResult',
-                {
-                    fromBlock: 0,
-                    toBlock: 'latest'
-                });
+    //         const finalizePurchaseEvents = await this.sale.getPastEvents(
+    //             'UnderscoreFinalizePurchaseResult',
+    //             {
+    //                 fromBlock: 0,
+    //                 toBlock: 'latest'
+    //             });
 
-            this.result = finalizePurchaseEvents[0].args;
-        });
+    //         this.result = finalizePurchaseEvents[0].args;
+    //     });
 
-        it('should update the number of lot items available for sale', async function () {
-            const lot = await this.sale._lots(lotId);
-            lot.numAvailable.should.be.bignumber.equals(
-                this.lot.numAvailable.sub(quantity));
-        });
+    //     it('should update the number of lot items available for sale', async function () {
+    //         const lot = await this.sale._lots(lotId);
+    //         lot.numAvailable.should.be.bignumber.equals(
+    //             this.lot.numAvailable.sub(quantity));
+    //     });
 
-        it('should return correct finalize info', async function () {
-            this.result.finalizeInfo.length.should.equal(0);
-        });
-    });
+    //     it('should return correct finalize info', async function () {
+    //         this.result.finalizeInfo.length.should.equal(0);
+    //     });
+    // });
 });

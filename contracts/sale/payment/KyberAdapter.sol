@@ -5,7 +5,7 @@ pragma solidity 0.6.8;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20Detailed.sol";
-import "./IKyber.sol";
+import "./interfaces/IKyber.sol";
 
 /**
  * @title KyberAdapter

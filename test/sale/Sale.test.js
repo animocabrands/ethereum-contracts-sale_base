@@ -736,29 +736,29 @@ contract('Sale', function ([
         });
     });
 
-    describe('_finalizePurchase()', function () {
-        const paymentToken = EthAddress;
-        const sku = allSkus[0];
-        const quantity = Constants.One;
+    // describe('_finalizePurchase()', function () {
+    //     const paymentToken = EthAddress;
+    //     const sku = allSkus[0];
+    //     const quantity = Constants.One;
 
-        it('should return the correct finalize info', async function () {
-            const receipt = await this.contract.callUnderscoreFinalizePurchase(
-                purchaser,
-                paymentToken,
-                sku,
-                quantity,
-                userData,
-                [], // priceInfo
-                [], // paymentInfo
-                [], // deliveryInfo
-                { value: quantity });
+    //     it('should return the correct finalize info', async function () {
+    //         const receipt = await this.contract.callUnderscoreFinalizePurchase(
+    //             purchaser,
+    //             paymentToken,
+    //             sku,
+    //             quantity,
+    //             userData,
+    //             [], // priceInfo
+    //             [], // paymentInfo
+    //             [], // deliveryInfo
+    //             { value: quantity });
 
-            expectEvent(
-                receipt,
-                'UnderscoreFinalizePurchaseResult',
-                { finalizeInfo: [ uintToBytes32(Constants.Four) ] });
-        });
-    });
+    //         expectEvent(
+    //             receipt,
+    //             'UnderscoreFinalizePurchaseResult',
+    //             { finalizeInfo: [ uintToBytes32(Constants.Four) ] });
+    //     });
+    // });
 
     describe('_notifyPurchased()', function () {
         it('should emit the `Purchased` event', async function () {
