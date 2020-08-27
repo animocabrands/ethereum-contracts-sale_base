@@ -17,8 +17,7 @@ import "./PurchaseLifeCycles.sol";
  * @title AbstractSale
  * An abstract base sale contract with a minimal implementation of ISale and administration functions.
  *  A minimal implementation of the `_validation`, `_delivery` and `notification` life cycle step functions
- *  is provided, but the inheriting contract must implement `_pricing` and `_payment`. The inheriting contract
- *  is also responsible for implementing `skusCap` and `tokensPerSkuCap` functions.
+ *  is provided, but the inheriting contract must implement `_pricing` and `_payment`.
  */
 abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pausable {
     using Address for address;
@@ -40,13 +39,24 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
     EnumSet.Set internal _skus;
     mapping(bytes32 => SkuInfo) internal _skuInfos;
 
+    uint256 internal immutable _skusCapacity;
+    uint256 internal immutable _tokensPerSkuCapacity;
+
     /**
      * Constructor.
      * @dev Emits the `MagicValues` event.
      * @dev Emits the `Paused` event.
      * @param payoutWallet_ the payout wallet.
+     * @param skusCapacity the cap for the number of managed SKUs.
+     * @param tokensPerSkuCapacity the cap for the number of tokens managed per SKU.
      */
-    constructor(address payoutWallet_) internal PayoutWallet(payoutWallet_) {
+    constructor(
+        address payoutWallet_,
+        uint256 skusCapacity,
+        uint256 tokensPerSkuCapacity
+    ) internal PayoutWallet(payoutWallet_) {
+        _skusCapacity = skusCapacity;
+        _tokensPerSkuCapacity = tokensPerSkuCapacity;
         emit MagicValues(TOKEN_ETH, SUPPLY_UNLIMITED, new bytes32[](0));
         _pause();
     }
@@ -108,7 +118,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
         address notificationsReceiver
     ) public virtual onlyOwner {
         require(totalSupply != 0, "Sale: zero supply");
-        require(_skus.length() < skusCap(), "Sale: too many skus");
+        require(_skus.length() < _skusCapacity, "Sale: too many skus");
         require(_skus.add(sku), "Sale: sku already created");
         if (notificationsReceiver != address(0)) {
             require(notificationsReceiver.isContract(), "Sale: receiver is not a contract");
@@ -149,7 +159,8 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
         if (length == 0) {
             uint256 currentLength = tokenPrices.length();
             for (uint256 i = 0; i < currentLength; ++i) {
-                (bytes32 token, ) = tokenPrices.at(i);
+                // TODO add a clear function in EnumMap and EnumSet and use it
+                (bytes32 token, ) = tokenPrices.at(0);
                 tokenPrices.remove(token);
             }
         } else {
@@ -163,7 +174,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
                     tokenPrices.set(bytes32(uint256(token)), bytes32(price));
                 }
             }
-            require(tokenPrices.length() <= tokensPerSkuCap(), "Sale: too many tokens");
+            require(tokenPrices.length() <= _tokensPerSkuCapacity, "Sale: too many tokens");
         }
 
         emit SkuPricingUpdate(sku, tokens, prices);
@@ -291,21 +302,6 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
         skus = _skus.values;
     }
 
-    /*                               Public Capacity Functions                               */
-
-    /**
-     * Returns the cap for the number of managed SKUs.
-     * @return the cap for the number of managed SKUs.
-     */
-    function skusCap() public virtual returns (uint256);
-
-    /**
-     * Returns the cap for the number of tokens managed per SKU.
-     * @return the cap for the number of tokens managed per SKU.
-     */
-    function tokensPerSkuCap() public virtual returns (uint256);
-
-
     /*                               Internal Life Cycle Step Functions                               */
 
     /**
@@ -353,23 +349,21 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      */
     function _notification(PurchaseData memory purchase) internal virtual override {
         bytes32[] memory purchaseData = new bytes32[](
-            purchase.pricingData.length
-            + purchase.paymentData.length
-            + purchase.deliveryData.length
+            purchase.pricingData.length + purchase.paymentData.length + purchase.deliveryData.length
         );
 
         uint256 offset = 0;
 
-        for (uint256 index = 0; index < purchase.pricingData.length; index++) {
-            purchaseData[offset++] = purchase.pricingData[index];
+        for (uint256 i = 0; i < purchase.pricingData.length; ++i) {
+            purchaseData[offset++] = purchase.pricingData[i];
         }
 
-        for (uint256 index = 0; index < purchase.paymentData.length; index++) {
-            purchaseData[offset++] = purchase.paymentData[index];
+        for (uint256 i = 0; i < purchase.paymentData.length; ++i) {
+            purchaseData[offset++] = purchase.paymentData[i];
         }
 
-        for (uint256 index = 0; index < purchase.deliveryData.length; index++) {
-            purchaseData[offset++] = purchase.deliveryData[index];
+        for (uint256 i = 0; i < purchase.deliveryData.length; ++i) {
+            purchaseData[offset++] = purchase.deliveryData[i];
         }
 
         emit Purchase(

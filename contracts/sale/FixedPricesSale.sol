@@ -8,17 +8,21 @@ import "./AbstractSale.sol";
 /**
  * @title FixedPricesSale
  * An AbstractSale which implements a fixed prices strategy.
- * The inheriting contract is responsible for implementing `skusCap` and `tokensPerSkuCap` functions.
  */
-abstract contract FixedPricesSale is AbstractSale {
-
+contract FixedPricesSale is AbstractSale {
     /**
      * Constructor.
      * @dev Emits the `MagicValues` event.
      * @dev Emits the `Paused` event.
      * @param payoutWallet_ the payout wallet.
+     * @param skusCapacity the cap for the number of managed SKUs.
+     * @param tokensPerSkuCapacity the cap for the number of tokens managed per SKU.
      */
-    constructor(address payoutWallet_) internal AbstractSale(payoutWallet_) {}
+    constructor(
+        address payoutWallet_,
+        uint256 skusCapacity,
+        uint256 tokensPerSkuCapacity
+    ) internal AbstractSale(payoutWallet_, skusCapacity, tokensPerSkuCapacity) {}
 
     /*                               Internal Life Cycle Functions                               */
 
