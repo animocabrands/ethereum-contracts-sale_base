@@ -14,7 +14,7 @@ import "./interfaces/IPurchaseNotificationsReceiver.sol";
 import "./PurchaseLifeCycles.sol";
 
 /**
- * @title Sale
+ * @title AbstractSale
  * An abstract base sale contract with a minimal implementation of ISale and administration functions.
  *  A minimal implementation of the `_validation`, `_delivery` and `notification` life cycle step functions
  *  is provided, but the inheriting contract must implement `_pricing` and `_payment`. The inheriting contract
@@ -305,6 +305,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      */
     function tokensPerSkuCap() public virtual returns (uint256);
 
+
     /*                               Internal Life Cycle Step Functions                               */
 
     /**
@@ -343,7 +344,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      * Lifecycle step which notifies of the purchase.
      * @dev Responsibilities:
      *  - Manage event(s) emission.
-     *  - Ensure calls are made to the notifications receiver contract's `onPurchased` function, if such contract is provided.
+     *  - Ensure calls are made to the notifications receiver contract's `onPurchased` function, if applicable.
      * @dev Reverts if `onPurchased` throws or returns an incorrect value.
      * @dev Emits the `Purchase` event. The values of `purchaseData` are the concatenated values of `priceData`, `paymentData`
      * and `deliveryData`. If not empty, the implementer MUST document how to interpret these values.

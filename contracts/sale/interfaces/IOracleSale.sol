@@ -36,5 +36,5 @@ interface IOracleSale /*is ISale*/{
      * @param tokens The list of tokens to retrieve the conversion rates for.
      * @return rates the rates for the `tokens`/`referenceToken` pairs retrieved via the oracle.
      */
-    function conversionRates(address[] calldata tokens) external view returns (uint256 rates);
+    function conversionRates(address[] calldata tokens) external view returns (uint256[] memory rates);
 }

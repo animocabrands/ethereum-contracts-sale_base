@@ -103,7 +103,7 @@ abstract contract PurchaseLifeCycles {
      * Lifecycle step which notifies of the purchase.
      * @dev Responsibilities:
      *  - Manage event(s) emission.
-     *  - Ensure calls are made to the notifications receiver contract's `onPurchased` function, if such contract is provided.
+     *  - Ensure calls are made to the notifications receiver contract's `onPurchased` function, if applicable.
      * @dev Reverts if `onPurchased` throws or returns an incorrect value.
      * @dev Emits the `Purchase` event. The values of `purchaseData` are the concatenated values of `priceData`, `paymentData`
      * and `deliveryData`. If not empty, the implementer MUST document how to interpret these values.
