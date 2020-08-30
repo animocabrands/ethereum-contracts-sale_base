@@ -9,13 +9,13 @@ pragma solidity 0.6.8;
  *
  *  Products, designated as SKUs, are represented by bytes32 identifiers so that an identifier can carry an
  *  explicit name under the form of a fixed-length string. Each SKU can be priced via up to several payment
- *  tokens which can be ETH and/or ERC20(s). ETH token is represented by the magic value `ETH`, which means
+ *  tokens which can be ETH and/or ERC20(s). ETH token is represented by the magic value TOKEN_ETH, which means
  *  this value can be used as the 'token' argument of the purchase-related functions to indicate ETH payment.
  *
- *  The total available supply for a SKU is fixed at its creation. The magic value `unlimitedSupply` is used
+ *  The total available supply for a SKU is fixed at its creation. The magic value SUPPLY_UNLIMITED is used
  *  to represent a SKU with an infinite, never-decreasing supply. An optional purchase notifications receiver
  *  contract address can be set for a SKU at its creation: if the value is different from the zero address,
- *  the function `onPurchaseNotificationReceived` will be called on this address upon every successful purchase of the SKU.
+ *  the function `onPurchaseNotificationReceived` will be called on this address upon every purchase of the SKU.
  *
  *  This interface is designed to be consistent while managing a variety of implementation scenarios. It is
  *  also intended to be developer-friendly: all vital information is consistently deductible from the events
