@@ -28,7 +28,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
     struct SkuInfo {
         uint256 totalSupply;
         uint256 remainingSupply;
-        uint256 maxPurchaseQuantity;
+        uint256 maxQuantityPerPurchase;
         address notificationsReceiver;
         EnumMap.Map prices;
     }
@@ -57,7 +57,11 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
     ) internal PayoutWallet(payoutWallet_) {
         _skusCapacity = skusCapacity;
         _tokensPerSkuCapacity = tokensPerSkuCapacity;
-        emit MagicValues(TOKEN_ETH, SUPPLY_UNLIMITED, new bytes32[](0));
+        bytes32[] memory names = new bytes32[](2);
+        bytes32[] memory values = new bytes32[](2);
+        (names[0], values[0]) = ("TOKEN_ETH", bytes32(uint256(TOKEN_ETH)));
+        (names[1], values[1]) = ("SUPPLY_UNLIMITED", bytes32(uint256(SUPPLY_UNLIMITED)));
+        emit MagicValues(names, values);
         _pause();
     }
 
@@ -107,14 +111,14 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      * @dev Emits the `SkuCreation` event.
      * @param sku the SKU identifier.
      * @param totalSupply the initial total supply.
-     * @param maxPurchaseQuantity The maximum allowed quantity for a single purchase.
+     * @param maxQuantityPerPurchase The maximum allowed quantity for a single purchase.
      * @param notificationsReceiver The purchase notifications receiver contract address.
      *  If set to the zero address, the notification is not enabled.
      */
     function createSku(
         bytes32 sku,
         uint256 totalSupply,
-        uint256 maxPurchaseQuantity,
+        uint256 maxQuantityPerPurchase,
         address notificationsReceiver
     ) public virtual onlyOwner {
         require(totalSupply != 0, "Sale: zero supply");
@@ -126,10 +130,10 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
         SkuInfo storage skuInfo;
         skuInfo.totalSupply = totalSupply;
         skuInfo.remainingSupply = totalSupply;
-        skuInfo.maxPurchaseQuantity = maxPurchaseQuantity;
+        skuInfo.maxQuantityPerPurchase = maxQuantityPerPurchase;
         skuInfo.notificationsReceiver = notificationsReceiver;
         _skuInfos[sku] = skuInfo;
-        emit SkuCreation(sku, totalSupply, maxPurchaseQuantity, notificationsReceiver);
+        emit SkuCreation(sku, totalSupply, maxQuantityPerPurchase, notificationsReceiver);
     }
 
     /**
@@ -164,17 +168,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
                 tokenPrices.remove(token);
             }
         } else {
-            for (uint256 i = 0; i < length; ++i) {
-                address token = tokens[i];
-                require(token != address(0), "Sale: zero address token");
-                uint256 price = prices[i];
-                if (price == 0) {
-                    tokenPrices.remove(bytes32(uint256(token)));
-                } else {
-                    tokenPrices.set(bytes32(uint256(token)), bytes32(price));
-                }
-            }
-            require(tokenPrices.length() <= _tokensPerSkuCapacity, "Sale: too many tokens");
+            _setTokenPrices(tokenPrices, tokens, prices);
         }
 
         emit SkuPricingUpdate(sku, tokens, prices);
@@ -230,7 +224,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      * @param sku The identifier of the SKU used to calculate the total price amount.
      * @param quantity The quantity used to calculate the total price amount.
      * @param userData Optional extra user input data.
-     * @return price The calculated total price.
+     * @return totalPrice The computed total price.
      * @return priceInfo Implementation-specific extra price information, such as details about potential discounts applied.
      */
     function estimatePurchase(
@@ -239,7 +233,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
         bytes32 sku,
         uint256 quantity,
         bytes calldata userData
-    ) external virtual override view whenStarted whenNotPaused returns (uint256 price, bytes32[] memory priceInfo) {
+    ) external virtual override view whenStarted whenNotPaused returns (uint256 totalPrice, bytes32[] memory priceInfo) {
         PurchaseData memory purchase;
         purchase.purchaser = _msgSender();
         purchase.recipient = recipient;
@@ -259,8 +253,8 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      * @param sku The SKU identifier.
      * @return totalSupply The initial total supply for sale.
      * @return remainingSupply The remaining supply for sale.
-     * @return maxPurchaseQuantity The maximum allowed quantity for a single purchase.
-     * @return notificationsReceiver The address of a contract on which to call the `onPurchased` function.
+     * @return maxQuantityPerPurchase The maximum allowed quantity for a single purchase.
+     * @return notificationsReceiver The address of a contract on which to call the `onPurchaseNotificationReceived` function.
      * @return tokens The list of supported payment tokens.
      * @return prices The list of associated prices for each of the `tokens`.
      */
@@ -271,7 +265,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
         returns (
             uint256 totalSupply,
             uint256 remainingSupply,
-            uint256 maxPurchaseQuantity,
+            uint256 maxQuantityPerPurchase,
             address notificationsReceiver,
             address[] memory tokens,
             uint256[] memory prices
@@ -282,7 +276,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
 
         totalSupply = skuInfo.totalSupply;
         remainingSupply = skuInfo.remainingSupply;
-        maxPurchaseQuantity = skuInfo.maxPurchaseQuantity;
+        maxQuantityPerPurchase = skuInfo.maxQuantityPerPurchase;
         notificationsReceiver = skuInfo.notificationsReceiver;
 
         tokens = new address[](length);
@@ -302,6 +296,27 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
         skus = _skus.values;
     }
 
+
+    /*                               Internal Utility Functions                               */
+
+    function _setTokenPrices(
+        EnumMap.Map storage tokenPrices,
+        address[] memory tokens,
+        uint256[] memory prices
+    ) internal virtual {
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            address token = tokens[i];
+            require(token != address(0), "Sale: zero address token");
+            uint256 price = prices[i];
+            if (price == 0) {
+                tokenPrices.remove(bytes32(uint256(token)));
+            } else {
+                tokenPrices.set(bytes32(uint256(token)), bytes32(price));
+            }
+        }
+        require(tokenPrices.length() <= _tokensPerSkuCapacity, "Sale: too many tokens");
+    }
+
     /*                               Internal Life Cycle Step Functions                               */
 
     /**
@@ -310,23 +325,29 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      *  - Ensure that the purchase pre-conditions are met and revert if not.
      * @dev Reverts if `purchase.recipient` is the zero address.
      * @dev Reverts if `purchase.quantity` is zero.
-     * @dev Reverts if `purchase.quantity` is greater than the SKU's `maxPurchaseQuantity`.
+     * @dev Reverts if `purchase.quantity` is greater than the SKU's `maxQuantityPerPurchase`.
+     * @dev Reverts if `purchase.quantity` is greater than the available supply.
      * @dev If this function is overriden, the implementer SHOULD super call this before.
      * @param purchase The purchase conditions.
      */
     function _validation(PurchaseData memory purchase) internal virtual override view {
         require(purchase.recipient != address(0), "Sale: zero address recipient");
         require(purchase.quantity != 0, "Sale: zero quantity purchase");
-        require(purchase.quantity <= _skuInfos[purchase.sku].maxPurchaseQuantity, "Sale: above max quantity");
+        SkuInfo memory skuInfo = _skuInfos[purchase.sku];
+        require(purchase.quantity <= skuInfo.maxQuantityPerPurchase, "Sale: above max quantity");
+        if (skuInfo.totalSupply != SUPPLY_UNLIMITED) {
+            require(skuInfo.remainingSupply >= purchase.quantity, "Sale: insufficient supply");
+        }
     }
 
     /**
      * Lifecycle step which delivers the purchased SKUs to the recipient.
      * @dev Responsibilities:
-     *  - Handle any internal logic related to supply update, minting/transferring of the SKU and purchase receipts creation;
+     *  - Ensure the product is delivered to the recipient, if that is the contract's responsibility.
+     *  - Handle any internal logic related to the delivery, including the remaining supply update;
      *  - Add any relevant extra data related to delivery in `purchase.deliveryData` and document how to interpret it.
      * @dev Reverts if there is not enough available supply.
-     * @dev If this function is overriden, the implementer SHOULD super call this before.
+     * @dev If this function is overriden, the implementer SHOULD super call it.
      * @param purchase The purchase conditions.
      */
     function _delivery(PurchaseData memory purchase) internal virtual override {
@@ -339,33 +360,15 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
     /**
      * Lifecycle step which notifies of the purchase.
      * @dev Responsibilities:
-     *  - Manage event(s) emission.
-     *  - Ensure calls are made to the notifications receiver contract's `onPurchased` function, if applicable.
-     * @dev Reverts if `onPurchased` throws or returns an incorrect value.
+     *  - Manage after-purchase event(s) emission.
+     *  - Handle calls to the notifications receiver contract's `onPurchaseNotificationReceived` function, if applicable.
+     * @dev Reverts if `onPurchaseNotificationReceived` throws or returns an incorrect value.
      * @dev Emits the `Purchase` event. The values of `purchaseData` are the concatenated values of `priceData`, `paymentData`
      * and `deliveryData`. If not empty, the implementer MUST document how to interpret these values.
-     * @dev If this function is overriden, the implementer SHOULD super call this after.
+     * @dev If this function is overriden, the implementer SHOULD super call it.
      * @param purchase The purchase conditions.
      */
     function _notification(PurchaseData memory purchase) internal virtual override {
-        bytes32[] memory purchaseData = new bytes32[](
-            purchase.pricingData.length + purchase.paymentData.length + purchase.deliveryData.length
-        );
-
-        uint256 offset = 0;
-
-        for (uint256 i = 0; i < purchase.pricingData.length; ++i) {
-            purchaseData[offset++] = purchase.pricingData[i];
-        }
-
-        for (uint256 i = 0; i < purchase.paymentData.length; ++i) {
-            purchaseData[offset++] = purchase.paymentData[i];
-        }
-
-        for (uint256 i = 0; i < purchase.deliveryData.length; ++i) {
-            purchaseData[offset++] = purchase.deliveryData[i];
-        }
-
         emit Purchase(
             purchase.purchaser,
             purchase.recipient,
@@ -373,25 +376,27 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
             purchase.sku,
             purchase.quantity,
             purchase.userData,
-            purchase.price,
-            purchaseData
+            purchase.totalPrice,
+            purchase.pricingData,
+            purchase.paymentData,
+            purchase.deliveryData
         );
 
         address notificationsReceiver = _skuInfos[purchase.sku].notificationsReceiver;
         if (notificationsReceiver != address(0)) {
             require(
-                IPurchaseNotificationsReceiver(notificationsReceiver).onPurchased(
+                IPurchaseNotificationsReceiver(notificationsReceiver).onPurchaseNotificationReceived(
                     purchase.purchaser,
                     purchase.recipient,
                     purchase.token,
                     purchase.sku,
                     purchase.quantity,
                     purchase.userData,
-                    purchase.price,
+                    purchase.totalPrice,
                     purchase.pricingData,
                     purchase.paymentData,
                     purchase.deliveryData
-                ) == IPurchaseNotificationsReceiver(address(0)).onPurchased.selector, // TODO precompute return value
+                ) == IPurchaseNotificationsReceiver(address(0)).onPurchaseNotificationReceived.selector, // TODO precompute return value
                 "Sale: wrong receiver return value"
             );
         }
