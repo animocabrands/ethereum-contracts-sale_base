@@ -5,7 +5,7 @@ pragma solidity 0.6.8;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20Detailed.sol";
-import "./interfaces/IKyber.sol";
+import "./interfaces/IKyberNetworkProxy.sol";
 
 /**
  * @title KyberAdapter
@@ -15,12 +15,12 @@ import "./interfaces/IKyber.sol";
 contract KyberAdapter {
     using SafeMath for uint256;
 
-    IKyber public kyber;
+    IKyberNetworkProxy public kyber;
 
     IERC20 public KYBER_ETH_ADDRESS = IERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
 
     constructor(address _kyberProxy) public {
-        kyber = IKyber(_kyberProxy);
+        kyber = IKyberNetworkProxy(_kyberProxy);
     }
 
     fallback () external payable {}

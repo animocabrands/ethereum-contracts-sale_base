@@ -17,7 +17,7 @@ import "./PurchaseLifeCycles.sol";
  * @title AbstractSale
  * An abstract base sale contract with a minimal implementation of ISale and administration functions.
  *  A minimal implementation of the `_validation`, `_delivery` and `notification` life cycle step functions
- *  is provided, but the inheriting contract must implement `_pricing` and `_payment`.
+ *  are provided, but the inheriting contract must implement `_pricing` and `_payment`.
  */
 abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pausable {
     using Address for address;

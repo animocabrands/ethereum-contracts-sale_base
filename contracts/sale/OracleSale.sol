@@ -9,8 +9,6 @@ import "./interfaces/IOracleSale.sol";
  * @title OracleSale
  * A FixedPricesSale which implements an oracle-based pricing strategy in parallel of top of .
  *
- * The inheriting contract is responsible for implementing `skusCap` and `tokensPerSkuCap` functions.
- *
  * PurchaseData.pricingData:
  *  - [0] uint256: the conversion rate used for an oracle pricing or 0 for a fixed pricing.
  */
@@ -55,6 +53,7 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
 
     /**
      * Retrieves the current rates for the `tokens`/`referenceToken` pairs via the oracle.
+     * @dev Reverts if the oracle does not provide a pricing for one of the pairs.
      * @param tokens The list of tokens to retrieve the conversion rates for.
      * @return rates the rates for the `tokens`/`referenceToken` pairs retrieved via the oracle.
      */
@@ -105,9 +104,7 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
         requiresOracle = (price == PRICE_CONVERT_VIA_ORACLE);
     }
 
-    function _conversionRate(address tokenA, address tokenB) internal view returns (uint256 rate) {
-        // TODO
-    }
+    function _conversionRate(address tokenA, address tokenB) internal virtual view returns (uint256 rate);
 
     /*                               Internal Life Cycle Step Functions                               */
 

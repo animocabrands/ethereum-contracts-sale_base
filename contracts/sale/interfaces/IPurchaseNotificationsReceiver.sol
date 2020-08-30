@@ -20,7 +20,7 @@ interface IPurchaseNotificationsReceiver {
      * @param sku The identifier of the SKU to purchase.
      * @param quantity The quantity to purchase.
      * @param userData Optional extra user input data.
-     * @param totalPrice The total price to paid.
+     * @param totalPrice The total price paid.
      * @param pricingData Implementation-specific extra pricing data, such as details about discounts applied.
      * @param paymentData Implementation-specific extra payment data, such as conversion rates.
      * @param deliveryData Implementation-specific extra delivery data, such as purchase receipts.
