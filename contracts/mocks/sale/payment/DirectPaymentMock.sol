@@ -2,9 +2,9 @@
 
 pragma solidity 0.6.8;
 
-// import "../../../sale/payment/KyberPayment.sol";
+// import "../../../sale/payment/DirectPayment.sol";
 
-// contract KyberPaymentMock is KyberPayment {
+// contract DirectPaymentMock is DirectPayment {
 
 //     event UnderscoreHandlePaymentTransfersResult(
 //         bytes32[] paymentTransfersInfo
@@ -12,22 +12,14 @@ pragma solidity 0.6.8;
 
 //     constructor(
 //         address payable payoutWallet_,
-//         IERC20 payoutToken_,
-//         address kyberProxy
+//         IERC20 payoutToken_
 //     )
-//         KyberPayment(
+//         DirectPayment(
 //             payoutWallet_,
-//             payoutToken_,
-//             kyberProxy
+//             payoutToken_
 //         )
 //         public
 //     {}
-
-//     function callUnderscoreSetPayoutToken(
-//         IERC20 payoutToken_
-//     ) external  {
-//         _setPayoutToken(payoutToken_);
-//     }
 
 //     function callUnderscoreHandlePaymentTransfers(
 //         address payable operator,
@@ -42,17 +34,6 @@ pragma solidity 0.6.8;
 //             extData);
 
 //         emit UnderscoreHandlePaymentTransfersResult(paymentTransfersInfo);
-//     }
-
-//     function callUnderscoreHandlePaymentAmount(
-//         IERC20 paymentToken,
-//         uint256 paymentAmount,
-//         bytes32[] calldata extData
-//     ) external view returns (bytes32[] memory paymentAmountInfo) {
-//         paymentAmountInfo = _handlePaymentAmount(
-//             paymentToken,
-//             paymentAmount,
-//             extData);
 //     }
 
 // }
