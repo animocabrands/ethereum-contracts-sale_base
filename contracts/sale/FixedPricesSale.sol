@@ -8,6 +8,7 @@ import "./AbstractSale.sol";
 /**
  * @title FixedPricesSale
  * An AbstractSale which implements a fixed prices strategy.
+ *  The final implementer is responsible for implementing any additional pricing and/or delivery logic.
  */
 contract FixedPricesSale is AbstractSale {
     /**

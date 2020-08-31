@@ -8,6 +8,7 @@ import "./interfaces/IOracleSale.sol";
 /**
  * @title OracleSale
  * A FixedPricesSale which implements an oracle-based pricing strategy in parallel of top of .
+ *  The final implementer is responsible for implementing any additional pricing and/or delivery logic.
  *
  * PurchaseData.pricingData:
  *  - [0] uint256: the conversion rate used for an oracle pricing or 0 for a fixed pricing.
@@ -105,8 +106,6 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
     }
 
     function _conversionRate(address tokenA, address tokenB) internal virtual view returns (uint256 rate);
-
-    /*                               Internal Life Cycle Step Functions                               */
 
     function _unitPrice(PurchaseData memory purchase, EnumMap.Map storage prices)
         internal
