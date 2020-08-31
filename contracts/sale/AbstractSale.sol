@@ -139,6 +139,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
 
     /**
      * Sets the token prices for the specified product SKU.
+     * @dev Reverts if called by any other than the contract owner.
      * @dev Reverts if `tokens` and `prices` have different lengths.
      * @dev Reverts if `sku` does not exist.
      * @dev Reverts if one of the `tokens` is the zero address.
@@ -154,7 +155,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
         bytes32 sku,
         address[] calldata tokens,
         uint256[] calldata prices
-    ) external virtual {
+    ) external virtual onlyOwner {
         uint256 length = tokens.length;
         require(length == prices.length, "Sale: tokens/prices lengths mismatch");
         SkuInfo storage skuInfo = _skuInfos[sku];
