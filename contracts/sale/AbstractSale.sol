@@ -128,12 +128,11 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
         if (notificationsReceiver != address(0)) {
             require(notificationsReceiver.isContract(), "Sale: receiver is not a contract");
         }
-        SkuInfo storage skuInfo;
+        SkuInfo storage skuInfo = _skuInfos[sku];
         skuInfo.totalSupply = totalSupply;
         skuInfo.remainingSupply = totalSupply;
         skuInfo.maxQuantityPerPurchase = maxQuantityPerPurchase;
         skuInfo.notificationsReceiver = notificationsReceiver;
-        _skuInfos[sku] = skuInfo;
         emit SkuCreation(sku, totalSupply, maxQuantityPerPurchase, notificationsReceiver);
     }
 
