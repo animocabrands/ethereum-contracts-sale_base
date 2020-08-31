@@ -180,6 +180,8 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
 
     /**
      * Performs a purchase.
+     * @dev Reverts if the sale has not started.
+     * @dev Reverts if the sale is paused.
      * @dev Reverts if `token` is the address zero.
      * @dev Reverts if `quantity` is zero.
      * @dev Reverts if `quantity` is greater than the maximum purchase quantity.
@@ -215,6 +217,8 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      * Estimates the computed final total amount to pay for a purchase, including any potential discount.
      * @dev This function MUST compute the same price as `purchaseFor` would in identical conditions (same arguments, same point in time).
      * @dev If an implementer contract uses the `priceInfo` field, it SHOULD document how to interpret the info.
+     * @dev Reverts if the sale has not started.
+     * @dev Reverts if the sale is paused.
      * @dev Reverts if `token` is the zero address.
      * @dev Reverts if `quantity` is zero.
      * @dev Reverts if `quantity` is greater than the maximum purchase quantity.
