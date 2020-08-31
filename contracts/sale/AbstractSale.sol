@@ -104,6 +104,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
 
     /**
      * Creates an SKU.
+     * @dev Reverts if called by any other than the contract owner.
      * @dev Reverts if `totalSupply` is zero.
      * @dev Reverts if `sku` already exists.
      * @dev Reverts if `notificationsReceiver` is not the zero address and is not a contract address.
