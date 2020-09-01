@@ -152,9 +152,9 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      */
     function updateSkuPricing(
         bytes32 sku,
-        address[] calldata tokens,
-        uint256[] calldata prices
-    ) external virtual onlyOwner {
+        address[] memory tokens,
+        uint256[] memory prices
+    ) public virtual onlyOwner {
         uint256 length = tokens.length;
         require(length == prices.length, "Sale: tokens/prices lengths mismatch");
         SkuInfo storage skuInfo = _skuInfos[sku];
@@ -169,7 +169,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
                 tokenPrices.remove(token);
             }
         } else {
-            _setTokenPrices(tokenPrices, tokens, prices);
+            _setTokenPrices(sku, tokenPrices, tokens, prices);
         }
 
         emit SkuPricingUpdate(sku, tokens, prices);
@@ -305,6 +305,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
     /*                               Internal Utility Functions                               */
 
     function _setTokenPrices(
+        bytes32 /*sku*/,
         EnumMap.Map storage tokenPrices,
         address[] memory tokens,
         uint256[] memory prices
