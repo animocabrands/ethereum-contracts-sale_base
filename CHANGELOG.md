@@ -1,5 +1,15 @@
 # Changelog
 
+## 6.0.0
+
+### New Features
+ * Added `ISale.sol`, a new interface contract which defines the events and public API for sale contracts.
+ * Added `PurchaseLifeCycles.sol`, `AbstractSale.sol`, `FixedPricesSale.sol` and `OracleSale.sol`.
+ * Added contracts for UniswapV2 interactions.
+
+### Breaking changes
+ * Refactored the sale logic and removed the previous sale contracts.
+
 ## 5.0.0
 
 ### Breaking changes
