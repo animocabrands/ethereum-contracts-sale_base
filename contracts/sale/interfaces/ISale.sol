@@ -9,13 +9,13 @@ pragma solidity 0.6.8;
  *
  *  Products, designated as SKUs, are represented by bytes32 identifiers so that an identifier can carry an
  *  explicit name under the form of a fixed-length string. Each SKU can be priced via up to several payment
- *  tokens which can be ETH and/or ERC20(s). ETH token is represented by the magic value `ETH`, which means
+ *  tokens which can be ETH and/or ERC20(s). ETH token is represented by the magic value TOKEN_ETH, which means
  *  this value can be used as the 'token' argument of the purchase-related functions to indicate ETH payment.
  *
- *  The total available supply for a SKU is fixed at its creation. The magic value `unlimitedSupply` is used
+ *  The total available supply for a SKU is fixed at its creation. The magic value SUPPLY_UNLIMITED is used
  *  to represent a SKU with an infinite, never-decreasing supply. An optional purchase notifications receiver
  *  contract address can be set for a SKU at its creation: if the value is different from the zero address,
- *  the function `onPurchased` will be called on this address upon every successful purchase of the SKU.
+ *  the function `onPurchaseNotificationReceived` will be called on this address upon every purchase of the SKU.
  *
  *  This interface is designed to be consistent while managing a variety of implementation scenarios. It is
  *  also intended to be developer-friendly: all vital information is consistently deductible from the events
@@ -23,23 +23,21 @@ pragma solidity 0.6.8;
  */
 interface ISale {
     /**
-     * Event emitted to notify about the magic values necessary for interpreting and using this interface.
-     * @param TOKEN_ETH The magic value used to represent the ETH payment token.
-     * @param SUPPLY_UNLIMITED The magic value used to represent an infinite, never-decreasing SKU's supply.
-     * @param otherMagicValues Implementation-specific optional extra magic values.
-     *  If not empty, the implementer MUST document how to interepret the values.
+     * Event emitted to notify about the magic values necessary for interfacing with this contract.
+     * @param names An array of names for the magic values used by the contract.
+     * @param values An array of values for the magic values used by the contract.
      */
-    event MagicValues(address TOKEN_ETH, uint256 SUPPLY_UNLIMITED, bytes32[] otherMagicValues);
+    event MagicValues(bytes32[] names, bytes32[] values);
 
     /**
      * Event emitted to notify about the creation of a SKU.
      * @param sku The identifier of the created SKU.
      * @param totalSupply The initial total supply for sale.
-     * @param maxPurchaseQuantity The maximum allowed quantity for a single purchase.
-     * @param notificationsReceiver The address of a contract on which to call the `onPurchased` function.
+     * @param maxQuantityPerPurchase The maximum allowed quantity for a single purchase.
+     * @param notificationsReceiver If not the zero address, the address of a contract on which `onPurchaseNotificationReceived` will be called after each purchase,
      *  If this is the zero address, the call is not enabled.
      */
-    event SkuCreation(bytes32 sku, uint256 totalSupply, uint256 maxPurchaseQuantity, address notificationsReceiver);
+    event SkuCreation(bytes32 sku, uint256 totalSupply, uint256 maxQuantityPerPurchase, address notificationsReceiver);
 
     /**
      * Event emitted to notify about a change in the pricing of a SKU.
@@ -59,9 +57,10 @@ interface ISale {
      * @param sku The identifier of the purchased SKU.
      * @param quantity The purchased quantity.
      * @param userData Optional extra user input data.
-     * @param price The amount of `token` paid.
-     * @param purchaseData Implementation-specific optional extra purchase data.
-     *  If not empty, the implementer MUST document how to interepret the values.
+     * @param totalPrice The amount of `token` paid.
+     * @param pricingData Implementation-specific extra pricing data, such as details about discounts applied.
+     * @param paymentData Implementation-specific extra payment data, such as conversion rates.
+     * @param deliveryData Implementation-specific extra delivery data, such as purchase receipts.
      */
     event Purchase(
         address indexed purchaser,
@@ -70,8 +69,10 @@ interface ISale {
         bytes32 indexed sku,
         uint256 quantity,
         bytes userData,
-        uint256 price,
-        bytes32[] purchaseData
+        uint256 totalPrice,
+        bytes32[] pricingData,
+        bytes32[] paymentData,
+        bytes32[] deliveryData
     );
 
     /**
@@ -125,7 +126,7 @@ interface ISale {
      * @param sku The identifier of the SKU used to calculate the total price amount.
      * @param quantity The quantity used to calculate the total price amount.
      * @param userData Optional extra user input data.
-     * @return price The computed total price to pay.
+     * @return totalPrice The computed total price to pay.
      * @return pricingData Implementation-specific extra pricing data, such as details about discounts applied.
      *  If not empty, the implementer MUST document how to interepret the values.
      */
@@ -135,7 +136,7 @@ interface ISale {
         bytes32 sku,
         uint256 quantity,
         bytes calldata userData
-    ) external view returns (uint256 price, bytes32[] memory pricingData);
+    ) external view returns (uint256 totalPrice, bytes32[] memory pricingData);
 
     /**
      * Returns the information relative to a SKU.
@@ -145,8 +146,8 @@ interface ISale {
      * @param sku The SKU identifier.
      * @return totalSupply The initial total supply for sale.
      * @return remainingSupply The remaining supply for sale.
-     * @return maxPurchaseQuantity The maximum allowed quantity for a single purchase.
-     * @return notificationsReceiver The address of a contract on which to call the `onPurchased` function.
+     * @return maxQuantityPerPurchase The maximum allowed quantity for a single purchase.
+     * @return notificationsReceiver The address of a contract on which to call the `onPurchaseNotificationReceived` function.
      * @return tokens The list of supported payment tokens.
      * @return prices The list of associated prices for each of the `tokens`.
      */
@@ -156,7 +157,7 @@ interface ISale {
         returns (
             uint256 totalSupply,
             uint256 remainingSupply,
-            uint256 maxPurchaseQuantity,
+            uint256 maxQuantityPerPurchase,
             address notificationsReceiver,
             address[] memory tokens,
             uint256[] memory prices

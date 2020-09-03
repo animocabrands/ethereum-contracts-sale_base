@@ -18,6 +18,6 @@ contract FixedPricesSaleMock is FixedPricesSale {
         address payoutWallet_,
         uint256 skusCapacity,
         uint256 tokensPerSkuCapacity
-    ) internal FixedPricesSale(payoutWallet_, skusCapacity, tokensPerSkuCapacity) {}
+    ) public FixedPricesSale(payoutWallet_, skusCapacity, tokensPerSkuCapacity) {}
 
 }

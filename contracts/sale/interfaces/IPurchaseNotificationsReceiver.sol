@@ -12,7 +12,7 @@ interface IPurchaseNotificationsReceiver {
     /**
      * Handles the receipt of a purchase notification.
      * @dev This function MUST return the function selector, otherwise the caller will revert the transaction.
-     *  The selector to be returned can be obtained as `this.onPurchased.selector`
+     *  The selector to be returned can be obtained as `this.onPurchaseNotificationReceived.selector`
      * @dev This function MAY throw.
      * @param purchaser The purchaser of the purchase.
      * @param recipient The recipient of the purchase.
@@ -20,20 +20,20 @@ interface IPurchaseNotificationsReceiver {
      * @param sku The identifier of the SKU to purchase.
      * @param quantity The quantity to purchase.
      * @param userData Optional extra user input data.
-     * @param price The price to paid.
+     * @param totalPrice The total price paid.
      * @param pricingData Implementation-specific extra pricing data, such as details about discounts applied.
      * @param paymentData Implementation-specific extra payment data, such as conversion rates.
      * @param deliveryData Implementation-specific extra delivery data, such as purchase receipts.
-     * @return `bytes4(keccak256("onPurchased(address,address,address,bytes32,uint256,bytes,uint256,bytes32[],bytes32[],bytes32[])"))`
+     * @return `bytes4(keccak256("onPurchaseNotificationReceived(address,address,address,bytes32,uint256,bytes,uint256,bytes32[],bytes32[],bytes32[])"))`
      */
-    function onPurchased(
+    function onPurchaseNotificationReceived(
         address purchaser,
         address recipient,
         address token,
         bytes32 sku,
         uint256 quantity,
         bytes calldata userData,
-        uint256 price,
+        uint256 totalPrice,
         bytes32[] calldata pricingData,
         bytes32[] calldata paymentData,
         bytes32[] calldata deliveryData
