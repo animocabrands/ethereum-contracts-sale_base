@@ -169,7 +169,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
                 tokenPrices.remove(token);
             }
         } else {
-            _setTokenPrices(sku, tokenPrices, tokens, prices);
+            _setTokenPrices(tokenPrices, tokens, prices);
         }
 
         emit SkuPricingUpdate(sku, tokens, prices);
@@ -305,7 +305,6 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
     /*                               Internal Utility Functions                               */
 
     function _setTokenPrices(
-        bytes32 /*sku*/,
         EnumMap.Map storage tokenPrices,
         address[] memory tokens,
         uint256[] memory prices

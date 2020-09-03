@@ -18,8 +18,6 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
 
     address internal _referenceToken;
 
-    mapping(bytes32 => uint256) internal _skuOracleTokenCounts;
-
     /**
      * Constructor.
      * @dev Emits the `MagicValues` event.
@@ -74,95 +72,18 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
         }
     }
 
-    /**
-     * Sets the token prices for the specified product SKU.
-     * @dev Reverts if called by any other than the contract owner.
-     * @dev Reverts if `tokens` and `prices` have different lengths.
-     * @dev Reverts if `sku` does not exist.
-     * @dev Reverts if one of the `tokens` is the zero address.
-     * @dev Reverts if the update results in too many tokens for the SKU.
-     * @dev Emits the `SkuPricingUpdate` event.
-     * @param sku The identifier of the SKU.
-     * @param tokens The list of payment tokens to update.
-     *  If empty, disable all the existing payment tokens.
-     * @param prices The list of prices to apply for each payment token.
-     *  Zero price values are used to disable a payment token.
-     */
-    function updateSkuPricing(
-        bytes32 sku,
-        address[] memory tokens,
-        uint256[] memory prices
-    ) public virtual override onlyOwner {
-        super.updateSkuPricing(sku, tokens, prices);
-
-        if (tokens.length == 0) {
-            _skuOracleTokenCounts[sku] = 0;
-        }
-    }
-
     /*                               Internal Utility Functions                               */
 
     function _setTokenPrices(
-        bytes32 sku,
         EnumMap.Map storage tokenPrices,
         address[] memory tokens,
         uint256[] memory prices
     ) internal virtual override {
-        uint256 storedCount = _skuOracleTokenCounts[sku];
-        uint256 currentCount = storedCount;
-
-        for (uint256 i = 0; i < tokens.length; ++i) {
-            address token = tokens[i];
-            require(token != address(0), "Sale: zero address token");
-            uint256 price = prices[i];
-            if (price == 0) {
-                if (_removeTokenPrice(tokenPrices, token, price)) {
-                    --currentCount;
-                }
-            } else {
-                if (_upsertTokenPrice(tokenPrices, token, price)) {
-                    ++currentCount;
-                }
-            }
-        }
-        require(tokenPrices.length() <= _tokensPerSkuCapacity, "Sale: too many tokens");
-
-        if (currentCount != storedCount) {
-            _skuOracleTokenCounts[sku] = currentCount;
-
-            if (currentCount != 0) {
-                require(tokenPrices.contains(bytes32(uint256(_referenceToken))), "OracleSale: missing reference price");
-            }
-        }
-    }
-
-    function _removeTokenPrice(
-        EnumMap.Map storage tokenPrices,
-        address token,
-        uint256 /*price*/
-    ) internal virtual returns (bool oracleTokenRemoved) {
-        bytes32 tokenKey = bytes32(uint256(token));
-
-        if (tokenPrices.contains(tokenKey)) {
-            uint256 prevPrice = uint256(tokenPrices.get(tokenKey));
-            bool requiredOracle = prevPrice == PRICE_CONVERT_VIA_ORACLE;
-            bool removed = tokenPrices.remove(tokenKey);
-
-            oracleTokenRemoved = removed && requiredOracle;
-        } else {
-            oracleTokenRemoved = false;
-        }
-    }
-
-    function _upsertTokenPrice(
-        EnumMap.Map storage tokenPrices,
-        address token,
-        uint256 price
-    ) internal virtual returns (bool oracleTokenAdded) {
-        bool requiresOracle = price == PRICE_CONVERT_VIA_ORACLE;
-        bool added = tokenPrices.set(bytes32(uint256(token)), bytes32(price));
-
-        oracleTokenAdded = added && requiresOracle;
+        super._setTokenPrices(tokenPrices, tokens, prices);
+        require(
+            tokenPrices.length() == 0 || tokenPrices.contains(bytes32(uint256(_referenceToken))),
+            "OracleSale: missing reference token"
+        );
     }
 
     function _conversionRate(address tokenA, address tokenB) internal virtual view returns (uint256 rate);
@@ -170,8 +91,8 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
     function _unitPrice(PurchaseData memory purchase, EnumMap.Map storage prices)
         internal
         virtual
-        view
         override
+        view
         returns (uint256 unitPrice)
     {
         unitPrice = super._unitPrice(purchase, prices);
