@@ -35,7 +35,7 @@ GANACHE_PORT="${GANACHE_PORT:-7545}"
 TOTAL_ACCOUNTS="${TOTAL_ACCOUNTS:-10}"
 DEFAULT_BALANCE_ETHER="${DEFAULT_BALANCE_ETHER:-100000000}"
 GAS_LIMIT="${GAS_LIMIT:-0xffffffffffff}"
-HARD_FORK="${HARD_FORK:-constantinople}"
+HARD_FORK="${HARD_FORK:-istanbul}"
 
 # Exit script as soon as a command fails.
 set -o errexit

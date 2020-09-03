@@ -1,6 +1,6 @@
 {
   "name": "@animoca/ethereum-contracts-sale_base",
-  "version": "5.0.0",
+  "version": "6.0.0",
   "description": "Solidity sale contracts managing inventory purchases with ETH/ERC-20 token payments",
   "scripts": {
     "compile": "./node_modules/@animoca/ethereum-contracts-core_library/scripts/oz-compile.sh",
@@ -24,6 +24,8 @@
     "@animoca/blockchain-inventory_metadata": "^0.0.1",
     "@animoca/ethereum-contracts-assets_inventory": "^3.0.0",
     "@animoca/ethereum-contracts-core_library": "^3.1.1",
-    "@animoca/ethereum-contracts-erc20_base": "^3.0.0"
+    "@animoca/ethereum-contracts-erc20_base": "^3.0.0",
+    "@truffle/provisioner": "^0.2.5",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0"
   }
 }

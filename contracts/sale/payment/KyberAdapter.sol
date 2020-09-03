@@ -5,7 +5,7 @@ pragma solidity 0.6.8;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20Detailed.sol";
-import "./IKyber.sol";
+import "./interfaces/IKyberNetworkProxy.sol";
 
 /**
  * @title KyberAdapter
@@ -15,27 +15,41 @@ import "./IKyber.sol";
 contract KyberAdapter {
     using SafeMath for uint256;
 
-    IKyber public kyber;
+    IKyberNetworkProxy public kyber;
 
     IERC20 public KYBER_ETH_ADDRESS = IERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
 
     constructor(address _kyberProxy) public {
-        kyber = IKyber(_kyberProxy);
+        kyber = IKyberNetworkProxy(_kyberProxy);
     }
 
     fallback () external payable {}
 
     receive () external payable {}
 
-    function _getTokenDecimals(IERC20 _token) internal view returns (uint8 _decimals) {
+    function _getTokenDecimals(
+        IERC20 _token
+    ) internal view returns (
+        uint8 _decimals
+    ) {
         return _token != KYBER_ETH_ADDRESS ? IERC20Detailed(address(_token)).decimals() : 18;
     }
 
-    function _getTokenBalance(IERC20 _token, address _account) internal view returns (uint256 _balance) {
+    function _getTokenBalance(
+        IERC20 _token,
+        address _account
+    ) internal view returns (
+        uint256 _balance
+    ) {
         return _token != KYBER_ETH_ADDRESS ? _token.balanceOf(_account) : _account.balance;
     }
 
-    function _ceilingDiv(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    function _ceilingDiv(
+        uint256 a,
+        uint256 b
+    ) internal pure returns (
+        uint256 c
+    ) {
         return a.div(b).add(a.mod(b) > 0 ? 1 : 0);
     }
 
@@ -44,11 +58,9 @@ contract KyberAdapter {
         IERC20 _dest,
         uint256 _unfixedDestAmount,
         bool _ceiling
-    )
-    internal
-    view
-    returns (uint256 _destTokenAmount)
-    {
+    ) internal view returns (
+        uint256 _destTokenAmount
+    ) {
         uint256 _unfixedDecimals = _getTokenDecimals(_src) + 18; // Kyber by default returns rates with 18 decimals.
         uint256 _decimals = _getTokenDecimals(_dest);
 
@@ -69,14 +81,10 @@ contract KyberAdapter {
         IERC20 _src,
         uint256 _srcAmount,
         IERC20 _dest
-    )
-    internal
-    view
-    returns (
+    ) internal view returns (
         uint256 _expectedAmount,
         uint256 _slippageAmount
-    )
-    {
+    ) {
         (uint256 _expectedRate, uint256 _slippageRate) = kyber.getExpectedRate(_src, _dest, _srcAmount);
 
         return (
@@ -93,13 +101,10 @@ contract KyberAdapter {
         uint256 _minConversionRate,
         address payable _initiator,
         address payable _receiver
-    )
-    internal
-    returns (
+    ) internal returns (
         uint256 _srcAmount,
         uint256 _destAmount
-    )
-    {
+    ) {
         if (_src == _dest) {
             // payment is made with DAI
             require(
