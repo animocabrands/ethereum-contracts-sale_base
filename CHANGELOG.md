@@ -3,27 +3,12 @@
 ## 6.0.0
 
 ### New Features
- * `ISale.sol`: A new interface contract which defines the events and public API for sale contracts.
- * `Sale.sol`: Implements the new `ISale.sol` interface.
- * `Sale.sol`: Added `getSkus()` for retrieving the list of inventory SKUs available for purchase.
- * `Sale.sol`: Added `getPaymentTokens()` for retrieving the list of supported ERC20 payment tokens.
- * `Sale.sol`: Added `getSkuTokenPrice()` for retrieving the undiscounted unit price of an inventory SKU.
- * `Sale.sol`: Added `getPrice()` for calculating the total purchase price amount of a given quantity of a specified inventory SKU item.
+ * Added `ISale.sol`, a new interface contract which defines the events and public API for sale contracts.
+ * Added `PurchaseLifeCycles.sol`, `AbstractSale.sol`, `FixedPricesSale.sol` and `OracleSale.sol`.
+ * Added contracts for UniswapV2 interactions.
 
 ### Breaking changes
- * `KyberLotSale.sol`: `_getTotalPriceInfo()` argument `bytes32[] extData` has been replaced with `bytes userData`.
- * `Sale.sol`: `Purchased` event parameter `bytes32[] extData` has been replaced with `bytes userData` and `bytes32[] purchaseData`.
- * `Sale.sol`: `Purchase` struct field `bytes32[] extData` has been replaced with `bytes userData`.
- * `Sale.sol`: `purchaseFor()` argument `bytes32[] extData` has been replaced with `bytes userData`.
- * `Sale.sol`: `_getPurchasedEventExtData()` argument `Purchase purchase` has been removed
- * `Sale.sol`: `_getPurchasedEventExtData()` has been renamed to `_getPurchasedEventPurchaseData`.
- * `Sale.sol`: `_getTotalPriceInfo()` argument `bytes32[] extData` has been replaced with `bytes userData`.
- * `Sale.sol`: Renamed `addInventorySkus()` to `addSkus()`.
- * `Sale.sol`: Renamed `addSupportedPaymentTokens()` to `addPaymentTokens()`.
- * `Sale.sol`: Renamed the `InventorySkusAdded` event to `SkusAdded`.
- * `Sale.sol`: Renamed the `SupportedPaymentTokensAdded` event to `PaymentTokensAdded`.
- * `SimplePayment.sol`: Renamed to `DirectPayment.sol`.
- * `SimpleSale.sol`: Renamed to `DirectSale.sol`.
+ * Refactored the sale logic and removed the previous sale contracts.
 
 ## 5.0.0
 
