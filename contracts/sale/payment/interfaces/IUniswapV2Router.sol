@@ -1,9 +1,13 @@
-
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity 0.6.8;
 
 
+/**
+ * @title IUniswapV2Router
+ * Interface for the UniswapV2 router contract.
+ * @dev https://github.com/Uniswap/uniswap-v2-periphery/blob/master/contracts/interfaces/IUniswapV2Router02.sol
+ */
 interface IUniswapV2Router {
     /**
      * Returns the canonical WETH address.
