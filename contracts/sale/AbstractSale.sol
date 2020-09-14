@@ -181,7 +181,8 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      * Performs a purchase.
      * @dev Reverts if the sale has not started.
      * @dev Reverts if the sale is paused.
-     * @dev Reverts if `token` is the address zero.
+     * @dev Reverts if `recipient` is the zero address.
+     * @dev Reverts if `token` is the zero address.
      * @dev Reverts if `quantity` is zero.
      * @dev Reverts if `quantity` is greater than the maximum purchase quantity.
      * @dev Reverts if `quantity` is greater than the remaining supply.
@@ -215,9 +216,10 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
     /**
      * Estimates the computed final total amount to pay for a purchase, including any potential discount.
      * @dev This function MUST compute the same price as `purchaseFor` would in identical conditions (same arguments, same point in time).
-     * @dev If an implementer contract uses the `priceInfo` field, it SHOULD document how to interpret the info.
+     * @dev If an implementer contract uses the `pricingData` field, it SHOULD document how to interpret the values.
      * @dev Reverts if the sale has not started.
      * @dev Reverts if the sale is paused.
+     * @dev Reverts if `recipient` is the zero address.
      * @dev Reverts if `token` is the zero address.
      * @dev Reverts if `quantity` is zero.
      * @dev Reverts if `quantity` is greater than the maximum purchase quantity.
@@ -230,7 +232,8 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      * @param quantity The quantity used to calculate the total price amount.
      * @param userData Optional extra user input data.
      * @return totalPrice The computed total price.
-     * @return priceInfo Implementation-specific extra price information, such as details about potential discounts applied.
+     * @return pricingData Implementation-specific extra pricing data, such as details about discounts applied.
+     *  If not empty, the implementer MUST document how to interepret the values.
      */
     function estimatePurchase(
         address payable recipient,
@@ -238,7 +241,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
         bytes32 sku,
         uint256 quantity,
         bytes calldata userData
-    ) external virtual override view whenStarted whenNotPaused returns (uint256 totalPrice, bytes32[] memory priceInfo) {
+    ) external virtual override view whenStarted whenNotPaused returns (uint256 totalPrice, bytes32[] memory pricingData) {
         PurchaseData memory purchase;
         purchase.purchaser = _msgSender();
         purchase.recipient = recipient;
@@ -280,6 +283,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
         uint256 length = skuInfo.prices.length();
 
         totalSupply = skuInfo.totalSupply;
+        require(totalSupply != 0, "Sale: non-existent sku");
         remainingSupply = skuInfo.remainingSupply;
         maxQuantityPerPurchase = skuInfo.maxQuantityPerPurchase;
         notificationsReceiver = skuInfo.notificationsReceiver;
@@ -329,20 +333,27 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      * @dev Responsibilities:
      *  - Ensure that the purchase pre-conditions are met and revert if not.
      * @dev Reverts if `purchase.recipient` is the zero address.
+     * @dev Reverts if `purchase.token` is the zero address.
      * @dev Reverts if `purchase.quantity` is zero.
      * @dev Reverts if `purchase.quantity` is greater than the SKU's `maxQuantityPerPurchase`.
      * @dev Reverts if `purchase.quantity` is greater than the available supply.
+     * @dev Reverts if `purchase.sku` does not exist.
+     * @dev Reverts if `purchase.sku` exists but does not have a price set for `purchase.token`.
      * @dev If this function is overriden, the implementer SHOULD super call this before.
      * @param purchase The purchase conditions.
      */
     function _validation(PurchaseData memory purchase) internal virtual override view {
         require(purchase.recipient != address(0), "Sale: zero address recipient");
+        require(purchase.token != address(0), "Sale: zero address token");
         require(purchase.quantity != 0, "Sale: zero quantity purchase");
-        SkuInfo memory skuInfo = _skuInfos[purchase.sku];
-        require(purchase.quantity <= skuInfo.maxQuantityPerPurchase, "Sale: above max quantity");
+        SkuInfo storage skuInfo = _skuInfos[purchase.sku];
+        require(skuInfo.totalSupply != 0, "Sale: non-existent sku");
+        require(skuInfo.maxQuantityPerPurchase >= purchase.quantity, "Sale: above max quantity");
         if (skuInfo.totalSupply != SUPPLY_UNLIMITED) {
             require(skuInfo.remainingSupply >= purchase.quantity, "Sale: insufficient supply");
         }
+        bytes32 priceKey = bytes32(uint256(purchase.token));
+        require(skuInfo.prices.contains(priceKey), "Sale: non-existent sku token");
     }
 
     /**

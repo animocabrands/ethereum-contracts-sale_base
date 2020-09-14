@@ -91,6 +91,7 @@ interface ISale {
 
     /**
      * Performs a purchase.
+     * @dev Reverts if `recipient` is the zero address.
      * @dev Reverts if `token` is the address zero.
      * @dev Reverts if `quantity` is zero.
      * @dev Reverts if `quantity` is greater than the maximum purchase quantity.
@@ -115,6 +116,8 @@ interface ISale {
     /**
      * Estimates the computed final total amount to pay for a purchase, including any potential discount.
      * @dev This function MUST compute the same price as `purchaseFor` would in identical conditions (same arguments, same point in time).
+     * @dev If an implementer contract uses the `pricingData` field, it SHOULD document how to interpret the values.
+     * @dev Reverts if `recipient` is the zero address.
      * @dev Reverts if `token` is the zero address.
      * @dev Reverts if `quantity` is zero.
      * @dev Reverts if `quantity` is greater than the maximum purchase quantity.
