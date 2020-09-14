@@ -37,5 +37,5 @@ interface IPurchaseNotificationsReceiver {
         bytes32[] calldata pricingData,
         bytes32[] calldata paymentData,
         bytes32[] calldata deliveryData
-    ) external pure returns (bytes4);
+    ) external returns (bytes4);
 }
