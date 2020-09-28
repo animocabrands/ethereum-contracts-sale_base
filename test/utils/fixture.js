@@ -30,6 +30,7 @@ async function sendAsync(provider, method, params) {
     }
 };
 
+const { bufferToInt } = require('ethereumjs-util');
 function createFixtureLoader(accounts, provider) {
     const snapshots = [];
 
@@ -39,13 +40,15 @@ function createFixtureLoader(accounts, provider) {
         });
 
         if (snapshot) {
-            await sendAsync(snapshot.provider, 'evm_revert', [snapshot.id]);
-            snapshot.id = await sendAsync(snapshot.provider, 'evm_snapshot', []);
+            const evmRevert = await sendAsync(snapshot.provider, 'evm_revert', [snapshot.id]);
+            const evmSnapshot = await sendAsync(snapshot.provider, 'evm_snapshot', []);
+            snapshot.id = evmSnapshot.result;
             return snapshot.data;
         } else {
             const data = await fixture(accounts, provider);
-            const id = await sendAsync(provider, 'evm_snapshot', []);
-            snapshots.push({ fixture, data, id, provider, accounts });
+            const evmSnapshot = await sendAsync(provider, 'evm_snapshot', []);
+            const id = evmSnapshot.result;
+            snapshots.push({ fixture, data, id, provider });
             return data;
         }
     };
