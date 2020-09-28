@@ -10,7 +10,14 @@ pragma solidity 0.6.8;
  */
 interface IUniswapV2Router {
     /**
+     * Returns the UniswapV2 factory used by the router.
+     * @return The UniswapV2 factory used by the router.
+     */
+    function factory() external pure returns (address);
+
+    /**
      * Returns the canonical WETH address.
+     * @return The canonical WETH address.
      */
     function WETH() external pure returns (address);
 

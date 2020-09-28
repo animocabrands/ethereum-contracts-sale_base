@@ -86,7 +86,7 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
         );
     }
 
-    function _conversionRate(address tokenA, address tokenB) internal virtual view returns (uint256 rate);
+    function _conversionRate(address fromToken, address toToken) internal virtual view returns (uint256 rate);
 
     function _unitPrice(PurchaseData memory purchase, EnumMap.Map storage prices)
         internal
@@ -99,7 +99,7 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
         if (unitPrice == PRICE_CONVERT_VIA_ORACLE) {
             uint256 referenceUnitPrice = uint256(prices.get(bytes32(uint256(_referenceToken))));
             uint256 conversionRate = _conversionRate(_referenceToken, purchase.token); // TODO confirm formula
-            unitPrice = referenceUnitPrice.mul(conversionRate);
+            unitPrice = referenceUnitPrice.mul(conversionRate).div(10 ** 18);
             purchase.pricingData = new bytes32[](1);
             purchase.pricingData[0] = bytes32(conversionRate);
         }
