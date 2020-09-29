@@ -48,15 +48,6 @@ contract UniswapV2Adapter {
         emit UniswapV2RouterSet(uniswapV2Router_);
     }
 
-    function _conversionRate(address tokenA, address tokenB, uint256 amountB) internal virtual view returns (uint256 rate) {
-        address[] memory path = new address[](2);
-        path[0] = tokenA;
-        path[1] = tokenB;
-        uint256[] memory amountsIn = uniswapV2Router.getAmountsIn(amountB, path);
-        uint256 amountA = amountsIn[0];
-        rate = amountB.mul(10 ** 18).div(amountA);
-    }
-
     function _swap(
         address tokenA,
         address tokenB,

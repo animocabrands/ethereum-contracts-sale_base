@@ -27,8 +27,7 @@ interface IOracleSale /*is ISale*/{
      * Retrieves the current rates for the `tokens`/`referenceToken` pairs via the oracle.
      * @dev Reverts if the oracle does not provide a pricing for one of the pairs.
      * @param tokens The list of tokens to retrieve the conversion rates for.
-     * @param amount The amount of `referenceToken` to retrieve the conversion rates for.
      * @return rates The rates for the `tokens`/`referenceToken` pairs retrieved via the oracle.
      */
-    function conversionRates(address[] calldata tokens, uint256 amount) external view returns (uint256[] memory rates);
+    function conversionRates(address[] calldata tokens) external view returns (uint256[] memory rates);
 }

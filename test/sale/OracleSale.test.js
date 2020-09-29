@@ -246,62 +246,39 @@ contract('OracleSale', function (accounts) {
         it('should revert if one of the tokens to convert is the zero address', async function () {
             await expectRevert(
                 this.contract.conversionRates(
-                    [ ...this.tokensToConvert, ZeroAddress ],
-                    One),
-                'UniswapV2Library: ZERO_ADDRESS');
+                    [ ...this.tokensToConvert, ZeroAddress ]),
+                'UniswapV2Adapter: ZERO_ADDRESS');
         });
 
         it('should revert if one of the tokens to convert is the reference token', async function () {
             await expectRevert(
                 this.contract.conversionRates(
-                    [ ...this.tokensToConvert, tokens['ReferenceToken'].contract.address ],
-                    One),
-                'UniswapV2Library: IDENTICAL_ADDRESSES');
+                    [ ...this.tokensToConvert, tokens['ReferenceToken'].contract.address ]),
+                'UniswapV2Adapter: IDENTICAL_ADDRESSES');
         });
 
         it('should revert if one of the tokens to convert is not paired with the reference token', async function () {
             await expectRevert(
                 this.contract.conversionRates(
-                    [ ...this.tokensToConvert, tokens['TokenC'].contract.address ],
-                    One),
+                    [ ...this.tokensToConvert, tokens['TokenC'].contract.address ]),
                 'revert');
         });
 
         it(`should return the correct conversion rates`, async function () {
-            const tokenReserves = [];
+            const actualRates = await this.contract.conversionRates(this.tokensToConvert);
+
+            const expectedRates = [];
             const refTokenAddress = tokens['ReferenceToken'].contract.address;
-            var refReserve = 0;
 
-            for (const tokenAddress of this.tokensToConvert) {
+            for (var index = 0; index < this.tokensToConvert.length; ++index) {
+                const actualRate = actualRates[index];
+
                 const reserves = await this.contract.getReserves(
-                    tokenAddress,
+                    this.tokensToConvert[index],
                     refTokenAddress);
-                tokenReserves.push(reserves.reserveA);
-                refReserve = reserves.reserveB;
-            }
+                const expectedRate = reserves.reserveB.mul(new BN(10).pow(new BN(18))).div(reserves.reserveA);
 
-            // to make testing easier, we use a reference token reserve amount
-            // that will result in the rates based off of the tokens-to-convert
-            // reserve amounts
-            const refAmount = refReserve.divn(2);
-            const rates = await this.contract.conversionRates(this.tokensToConvert, refAmount);
-
-            const refLiquidityData = liquidity['ReferenceToken'];
-
-            for (var index = 0; index < this.tokenKeys.length; ++index) {
-                const tokenKey = this.tokenKeys[index];
-                const rate = rates[index];
-
-                // based on the UniswapV2Library::getAmountIn() calculation
-                // https://github.com/Uniswap/uniswap-v2-periphery/blob/master/contracts/libraries/UniswapV2Library.sol#L53
-                var expectedAmount = tokenReserves[index]
-                    .muln(1000).divn(997).addn(1)
-                    .mul(rate)
-                    .div(new BN(10).pow(new BN(18)));
-
-                const actualAmount = refAmount;
-
-                shouldBeEqualWithPercentPrecision(actualAmount, expectedAmount, 1, -3);
+                actualRate.should.be.bignumber.equal(expectedRate);
             }
         });
 
@@ -384,8 +361,8 @@ contract('OracleSale', function (accounts) {
                 [],
                 []);
 
+            const rates = await this.contract.conversionRates([ tokenA ]);
             const refLiquidityData = liquidity['ReferenceToken'];
-            const rates = await this.contract.conversionRates([ tokenA ], refLiquidityData.price);
             const expectedUnitPrice = refLiquidityData.price.mul(new BN(10).pow(new BN(18))).div(rates[0]);
 
             actualUnitPrice.should.be.bignumber.equal(expectedUnitPrice);
@@ -406,8 +383,8 @@ contract('OracleSale', function (accounts) {
                 [],
                 []);
 
+            const rates = await this.contract.conversionRates([ tokenB ]);
             const refLiquidityData = liquidity['ReferenceToken'];
-            const rates = await this.contract.conversionRates([ tokenB ], refLiquidityData.price);
             const expectedUnitPrice = refLiquidityData.price.mul(new BN(10).pow(new BN(18))).div(rates[0]);
 
             actualUnitPrice.should.be.bignumber.equal(expectedUnitPrice);
