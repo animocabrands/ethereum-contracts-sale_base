@@ -3,8 +3,8 @@
 pragma solidity 0.6.8;
 
 /**
- * @title IUniswapV2Router
- * Interface for the UniswapV2 router contract.
+ * @title IUniswapV2Pair
+ * Interface for the UniswapV2 pair contract.
  * @dev https://github.com/Uniswap/uniswap-v2-core/blob/master/contracts/interfaces/IUniswapV2Pair.sol
  */
 interface IUniswapV2Pair {
