@@ -40,7 +40,7 @@ interface IUniswapV2Router {
      * @param path An array of token addresses. path.length must be >= 2. Pools for each consecutive pair of addresses must exist and have liquidity.
      * @param to Recipient of the output tokens.
      * @param deadline Unix timestamp after which the transaction will revert.
-     * @return amounts The input token amount and all subsequent output token amounts. 
+     * @return amounts The input token amount and all subsequent output token amounts.
     */
     function swapTokensForExactTokens(
         uint amountOut,

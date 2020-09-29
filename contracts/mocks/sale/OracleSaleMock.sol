@@ -73,12 +73,22 @@ contract OracleSaleMock is OracleSale, UniswapV2Adapter {
         unitPrice = _unitPrice(purchaseData, prices);
     }
 
-    function _conversionRate(
+    function getReserves(
         address tokenA,
         address tokenB
+    ) external view returns (
+        uint256 reserveA,
+        uint256 reserveB
+    ) {
+        (reserveA, reserveB) = UniswapV2Adapter._getReserves(tokenA, tokenB);
+    }
+
+    function _conversionRate(
+        address fromToken,
+        address toToken,
+        uint256 toAmount
     ) internal override (OracleSale, UniswapV2Adapter) view returns (uint256 rate) {
-        (uint256 reserveA, uint256 reserveB) = _getReserves(tokenA, tokenB);
-        return reserveB.mul(10 ** 18).div(reserveA);
+        rate = UniswapV2Adapter._conversionRate(fromToken, toToken, toAmount);
     }
 
     function _getPurchaseData(

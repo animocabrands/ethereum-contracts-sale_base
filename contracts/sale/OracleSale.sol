@@ -56,9 +56,10 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
      * Retrieves the current rates for the `tokens`/`referenceToken` pairs via the oracle.
      * @dev Reverts if the oracle does not provide a pricing for one of the pairs.
      * @param tokens The list of tokens to retrieve the conversion rates for.
-     * @return rates the rates for the `tokens`/`referenceToken` pairs retrieved via the oracle.
+     * @param amount The amount of `referenceToken` to retrieve the conversion rates for.
+     * @return rates The rates for the `tokens`/`referenceToken` pairs retrieved via the oracle.
      */
-    function conversionRates(address[] calldata tokens)
+    function conversionRates(address[] calldata tokens, uint256 amount)
         external
         virtual
         override
@@ -68,7 +69,7 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
         uint256 length = tokens.length;
         rates = new uint256[](length);
         for (uint256 i = 0; i < length; ++i) {
-            rates[i] = _conversionRate(_referenceToken, tokens[i]);
+            rates[i] = _conversionRate(tokens[i], _referenceToken, amount);
         }
     }
 
@@ -86,7 +87,7 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
         );
     }
 
-    function _conversionRate(address fromToken, address toToken) internal virtual view returns (uint256 rate);
+    function _conversionRate(address fromToken, address toToken, uint256 toAmount) internal virtual view returns (uint256 rate);
 
     function _unitPrice(PurchaseData memory purchase, EnumMap.Map storage prices)
         internal
@@ -98,8 +99,8 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
         unitPrice = super._unitPrice(purchase, prices);
         if (unitPrice == PRICE_CONVERT_VIA_ORACLE) {
             uint256 referenceUnitPrice = uint256(prices.get(bytes32(uint256(_referenceToken))));
-            uint256 conversionRate = _conversionRate(_referenceToken, purchase.token); // TODO confirm formula
-            unitPrice = referenceUnitPrice.mul(conversionRate).div(10 ** 18);
+            uint256 conversionRate = _conversionRate(purchase.token, _referenceToken, referenceUnitPrice);
+            unitPrice = referenceUnitPrice.mul(10 ** 18).div(conversionRate);
             purchase.pricingData = new bytes32[](1);
             purchase.pricingData[0] = bytes32(conversionRate);
         }
