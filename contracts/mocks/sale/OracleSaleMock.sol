@@ -80,6 +80,12 @@ contract OracleSaleMock is OracleSale, UniswapV2Adapter {
         uint256 reserveA,
         uint256 reserveB
     ) {
+        if (tokenA == TOKEN_ETH) {
+            tokenA = uniswapV2Router.WETH();
+        }
+        if (tokenB == TOKEN_ETH) {
+            tokenB = uniswapV2Router.WETH();
+        }
         (reserveA, reserveB) = UniswapV2Adapter._getReserves(tokenA, tokenB);
     }
 
@@ -87,6 +93,12 @@ contract OracleSaleMock is OracleSale, UniswapV2Adapter {
         address fromToken,
         address toToken
     ) internal override (OracleSale) view returns (uint256 rate) {
+        if (fromToken == TOKEN_ETH) {
+            fromToken = uniswapV2Router.WETH();
+        }
+        if (toToken == TOKEN_ETH) {
+            toToken = uniswapV2Router.WETH();
+        }
         (uint256 fromReserve, uint256 toReserve) = UniswapV2Adapter._getReserves(fromToken, toToken);
         rate = toReserve.mul(10 ** 18).div(fromReserve);
     }
