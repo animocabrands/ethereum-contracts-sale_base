@@ -13,6 +13,9 @@ abstract contract PurchaseNotificationsReceiver is IPurchaseNotificationsReceive
     bytes4 internal constant _PURCHASE_NOTIFICATION_RECEIVED = type(IPurchaseNotificationsReceiver).interfaceId;
     bytes4 internal constant _PURCHASE_NOTIFICATION_REJECTED = 0xffffffff;
 
+    /**
+     * Constructor.
+     */
     constructor() internal {
         _registerInterface(type(IPurchaseNotificationsReceiver).interfaceId);
     }

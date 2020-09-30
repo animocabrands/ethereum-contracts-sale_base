@@ -54,7 +54,7 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
 
     /**
      * Retrieves the current rates for the `tokens`/`referenceToken` pairs via the oracle.
-     * @dev Reverts if the oracle does not provide a pricing for one of the pairs.
+     * @dev Reverts if the oracle does not provide a conversion rate for one of the pairs.
      * @param tokens The list of tokens to retrieve the conversion rates for.
      * @return rates The rates for the `tokens`/`referenceToken` pairs retrieved via the oracle.
      */
@@ -74,6 +74,17 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
 
     /*                               Internal Utility Functions                               */
 
+    /**
+     * Updates SKU token prices.
+     * @dev Reverts if one of the `tokens` is the zero address.
+     * @dev Reverts if the update results in too many tokens for the SKU.
+     * @dev Reverts if the SKU has any supported payment tokens and one of them is not the
+     *  reference token.
+     * @param tokenPrices Storage pointer to a mapping of SKU token prices to update.
+     * @param tokens The list of payment tokens to update.
+     * @param prices The list of prices to apply for each payment token.
+     *  Zero price values are used to disable a payment token.
+     */
     function _setTokenPrices(
         EnumMap.Map storage tokenPrices,
         address[] memory tokens,
@@ -86,8 +97,22 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
         );
     }
 
+    /**
+     * Retrieves the conversion rate for the `fromToken`/`toToken` pair via the oracle.
+     * @dev Reverts if the oracle does not provide a conversion rate for the pair.
+     * @param fromToken The source token from which the conversion rate is derived from.
+     * @param toToken the destination token from which the conversion rate is derived from.
+     * @return rate The conversion rate for the `fromToken`/`toToken` pair, retrieved via the oracle.
+     */
     function _conversionRate(address fromToken, address toToken) internal virtual view returns (uint256 rate);
 
+    /**
+     * Retrieves the unit price of a SKU for the specified payment token.
+     * @dev Reverts if the specified payment token is unsupported.
+     * @param purchase The purchase conditions specifying the payment token with which the unit price will be retrieved.
+     * @param prices Storage pointer to a mapping of SKU token prices to retrieve the unit price from.
+     * @return unitPrice The unit price of a SKU for the specified payment token.
+     */
     function _unitPrice(PurchaseData memory purchase, EnumMap.Map storage prices)
         internal
         virtual

@@ -25,7 +25,7 @@ interface IOracleSale /*is ISale*/{
 
     /**
      * Retrieves the current rates for the `tokens`/`referenceToken` pairs via the oracle.
-     * @dev Reverts if the oracle does not provide a pricing for one of the pairs.
+     * @dev Reverts if the oracle does not provide a conversion rate for one of the pairs.
      * @param tokens The list of tokens to retrieve the conversion rates for.
      * @return rates The rates for the `tokens`/`referenceToken` pairs retrieved via the oracle.
      */

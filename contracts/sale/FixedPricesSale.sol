@@ -76,6 +76,13 @@ contract FixedPricesSale is AbstractSale {
 
     /*                               Internal Utility Functions                               */
 
+    /**
+     * Retrieves the unit price of a SKU for the specified payment token.
+     * @dev Reverts if the specified payment token is unsupported.
+     * @param purchase The purchase conditions specifying the payment token with which the unit price will be retrieved.
+     * @param prices Storage pointer to a mapping of SKU token prices to retrieve the unit price from.
+     * @return unitPrice The unit price of a SKU for the specified payment token.
+     */
     function _unitPrice(PurchaseData memory purchase, EnumMap.Map storage prices)
         internal
         virtual

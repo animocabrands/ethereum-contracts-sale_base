@@ -308,6 +308,15 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
 
     /*                               Internal Utility Functions                               */
 
+    /**
+     * Updates SKU token prices.
+     * @dev Reverts if one of the `tokens` is the zero address.
+     * @dev Reverts if the update results in too many tokens for the SKU.
+     * @param tokenPrices Storage pointer to a mapping of SKU token prices to update.
+     * @param tokens The list of payment tokens to update.
+     * @param prices The list of prices to apply for each payment token.
+     *  Zero price values are used to disable a payment token.
+     */
     function _setTokenPrices(
         EnumMap.Map storage tokenPrices,
         address[] memory tokens,
