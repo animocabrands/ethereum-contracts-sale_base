@@ -1,28 +1,10 @@
-const { BN, ether, balance, time, expectRevert } = require('@openzeppelin/test-helpers');
+const { BN, ether, expectRevert } = require('@openzeppelin/test-helpers');
 const { ZeroAddress, Zero, One, Two, Three, Four } = require('@animoca/ethereum-contracts-core_library').constants;
-const { shouldBeEqualWithPercentPrecision } = require('@animoca/ethereum-contracts-core_library/test/fixtures');
 const { stringToBytes32 } = require('../utils/bytes32');
-const { fromWei } = require('web3-utils');
-const Fixture = require('../utils/fixture');
-const Path = require('path');
-const Resolver = require('@truffle/resolver');
-const UniswapV2Fixture = require('../fixtures/uniswapv2.fixture');
 
 const {
-    purchasingScenario,
-    purchasingScenarioBeforeEach
+    purchasingScenario
 } = require('../scenarios');
-
-const resolver = new Resolver({
-    working_directory: __dirname,
-    contracts_build_directory: Path.join(__dirname, '../../build'),
-    provider: web3.eth.currentProvider,
-    gas: 9999999
-});
-
-// const ERC20 = resolver.require('ERC20', UniswapV2Fixture.UniswapV2PeripheryBuildPath);
-const WETH9 = resolver.require('WETH9', UniswapV2Fixture.UniswapV2PeripheryBuildPath);
-const UniswapV2Router = resolver.require('UniswapV2Router02', UniswapV2Fixture.UniswapV2PeripheryBuildPath);
 
 const Sale = artifacts.require('OracleSaleMock');
 const ERC20 = artifacts.require('ERC20Mock');
@@ -34,45 +16,9 @@ const skuTotalSupply = Three;
 const skuMaxQuantityPerPurchase = Two;
 const skuNotificationsReceiver = ZeroAddress;
 
+const referenceTokenPrice = new BN('1000');
+
 contract('OracleSale', function (accounts) {
-    const loadFixture = Fixture.createFixtureLoader(accounts, web3.eth.currentProvider);
-
-    // uniswapv2 fixture adds `contract` field to each token when it's loaded
-    const tokens = {
-        'WETH': {
-            abstraction: WETH9,
-            supply: ether('1000')},
-        'ReferenceToken': {
-            abstraction: ERC20,
-            supply: ether('1000')},
-        'TokenA': {
-            abstraction: ERC20,
-            supply: ether('1000')},
-        'TokenB': {
-            abstraction: ERC20,
-            supply: ether('1000')},
-        'TokenC': {
-            abstraction: ERC20,
-            supply: ether('1000')},
-    };
-
-    const tokenPairs = {
-        'Pair1': ['WETH', 'ReferenceToken'],
-        'Pair2': ['TokenA', 'ReferenceToken'],
-        'Pair3': ['TokenB', 'ReferenceToken']
-    };
-
-    const liquidity = {
-        'ReferenceToken': {
-            amount: new BN('1000000'),
-            price: new BN('1000')},
-        'TokenA': {
-            amount: new BN('2000'),
-            price: new BN('2')},
-        'TokenB': {
-            amount: new BN('3000000000'),
-            price: new BN('3000000')}
-    };
 
     const [
         owner,
@@ -81,100 +27,20 @@ contract('OracleSale', function (accounts) {
         recipient
     ] = accounts;
 
-    async function doLoadFixture(params = {}) {
-        const fixture = UniswapV2Fixture.get(
-            params.tokens || tokens,
-            params.tokenPairs || tokenPairs);
-
-        this.fixtureData = await loadFixture(fixture);
-    }
-
-    async function doAddLiquidity(params = {}) {
-        const timestamp = await time.latest();
-        const deadline = params.deadline || timestamp.add(time.duration.minutes(5));
-
-        const amountRefTokenMin = params.amountRefTokenMin || Zero;
-        const amountTokenMin = params.amountTokenMin || Zero;
-        const amountEthMin = params.amountEthMin || Zero;
-        const router = this.fixtureData.router;
-
-        const refTokenKey = 'ReferenceToken';
-        const refTokenContract = tokens[refTokenKey].contract;
-        const refLiquidityData = liquidity[refTokenKey];
-
-        for (const [tokenPairKey, tokenPair] of Object.entries(tokenPairs)) {
-            if (tokenPair.length !== 2) {
-                throw new Error(`Invalid token pair length: ${tokenPairKey}`);
-            }
-
-            const refTokenIndex = tokenPair.indexOf(refTokenKey);
-
-            if (refTokenIndex === -1) {
-                throw new Error(`Missing expected reference token in pair: ${tokenPairKey}`);
-            }
-
-            const tokenIndex = refTokenIndex === 0 ? 1 : 0;
-            const tokenKey = tokenPair[tokenIndex];
-
-            await refTokenContract.approve(
-                router.address,
-                refLiquidityData.amount,
-                { from: refLiquidityData.owner || owner });
-
-            if (tokenKey === 'WETH') {
-                await router.addLiquidityETH(
-                    refTokenContract.address,
-                    refLiquidityData.amount,
-                    amountRefTokenMin,
-                    amountEthMin,
-                    refLiquidityData.lpTokenRecipient || owner,
-                    deadline,
-                    {
-                        from: refLiquidityData.owner || owner,
-                        value: refLiquidityData.amount.mul(refLiquidityData.price)
-                    });
-            } else {
-                const tokenContract = tokens[tokenKey].contract;
-                const liquidityData = liquidity[tokenKey];
-
-                await tokenContract.approve(
-                    router.address,
-                    liquidityData.amount,
-                    { from: liquidityData.owner || owner });
-
-                await router.addLiquidity(
-                    tokenContract.address,
-                    refTokenContract.address,
-                    liquidityData.amount,
-                    refLiquidityData.amount,
-                    amountTokenMin,
-                    amountRefTokenMin,
-                    liquidityData.lpTokenRecipient || owner,
-                    deadline,
-                    {
-                        from: liquidityData.owner || owner
-                    });
-
-                await tokenContract.approve(
-                    router.address,
-                    Zero,
-                    { from: liquidityData.owner || owner });
-            }
-
-            await refTokenContract.approve(
-                router.address,
-                Zero,
-                { from: refLiquidityData.owner || owner });
-        }
-    }
-
     async function doDeploy(params = {}) {
+        this.referenceToken = await ERC20.new(
+            params.referenceTokenSupply || ether('1000'),
+            { from: owner });
+
+        this.erc20Token = await ERC20.new(
+            params.erc20TokenSupply || ether('1000'),
+            { from: owner });
+
         this.contract = await Sale.new(
             params.payoutWallet || payoutWallet,
             params.skusCapacity || skusCapacity,
             params.tokensPerSkuCapacity || tokensPerSkuCapacity,
-            params.referenceToken || tokens['ReferenceToken'].contract.address,
-            params.router || this.fixtureData.router.address,
+            params.referenceToken || this.referenceToken.address,
             { from: params.owner || owner });
     }
 
@@ -192,16 +58,14 @@ contract('OracleSale', function (accounts) {
         this.oraclePrice = await this.contract.PRICE_CONVERT_VIA_ORACLE();
 
         const skuTokens = [
-            tokens['ReferenceToken'].contract.address,
+            this.referenceToken.address,
             this.ethTokenAddress,
-            tokens['TokenA'].contract.address,
-            tokens['TokenB'].contract.address];
+            this.erc20Token.address];
 
         const tokenPrices = [
-            liquidity['ReferenceToken'].price, // reference token
-            this.oraclePrice, // ETH
-            this.oraclePrice, // Token A
-            this.oraclePrice]; // Token B
+            referenceTokenPrice, // reference token
+            this.oraclePrice, // ETH token
+            this.oraclePrice]; // ERC20 token
 
         return await this.contract.updateSkuPricing(
             params.sku || sku,
@@ -210,13 +74,23 @@ contract('OracleSale', function (accounts) {
             { from: params.owner || owner });
     }
 
+    async function doSetConversionRates(params = {}) {
+        const tokenRates = {};
+        tokenRates[this.referenceToken.address] = params.referenceTokenRate != undefined ? params.referenceTokenRate : ether('1');
+        tokenRates[this.ethTokenAddress] = params.ethTokenRate != undefined ? params.ethTokenRate : ether('2');
+        tokenRates[this.erc20Token.address] = params.erc20Rate != undefined ? params.erc20Rate : ether('0.5');
+
+        for (const [token, rate] of Object.entries(tokenRates)) {
+            await this.contract.setMockConversionRate(
+                token,
+                this.referenceToken.address,
+                rate);
+        }
+    }
+
     async function doStart(params = {}) {
         return await this.contract.start({ from: params.owner || owner });
     };
-
-    beforeEach(async function () {
-        await doLoadFixture.bind(this)();
-    });
 
     describe('referenceToken()', function () {
 
@@ -225,7 +99,7 @@ contract('OracleSale', function (accounts) {
         });
 
         it ('should return the reference token', async function () {
-            const expected = tokens['ReferenceToken'].contract.address;
+            const expected = this.referenceToken.address;
             const actual = await this.contract.referenceToken();
             actual.should.be.equal(expected);
         });
@@ -235,58 +109,39 @@ contract('OracleSale', function (accounts) {
     describe('conversionRates()', function () {
 
         beforeEach(async function () {
-            await doAddLiquidity.bind(this)();
             await doDeploy.bind(this)();
-
-            const tokenKeysMap = {};
-
-            for (const tokenPair of Object.values(tokenPairs)) {
-                const refTokenIndex = tokenPair[0] === 'ReferenceToken' ? 0 : 1;
-                const tokenIndex = refTokenIndex == 0 ? 1 : 0;
-                const tokenKey = tokenPair[tokenIndex];
-                tokenKeysMap[tokenKey] = true;
-            }
-
-            this.tokenKeys = Object.keys(tokenKeysMap);
-            this.tokensToConvert = this.tokenKeys.map(item => tokens[item].contract.address);
+            await doCreateSku.bind(this)();
+            await doUpdateSkuPricing.bind(this)();
         });
 
-        it('should revert if one of the tokens to convert is the zero address', async function () {
+        it('should revert if the oracle does not provide a conversion rate for one of the pairs', async function () {
             await expectRevert(
                 this.contract.conversionRates(
-                    [ ...this.tokensToConvert, ZeroAddress ]),
-                'UniswapV2Adapter: ZERO_ADDRESS');
-        });
-
-        it('should revert if one of the tokens to convert is the reference token', async function () {
-            await expectRevert(
-                this.contract.conversionRates(
-                    [ ...this.tokensToConvert, tokens['ReferenceToken'].contract.address ]),
-                'UniswapV2Adapter: IDENTICAL_ADDRESSES');
-        });
-
-        it('should revert if one of the tokens to convert is not paired with the reference token', async function () {
-            await expectRevert(
-                this.contract.conversionRates(
-                    [ ...this.tokensToConvert, tokens['TokenC'].contract.address ]),
-                'revert');
+                    [ this.ethTokenAddress ]),
+                'OracleSaleMock: undefined conversion rate');
         });
 
         it(`should return the correct conversion rates`, async function () {
-            const actualRates = await this.contract.conversionRates(this.tokensToConvert);
+            await doSetConversionRates.bind(this)();
 
+            const tokens = [
+                this.referenceToken.address,
+                this.ethTokenAddress,
+                this.erc20Token.address
+            ];
+
+            const actualRates = await this.contract.conversionRates(tokens);
             const expectedRates = [];
-            const refTokenAddress = tokens['ReferenceToken'].contract.address;
 
-            for (var index = 0; index < this.tokensToConvert.length; ++index) {
-                const actualRate = actualRates[index];
+            for (const token of tokens) {
+                const rate = await this.contract.mockConversionRates(
+                    token,
+                    this.referenceToken.address);
+                expectedRates.push(rate);
+            }
 
-                const reserves = await this.contract.getReserves(
-                    this.tokensToConvert[index],
-                    refTokenAddress);
-                const expectedRate = reserves.reserveB.mul(new BN(10).pow(new BN(18))).div(reserves.reserveA);
-
-                actualRate.should.be.bignumber.equal(expectedRate);
+            for (var index = 0; index < tokens.length; ++index) {
+                actualRates[index].should.be.bignumber.equal(expectedRates[index]);
             }
         });
 
@@ -303,7 +158,7 @@ contract('OracleSale', function (accounts) {
             await expectRevert(
                 this.contract.setTokenPrices(
                     sku,
-                    [ tokens['TokenA'].contract.address ],
+                    [ await this.contract.TOKEN_ETH() ],
                     [ One ]),
                 'OracleSale: missing reference token');
         });
@@ -313,7 +168,7 @@ contract('OracleSale', function (accounts) {
             await expectRevert(
                 this.contract.setTokenPrices(
                     sku,
-                    [ tokens['ReferenceToken'].contract.address ],
+                    [ this.referenceToken.address ],
                     [ Zero ]),
                 'OracleSale: missing reference token');
         });
@@ -323,26 +178,23 @@ contract('OracleSale', function (accounts) {
     describe('_unitPrice()', function () {
 
         beforeEach(async function () {
-            await doAddLiquidity.bind(this)();
             await doDeploy.bind(this)();
             await doCreateSku.bind(this)();
         });
 
         it('should return the fixed unit price', async function () {
-            const tokenA = tokens['TokenA'].contract.address;
-            const tokenAUnitFixedPrice = ether('3');
+            const ethTokenUnitFixedPrice = ether('3');
 
             await doUpdateSkuPricing.bind(this)({
                 prices: [
                     One, // reference token
-                    One, // ETH
-                    tokenAUnitFixedPrice, // Token A
-                    One] // Token B
+                    ethTokenUnitFixedPrice, // ETH token
+                    One] // ERC20 token
             });
 
             const unitPrice = await this.contract.getUnitPrice(
                 ZeroAddress,
-                tokenA,
+                this.ethTokenAddress,
                 sku,
                 One,
                 '0x00',
@@ -351,16 +203,20 @@ contract('OracleSale', function (accounts) {
                 [],
                 []);
 
-            unitPrice.should.be.bignumber.equal(tokenAUnitFixedPrice);
+            unitPrice.should.be.bignumber.equal(ethTokenUnitFixedPrice);
         });
 
         it('should return the oracle unit price (0 < rate < 1)', async function () {
             await doUpdateSkuPricing.bind(this)();
-            const tokenA = tokens['TokenA'].contract.address;
+            await doSetConversionRates.bind(this)();
+
+            const conversionRate = await this.contract.mockConversionRates(
+                this.erc20Token.address,
+                this.referenceToken.address);
 
             const actualUnitPrice = await this.contract.getUnitPrice(
                 ZeroAddress,
-                tokenA,
+                this.erc20Token.address,
                 sku,
                 One,
                 '0x00',
@@ -369,20 +225,22 @@ contract('OracleSale', function (accounts) {
                 [],
                 []);
 
-            const rates = await this.contract.conversionRates([ tokenA ]);
-            const refLiquidityData = liquidity['ReferenceToken'];
-            const expectedUnitPrice = refLiquidityData.price.mul(new BN(10).pow(new BN(18))).div(rates[0]);
+            const expectedUnitPrice = referenceTokenPrice.mul(new BN(10).pow(new BN(18))).div(conversionRate);
 
             actualUnitPrice.should.be.bignumber.equal(expectedUnitPrice);
         });
 
-        it('should return the oracle unit price (1 <= rate)', async function () {
+        it('should return the oracle unit price (1 == rate)', async function () {
             await doUpdateSkuPricing.bind(this)();
-            const tokenB = tokens['TokenB'].contract.address;
+            await doSetConversionRates.bind(this)();
+
+            const conversionRate = await this.contract.mockConversionRates(
+                this.referenceToken.address,
+                this.referenceToken.address);
 
             const actualUnitPrice = await this.contract.getUnitPrice(
                 ZeroAddress,
-                tokenB,
+                this.referenceToken.address,
                 sku,
                 One,
                 '0x00',
@@ -391,9 +249,31 @@ contract('OracleSale', function (accounts) {
                 [],
                 []);
 
-            const rates = await this.contract.conversionRates([ tokenB ]);
-            const refLiquidityData = liquidity['ReferenceToken'];
-            const expectedUnitPrice = refLiquidityData.price.mul(new BN(10).pow(new BN(18))).div(rates[0]);
+            const expectedUnitPrice = referenceTokenPrice.mul(new BN(10).pow(new BN(18))).div(conversionRate);
+
+            actualUnitPrice.should.be.bignumber.equal(expectedUnitPrice);
+        });
+
+        it('should return the oracle unit price (1 < rate)', async function () {
+            await doUpdateSkuPricing.bind(this)();
+            await doSetConversionRates.bind(this)();
+
+            const conversionRate = await this.contract.mockConversionRates(
+                this.ethTokenAddress,
+                this.referenceToken.address);
+
+            const actualUnitPrice = await this.contract.getUnitPrice(
+                ZeroAddress,
+                this.ethTokenAddress,
+                sku,
+                One,
+                '0x00',
+                Zero,
+                [],
+                [],
+                []);
+
+            const expectedUnitPrice = referenceTokenPrice.mul(new BN(10).pow(new BN(18))).div(conversionRate);
 
             actualUnitPrice.should.be.bignumber.equal(expectedUnitPrice);
         });
@@ -402,21 +282,20 @@ contract('OracleSale', function (accounts) {
     describe('scenarios', function () {
 
         beforeEach(async function () {
-            await doAddLiquidity.bind(this)();
             await doDeploy.bind(this)();
             await doCreateSku.bind(this)();
             await doUpdateSkuPricing.bind(this)();
+            await doSetConversionRates.bind(this)();
             await doStart.bind(this)();
         });
 
         describe('purchasing', function () {
 
             beforeEach(async function () {
-                this.erc20TokenAddress = tokens['TokenA'].contract.address;
+                await this.erc20Token.transfer(purchaser, ether('1'));
+                await this.erc20Token.transfer(recipient, ether('1'));
 
-                const erc20TokenContract = await ERC20.at(this.erc20TokenAddress);
-                await erc20TokenContract.transfer(purchaser, ether('1'));
-                await erc20TokenContract.transfer(recipient, ether('1'));
+                this.erc20TokenAddress = this.erc20Token.address;
             });
 
             purchasingScenario([ purchaser, recipient ], sku);
