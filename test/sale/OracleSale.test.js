@@ -8,6 +8,11 @@ const Path = require('path');
 const Resolver = require('@truffle/resolver');
 const UniswapV2Fixture = require('../fixtures/uniswapv2.fixture');
 
+const {
+    purchasingScenario,
+    purchasingScenarioBeforeEach
+} = require('../scenarios');
+
 const resolver = new Resolver({
     working_directory: __dirname,
     contracts_build_directory: Path.join(__dirname, '../../build'),
@@ -15,11 +20,12 @@ const resolver = new Resolver({
     gas: 9999999
 });
 
-const ERC20 = resolver.require('ERC20', UniswapV2Fixture.UniswapV2PeripheryBuildPath);
+// const ERC20 = resolver.require('ERC20', UniswapV2Fixture.UniswapV2PeripheryBuildPath);
 const WETH9 = resolver.require('WETH9', UniswapV2Fixture.UniswapV2PeripheryBuildPath);
 const UniswapV2Router = resolver.require('UniswapV2Router02', UniswapV2Fixture.UniswapV2PeripheryBuildPath);
 
 const Sale = artifacts.require('OracleSaleMock');
+const ERC20 = artifacts.require('ERC20Mock');
 
 const skusCapacity = One;
 const tokensPerSkuCapacity = Four;
@@ -70,7 +76,9 @@ contract('OracleSale', function (accounts) {
 
     const [
         owner,
-        payoutWallet
+        payoutWallet,
+        purchaser,
+        recipient
     ] = accounts;
 
     async function doLoadFixture(params = {}) {
@@ -389,6 +397,32 @@ contract('OracleSale', function (accounts) {
 
             actualUnitPrice.should.be.bignumber.equal(expectedUnitPrice);
         });
+    });
+
+    describe('scenarios', function () {
+
+        beforeEach(async function () {
+            await doAddLiquidity.bind(this)();
+            await doDeploy.bind(this)();
+            await doCreateSku.bind(this)();
+            await doUpdateSkuPricing.bind(this)();
+            await doStart.bind(this)();
+        });
+
+        describe('purchasing', function () {
+
+            beforeEach(async function () {
+                this.erc20TokenAddress = tokens['TokenA'].contract.address;
+
+                const erc20TokenContract = await ERC20.at(this.erc20TokenAddress);
+                await erc20TokenContract.transfer(purchaser, ether('1'));
+                await erc20TokenContract.transfer(recipient, ether('1'));
+            });
+
+            purchasingScenario([ purchaser, recipient ], sku);
+
+        });
+
     });
 
 });
