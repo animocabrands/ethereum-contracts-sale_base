@@ -11,7 +11,8 @@ import "./interfaces/IOracleSale.sol";
  *  The final implementer is responsible for implementing any additional pricing and/or delivery logic.
  *
  * PurchaseData.pricingData:
- *  - [0] uint256: the conversion rate used for an oracle pricing or 0 for a fixed pricing.
+ *  - [0] uint256: uninterpreted unit price (magic value or fixed price)
+ *  - [1] uint256: the conversion rate used for an oracle pricing or 0 for a fixed pricing.
  */
 abstract contract OracleSale is FixedPricesSale, IOracleSale {
     uint256 public constant override PRICE_CONVERT_VIA_ORACLE = type(uint256).max;
@@ -125,8 +126,9 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
             uint256 referenceUnitPrice = uint256(prices.get(bytes32(uint256(_referenceToken))));
             uint256 conversionRate = _conversionRate(purchase.token, _referenceToken);
             unitPrice = referenceUnitPrice.mul(10 ** 18).div(conversionRate);
-            purchase.pricingData = new bytes32[](1);
-            purchase.pricingData[0] = bytes32(conversionRate);
+            purchase.pricingData = new bytes32[](2);
+            purchase.pricingData[0] = bytes32(PRICE_CONVERT_VIA_ORACLE);
+            purchase.pricingData[1] = bytes32(conversionRate);
         }
     }
 }

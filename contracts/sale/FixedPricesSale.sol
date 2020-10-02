@@ -9,6 +9,9 @@ import "./AbstractSale.sol";
  * @title FixedPricesSale
  * An AbstractSale which implements a fixed prices strategy.
  *  The final implementer is responsible for implementing any additional pricing and/or delivery logic.
+ *
+ * PurchaseData.pricingData:
+ *  - [0] uint256: unit price
  */
 contract FixedPricesSale is AbstractSale {
     /**
@@ -91,5 +94,7 @@ contract FixedPricesSale is AbstractSale {
     {
         unitPrice = uint256(prices.get(bytes32(uint256(purchase.token))));
         require(unitPrice != 0, "Sale: unsupported payment token");
+        purchase.pricingData = new bytes32[](1);
+        purchase.pricingData[0] = bytes32(unitPrice);
     }
 }
