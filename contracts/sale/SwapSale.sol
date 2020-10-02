@@ -2,6 +2,7 @@
 
 pragma solidity 0.6.8;
 
+import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
 import "./OracleSale.sol";
 import "./interfaces/ISwapSale.sol";
 
@@ -86,20 +87,39 @@ abstract contract SwapSale is OracleSale, ISwapSale {
     function _payment(PurchaseData memory purchase) internal virtual override {
         if (purchase.pricingData[0] == bytes32(PRICE_SWAP_TO_REFERENCE_TOKEN)) {
             if (purchase.token == TOKEN_ETH) {
-                require(msg.value >= purchase.totalPrice, "Sale: insufficient ETH provided");
+                require(msg.value >= purchase.totalPrice, "SwapSale: insufficient ETH provided");
+            } else {
+                require(
+                    IERC20(purchase.token).transferFrom(_msgSender(), address(this), purchase.totalPrice),
+                    "SwapSale: ERC20 payment failed");
             }
 
             uint256 swapRate = uint256(purchase.pricingData[1]);
             uint256 referenceTotalPrice = swapRate.mul(purchase.totalPrice).div(10 ** 18);
-
-            _swap(purchase.token, _referenceToken, referenceTotalPrice);
+            uint256 fromAmount = _swap(purchase.token, _referenceToken, referenceTotalPrice);
 
             if (purchase.token == TOKEN_ETH) {
-                uint256 change = msg.value.sub(purchase.totalPrice);
+                uint256 change = msg.value.sub(fromAmount);
 
                 if (change != 0) {
                     purchase.purchaser.transfer(change);
                 }
+            } else {
+                uint256 change = purchase.totalPrice.sub(fromAmount);
+
+                if (change != 0) {
+                    require(
+                        IERC20(purchase.token).transfer(_msgSender(), change),
+                        "SwapSale: ERC20 payment change failed");
+                }
+            }
+
+            if (_referenceToken == TOKEN_ETH) {
+                payoutWallet.transfer(purchase.totalPrice);
+            } else {
+                require(
+                    IERC20(_referenceToken).transfer(payoutWallet, purchase.totalPrice),
+                    "SwapSale: ERC20 payout failed");
             }
         } else {
             super._payment(purchase);
@@ -115,19 +135,21 @@ abstract contract SwapSale is OracleSale, ISwapSale {
      * @param fromToken The source token to swap from.
      * @param toToken The destination token to swap to.
      * @param toAmount The amount of destination tokens to swap for.
-     * @return fromAmount The estimated optimal amount of `fromToken` to provide in order to perform a swap
+     * @return fromAmount The estimated optimal amount of `fromToken` to provide in order to perform a swap,
      *  via the oracle.
      */
     function _estimateSwap(address fromToken, address toToken, uint256 toAmount) internal virtual view returns (uint256 fromAmount);
 
     /**
-     * Swaps `fromToken` for the specified amount of `toToken`.
+     * Swaps `fromToken` for the specified amount of `toToken`, via the oracle.
      * @dev Reverts if the oracle is unable to perform the token swap.
      * @param fromToken The source token to swap from.
      * @param toToken The destination token to swap to.
      * @param toAmount The amount of destination tokens to swap for.
+     * return fromAmount The amount of `fromToken` swapped for the specified amount of `toToken`, via the
+     *  oracle.
      */
-    function _swap(address fromToken, address toToken, uint256 toAmount) internal virtual;
+    function _swap(address fromToken, address toToken, uint256 toAmount) internal virtual returns (uint256 fromAmount);
 
     /**
      * Retrieves the unit price of a SKU for the specified payment token.
