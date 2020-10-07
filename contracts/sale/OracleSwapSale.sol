@@ -146,16 +146,16 @@ abstract contract OracleSwapSale is OracleSale, IOracleSwapSale {
 
                 if (change != 0) {
                     require(
-                        IERC20(purchase.token).transfer(_msgSender(), change),
+                        IERC20(purchase.token).transfer(purchase.purchaser, change),
                         "OracleSwapSale: ERC20 payment change failed");
                 }
             }
 
             if (referenceToken == TOKEN_ETH) {
-                payoutWallet.transfer(purchase.totalPrice);
+                payoutWallet.transfer(fromAmount);
             } else {
                 require(
-                    IERC20(referenceToken).transfer(payoutWallet, purchase.totalPrice),
+                    IERC20(referenceToken).transfer(payoutWallet, fromAmount),
                     "OracleSwapSale: ERC20 payout failed");
             }
         } else {
