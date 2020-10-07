@@ -57,6 +57,16 @@ contract UniswapSwapSale is OracleSwapSale, UniswapV2Adapter {
         )
     {}
 
+    /**
+     * Receives refunded ETH from the Uniswap token swapping operation.
+     * @dev Reverts if the sender of ETH isn't the Uniswap V2 router.
+     */
+    receive() external payable {
+        require(
+            _msgSender() == address(uniswapV2Router),
+            "UniswapSwapSale: Invalid ETH sender");
+    }
+
     /*                               Internal Life Cycle Functions                               */
 
     /**
