@@ -5,15 +5,18 @@ pragma solidity 0.6.8;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./payment/interfaces/IUniswapV2Router.sol";
 import "./payment/UniswapV2Adapter.sol";
-import "./OracleSale.sol";
+import "./OracleConversionSale.sol";
 
 /**
- * @title UniswapOracleSale
- * An abstract OracleSale contract that leverages the Uniswap network as an oracle, to be used in calculating
- *  conversion rates for the determination of SKU pricing by token. The final implementer is responsible for
- *  implementing any additional pricing and/or delivery logic.
+ * @title UniswapConversionSale
+ * An OracleConversionSale which implements a Uniswap-based token conversion pricing strategy. The final
+ *  implementer is responsible for implementing any additional pricing and/or delivery logic.
+ *
+ * PurchaseData.pricingData:
+ *  - a non-zero length array indicates Uniswap-based pricing, otherwise indicates fixed pricing.
+ *  - [0] uint256: the token conversion rate used for Uniswap-based pricing.
  */
-abstract contract UniswapOracleSale is OracleSale, UniswapV2Adapter {
+contract UniswapConversionSale is OracleConversionSale, UniswapV2Adapter {
     using SafeMath for uint256;
 
     /**
@@ -34,7 +37,7 @@ abstract contract UniswapOracleSale is OracleSale, UniswapV2Adapter {
         IUniswapV2Router uniswapV2Router
     )
         public
-        OracleSale(
+        OracleConversionSale(
             payoutWallet_,
             skusCapacity,
             tokensPerSkuCapacity,
@@ -45,18 +48,20 @@ abstract contract UniswapOracleSale is OracleSale, UniswapV2Adapter {
         )
     {}
 
-    /*                               Internal Utility Functions                               */
+    /*                               Internal Utility Functions                                  */
 
     /**
      * Retrieves the conversion rate for the `fromToken`/`toToken` pair via the oracle.
      * @dev Reverts if the oracle does not provide a conversion rate for the pair.
      * @param fromToken The source token from which the conversion rate is derived from.
      * @param toToken the destination token from which the conversion rate is derived from.
+     * @param *data* Additional data with no specified format for deriving the conversion rate.
      * @return rate The conversion rate for the `fromToken`/`toToken` pair, retrieved via the oracle.
      */
     function _conversionRate(
         address fromToken,
-        address toToken
+        address toToken,
+        bytes memory /*data*/
     ) internal virtual override view returns (uint256 rate) {
         if (fromToken == TOKEN_ETH) {
             fromToken = uniswapV2Router.WETH();
@@ -66,7 +71,7 @@ abstract contract UniswapOracleSale is OracleSale, UniswapV2Adapter {
             toToken = uniswapV2Router.WETH();
         }
 
-        (uint256 fromReserve, uint256 toReserve) = UniswapV2Adapter._getReserves(fromToken, toToken);
+        (uint256 fromReserve, uint256 toReserve) = _getReserves(fromToken, toToken);
         rate = toReserve.mul(10 ** 18).div(fromReserve);
     }
 

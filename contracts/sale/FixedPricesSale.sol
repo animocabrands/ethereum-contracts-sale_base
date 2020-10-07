@@ -26,7 +26,13 @@ contract FixedPricesSale is AbstractSale {
         address payoutWallet_,
         uint256 skusCapacity,
         uint256 tokensPerSkuCapacity
-    ) internal AbstractSale(payoutWallet_, skusCapacity, tokensPerSkuCapacity) {}
+    )
+        internal
+        AbstractSale(
+            payoutWallet_,
+            skusCapacity,
+            tokensPerSkuCapacity)
+    {}
 
     /*                               Internal Life Cycle Functions                               */
 
@@ -41,7 +47,9 @@ contract FixedPricesSale is AbstractSale {
      * @dev Reverts in case of price overflow.
      * @param purchase The purchase conditions.
      */
-    function _pricing(PurchaseData memory purchase) internal virtual override view {
+    function _pricing(
+        PurchaseData memory purchase
+    ) internal virtual override view {
         SkuInfo storage skuInfo = _skuInfos[purchase.sku];
         require(skuInfo.totalSupply != 0, "Sale: unsupported SKU");
         EnumMap.Map storage prices = skuInfo.prices;
@@ -58,7 +66,9 @@ contract FixedPricesSale is AbstractSale {
      * @dev Reverts in case of payment failure.
      * @param purchase The purchase conditions.
      */
-    function _payment(PurchaseData memory purchase) internal virtual override {
+    function _payment(
+        PurchaseData memory purchase
+    ) internal virtual override {
         if (purchase.token == TOKEN_ETH) {
             require(msg.value >= purchase.totalPrice, "Sale: insufficient ETH provided");
 
@@ -77,7 +87,7 @@ contract FixedPricesSale is AbstractSale {
         }
     }
 
-    /*                               Internal Utility Functions                               */
+    /*                               Internal Utility Functions                                  */
 
     /**
      * Retrieves the unit price of a SKU for the specified payment token.
@@ -86,15 +96,13 @@ contract FixedPricesSale is AbstractSale {
      * @param prices Storage pointer to a mapping of SKU token prices to retrieve the unit price from.
      * @return unitPrice The unit price of a SKU for the specified payment token.
      */
-    function _unitPrice(PurchaseData memory purchase, EnumMap.Map storage prices)
-        internal
-        virtual
-        view
-        returns (uint256 unitPrice)
-    {
+    function _unitPrice(
+        PurchaseData memory purchase,
+        EnumMap.Map storage prices
+    ) internal virtual view returns (
+        uint256 unitPrice
+    ) {
         unitPrice = uint256(prices.get(bytes32(uint256(purchase.token))));
         require(unitPrice != 0, "Sale: unsupported payment token");
-        purchase.pricingData = new bytes32[](1);
-        purchase.pricingData[0] = bytes32(unitPrice);
     }
 }

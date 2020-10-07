@@ -92,7 +92,9 @@ contract PurchaseLifeCyclesMock is PurchaseLifeCycles {
         bytes32[] memory pricingData,
         bytes32[] memory paymentData,
         bytes32[] memory deliveryData
-    ) internal view returns (PurchaseData memory purchase) {
+    ) internal view returns (
+        PurchaseData memory purchase
+    ) {
         purchase.purchaser = msg.sender;
         purchase.recipient = recipient;
         purchase.token = token;

@@ -31,6 +31,35 @@ interface IUniswapV2Router {
     function getAmountsIn(uint amountOut, address[] calldata path) external view returns (uint[] memory amounts);
 
     /**
+     * Receive an exact amount of tokens for as little ETH as possible, along the route determined by the path. The first element of path must be WETH,
+     *  the last is the output token and any intermediate elements represent intermediate pairs to trade through (if, for example, a direct pair does
+     *  not exist).
+     * @dev Leftover ETH, if any, is returned to msg.sender.
+     * @dev msg.value (amountInMax) is the maximum amount of ETH that can be required before the transaction reverts.
+     * @param amountOut The amount of output tokens to receive.
+     * @param path An array of token addresses. path.length must be >= 2. Pools for each consecutive pair of addresses must exist and have liquidity.
+     * @param to Recipient of the output tokens.
+     * @param deadline Unix timestamp after which the transaction will revert.
+     * @return amounts The input token amount and all subsequent output token amounts.
+     */
+    function swapETHForExactTokens(uint amountOut, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts);
+
+    /**
+     * Receive an exact amount of ETH for as few input tokens as possible, along the route determined by the path. The first element of path is the input
+     *  token, the last must be WETH, and any intermediate elements represent intermediate pairs to trade through (if, for example, a direct pair does
+     *  not exist).
+     * @dev msg.sender should have already given the router an allowance of at least amountInMax on the input token.
+     * @dev If the to address is a smart contract, it must have the ability to receive ETH.
+     * @param amountOut The amount of ETH to receive.
+     * @param amountInMax The maximum amount of input tokens that can be required before the transaction reverts.
+     * @param path An array of token addresses. path.length must be >= 2. Pools for each consecutive pair of addresses must exist and have liquidity.
+     * @param to Recipient of ETH.
+     * @param deadline Unix timestamp after which the transaction will revert.
+     * @return amounts The input token amount and all subsequent output token amounts.
+     */
+    function swapTokensForExactETH(uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts);
+
+    /**
      * Receive an exact amount of output tokens for as few input tokens as possible, along the route determined by the path.
      *  The first element of path is the input token, the last is the output token, and any intermediate elements represent
      *  intermediate pairs to trade through (if, for example, a direct pair does not exist).
@@ -41,12 +70,6 @@ interface IUniswapV2Router {
      * @param to Recipient of the output tokens.
      * @param deadline Unix timestamp after which the transaction will revert.
      * @return amounts The input token amount and all subsequent output token amounts.
-    */
-    function swapTokensForExactTokens(
-        uint amountOut,
-        uint amountInMax,
-        address[] calldata path,
-        address to,
-        uint deadline
-    ) external returns (uint[] memory amounts);
+     */
+    function swapTokensForExactTokens(uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts);
 }

@@ -24,7 +24,7 @@ abstract contract PurchaseLifeCycles {
         bytes32[] deliveryData;
     }
 
-    /*                                          Internal Life Cycle Functions                                         */
+    /*                               Internal Life Cycle Functions                               */
 
     /**
      * `estimatePurchase` lifecycle.
@@ -55,7 +55,7 @@ abstract contract PurchaseLifeCycles {
         _notification(purchase);
     }
 
-    /*                               Internal Life Cycle Step Functions                               */
+    /*                            Internal Life Cycle Step Functions                             */
 
     /**
      * Lifecycle step which validates the purchase pre-conditions.

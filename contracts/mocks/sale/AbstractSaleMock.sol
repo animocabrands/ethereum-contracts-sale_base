@@ -18,9 +18,18 @@ contract AbstractSaleMock is AbstractSale {
         address payoutWallet_,
         uint256 skusCapacity,
         uint256 tokensPerSkuCapacity
-    ) public AbstractSale(payoutWallet_, skusCapacity, tokensPerSkuCapacity) {}
+    )
+        public
+        AbstractSale(
+            payoutWallet_,
+            skusCapacity,
+            tokensPerSkuCapacity
+        )
+    {}
 
-    function setPaused(bool paused) external {
+    function setPaused(
+        bool paused
+    ) external {
         if (paused) {
             _pause();
         } else {
@@ -113,7 +122,9 @@ contract AbstractSaleMock is AbstractSale {
         _notification(purchaseData);
     }
 
-    function _pricing(PurchaseData memory purchase) internal override view {
+    function _pricing(
+        PurchaseData memory purchase
+    ) internal override view {
         SkuInfo storage skuInfo = _skuInfos[purchase.sku];
         bytes32 key = bytes32(uint256(purchase.token));
         bytes32 value = skuInfo.prices.get(key);
@@ -121,7 +132,9 @@ contract AbstractSaleMock is AbstractSale {
         purchase.totalPrice = purchase.quantity * price;
     }
 
-    function _payment(PurchaseData memory purchase) internal override {}
+    function _payment(
+        PurchaseData memory purchase
+    ) internal override {}
 
     function _getPurchaseData(
         address payable recipient,
@@ -133,7 +146,9 @@ contract AbstractSaleMock is AbstractSale {
         bytes32[] memory pricingData,
         bytes32[] memory paymentData,
         bytes32[] memory deliveryData
-    ) internal view returns (PurchaseData memory purchase) {
+    ) internal view returns (
+        PurchaseData memory purchase
+    ) {
         purchase.purchaser = _msgSender();
         purchase.recipient = recipient;
         purchase.token = token;

@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: MIT
+
+pragma solidity 0.6.8;
+
+
+/**
+ * @title IOracleConversionSale
+ * An IOracleSale which can manage token conversion pricing for some tokens through an oracle.
+ */
+interface IOracleConversionSale /*is IOracleSale*/{
+    /**
+     * Retrieves the token conversion rates for the `tokens`/`referenceToken` pairs via the oracle.
+     * @dev Reverts if the oracle does not provide a conversion rate for one of the token pairs.
+     * @param tokens The list of tokens to retrieve the conversion rates for.
+     * @param data Additional data with no specified format for deriving the conversion rates.
+     * @return rates The conversion rates for the `tokens`/`referenceToken` pairs, retrieved via the oracle.
+     */
+    function conversionRates(address[] calldata tokens, bytes calldata data) external view returns (uint256[] memory rates);
+}

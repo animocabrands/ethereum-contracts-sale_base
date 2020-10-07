@@ -19,7 +19,9 @@ contract PurchaseNotificationsReceiverMock is PurchaseNotificationsReceiver {
         bytes32[] calldata /* pricingData */,
         bytes32[] calldata /* paymentData */,
         bytes32[] calldata /* deliveryData */
-    ) external override returns (bytes4) {
+    ) external override returns (
+        bytes4
+    ) {
         emit PurchaseNotificationRecieved();
         return bytes4(keccak256("onPurchaseNotificationReceived(address,address,address,bytes32,uint256,bytes,uint256,bytes32[],bytes32[],bytes32[])"));
     }

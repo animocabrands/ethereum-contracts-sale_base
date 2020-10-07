@@ -54,7 +54,10 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
         address payoutWallet_,
         uint256 skusCapacity,
         uint256 tokensPerSkuCapacity
-    ) internal PayoutWallet(payoutWallet_) {
+    )
+        internal
+        PayoutWallet(payoutWallet_)
+    {
         _skusCapacity = skusCapacity;
         _tokensPerSkuCapacity = tokensPerSkuCapacity;
         bytes32[] memory names = new bytes32[](2);
@@ -65,7 +68,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
         _pause();
     }
 
-    /*                               Public Admin Functions                               */
+    /*                                   Public Admin Functions                                  */
 
     /**
      * Actvates, or 'starts', the contract.
@@ -175,7 +178,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
         emit SkuPricingUpdate(sku, tokens, prices);
     }
 
-    /*                               ISale Public Functions                               */
+    /*                                   ISale Public Functions                                  */
 
     /**
      * Performs a purchase.
@@ -241,7 +244,10 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
         bytes32 sku,
         uint256 quantity,
         bytes calldata userData
-    ) external virtual override view whenStarted whenNotPaused returns (uint256 totalPrice, bytes32[] memory pricingData) {
+    ) external virtual override view whenStarted whenNotPaused returns (
+        uint256 totalPrice,
+        bytes32[] memory pricingData
+    ) {
         PurchaseData memory purchase;
         purchase.purchaser = _msgSender();
         purchase.recipient = recipient;
@@ -266,19 +272,16 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      * @return tokens The list of supported payment tokens.
      * @return prices The list of associated prices for each of the `tokens`.
      */
-    function getSkuInfo(bytes32 sku)
-        external
-        override
-        view
-        returns (
-            uint256 totalSupply,
-            uint256 remainingSupply,
-            uint256 maxQuantityPerPurchase,
-            address notificationsReceiver,
-            address[] memory tokens,
-            uint256[] memory prices
-        )
-    {
+    function getSkuInfo(
+        bytes32 sku
+    ) external override view returns (
+        uint256 totalSupply,
+        uint256 remainingSupply,
+        uint256 maxQuantityPerPurchase,
+        address notificationsReceiver,
+        address[] memory tokens,
+        uint256[] memory prices
+    ) {
         SkuInfo storage skuInfo = _skuInfos[sku];
         uint256 length = skuInfo.prices.length();
 
@@ -301,12 +304,14 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      * Returns the list of created SKU identifiers.
      * @return skus the list of created SKU identifiers.
      */
-    function getSkus() external override view returns (bytes32[] memory skus) {
+    function getSkus() external override view returns (
+        bytes32[] memory skus
+    ) {
         skus = _skus.values;
     }
 
 
-    /*                               Internal Utility Functions                               */
+    /*                               Internal Utility Functions                                  */
 
     /**
      * Updates SKU token prices.
@@ -335,7 +340,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
         require(tokenPrices.length() <= _tokensPerSkuCapacity, "Sale: too many tokens");
     }
 
-    /*                               Internal Life Cycle Step Functions                               */
+    /*                            Internal Life Cycle Step Functions                             */
 
     /**
      * Lifecycle step which validates the purchase pre-conditions.
@@ -351,7 +356,9 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      * @dev If this function is overriden, the implementer SHOULD super call this before.
      * @param purchase The purchase conditions.
      */
-    function _validation(PurchaseData memory purchase) internal virtual override view {
+    function _validation(
+        PurchaseData memory purchase
+    ) internal virtual override view {
         require(purchase.recipient != address(0), "Sale: zero address recipient");
         require(purchase.token != address(0), "Sale: zero address token");
         require(purchase.quantity != 0, "Sale: zero quantity purchase");
@@ -375,7 +382,9 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      * @dev If this function is overriden, the implementer SHOULD super call it.
      * @param purchase The purchase conditions.
      */
-    function _delivery(PurchaseData memory purchase) internal virtual override {
+    function _delivery(
+        PurchaseData memory purchase
+    ) internal virtual override {
         SkuInfo memory skuInfo = _skuInfos[purchase.sku];
         if (skuInfo.totalSupply != SUPPLY_UNLIMITED) {
             _skuInfos[purchase.sku].remainingSupply = skuInfo.remainingSupply.sub(purchase.quantity);
@@ -393,7 +402,9 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
      * @dev If this function is overriden, the implementer SHOULD super call it.
      * @param purchase The purchase conditions.
      */
-    function _notification(PurchaseData memory purchase) internal virtual override {
+    function _notification(
+        PurchaseData memory purchase
+    ) internal virtual override {
         emit Purchase(
             purchase.purchaser,
             purchase.recipient,

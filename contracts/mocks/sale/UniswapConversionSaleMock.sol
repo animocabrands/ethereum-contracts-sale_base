@@ -2,13 +2,10 @@
 
 pragma solidity 0.6.8;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../../sale/payment/interfaces/IUniswapV2Router.sol";
-import "../../sale/payment/UniswapV2Adapter.sol";
-import "../../sale/UniswapOracleSale.sol";
+import "../../sale/UniswapConversionSale.sol";
 
-contract UniswapOracleSaleMock is UniswapOracleSale {
-    using SafeMath for uint256;
+contract UniswapConversionSaleMock is UniswapConversionSale {
 
     constructor(
         address payoutWallet_,
@@ -18,7 +15,7 @@ contract UniswapOracleSaleMock is UniswapOracleSale {
         IUniswapV2Router uniswapV2Router
     )
         public
-        UniswapOracleSale(
+        UniswapConversionSale(
             payoutWallet_,
             skusCapacity,
             tokensPerSkuCapacity,
@@ -27,11 +24,14 @@ contract UniswapOracleSaleMock is UniswapOracleSale {
         )
     {}
 
-    function getConversionRate(
+    function callUnderscoreConversionRate(
         address fromToken,
-        address toToken
-    ) external view returns (uint256 rate) {
-        rate = _conversionRate(fromToken, toToken);
+        address toToken,
+        bytes calldata data
+    ) external view returns (
+        uint256 rate
+    ) {
+        rate = _conversionRate(fromToken, toToken, data);
     }
 
     function getReserves(
@@ -49,7 +49,7 @@ contract UniswapOracleSaleMock is UniswapOracleSale {
             tokenB = uniswapV2Router.WETH();
         }
 
-        (reserveA, reserveB) = UniswapV2Adapter._getReserves(tokenA, tokenB);
+        (reserveA, reserveB) = _getReserves(tokenA, tokenB);
     }
 
 }

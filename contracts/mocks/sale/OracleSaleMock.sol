@@ -2,13 +2,9 @@
 
 pragma solidity 0.6.8;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../../sale/OracleSale.sol";
 
 contract OracleSaleMock is OracleSale {
-    using SafeMath for uint256;
-
-    mapping(address => mapping(address => uint256)) public mockConversionRates;
 
     constructor(
         address payoutWallet_,
@@ -25,7 +21,7 @@ contract OracleSaleMock is OracleSale {
         )
     {}
 
-    function setTokenPrices(
+    function callUnderscoreSetTokenPrices(
         bytes32 sku,
         address[] calldata tokens,
         uint256[] calldata prices
@@ -35,7 +31,7 @@ contract OracleSaleMock is OracleSale {
         _setTokenPrices(tokenPrices, tokens, prices);
     }
 
-    function getUnitPrice(
+    function callUnderscoreUnitPrice(
         address payable recipient,
         address token,
         bytes32 sku,
@@ -65,16 +61,21 @@ contract OracleSaleMock is OracleSale {
         unitPrice = _unitPrice(purchaseData, prices);
     }
 
-    function setMockConversionRate(address fromToken, address toToken, uint256 rate) external {
-        mockConversionRates[fromToken][toToken] = rate;
-    }
+    function _pricing(
+        PurchaseData memory purchase
+    ) internal virtual override view {
+        SkuInfo storage skuInfo = _skuInfos[purchase.sku];
+        require(skuInfo.totalSupply != 0, "Sale: unsupported SKU");
+        EnumMap.Map storage prices = skuInfo.prices;
+        uint256 unitPrice = _unitPrice(purchase, prices);
 
-    function _conversionRate(
-        address fromToken,
-        address toToken
-    ) internal override view returns (uint256 rate) {
-        rate = mockConversionRates[fromToken][toToken];
-        require(rate != 0, "OracleSaleMock: undefined conversion rate");
+        if (unitPrice == PRICE_VIA_ORACLE) {
+            uint256 referenceUnitPrice = uint256(prices.get(bytes32(uint256(referenceToken))));
+            purchase.totalPrice = referenceUnitPrice.mul(purchase.quantity);
+            purchase.pricingData[0] = bytes32(uint256(10 ** 18));
+        } else {
+            purchase.totalPrice = unitPrice.mul(purchase.quantity);
+        }
     }
 
 }

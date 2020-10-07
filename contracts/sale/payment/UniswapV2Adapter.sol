@@ -69,24 +69,62 @@ contract UniswapV2Adapter {
         emit UniswapV2RouterSet(uniswapV2Router_);
     }
 
-    function _swap(
+    function _getAmountsIn(
         address tokenA,
         address tokenB,
-        uint256 amountInTokenA,
-        address to
-    ) internal returns (
+        uint256 amountB
+    ) internal view returns (
         uint256 amount
     ) {
         address[] memory path = new address[](2);
         path[0] = tokenA;
         path[1] = tokenB;
-        uint256[] memory amounts = uniswapV2Router.swapTokensForExactTokens(
-            amountInTokenA,
-            type(uint256).max,
-            path,
-            to,
-            type(uint256).max
-        );
+        uint256[] memory amounts = uniswapV2Router.getAmountsIn(amountB, path);
         amount = amounts[0];
     }
+
+    function _swapTokensForExactAmount(
+        address tokenA,
+        address tokenB,
+        uint256 amountB,
+        uint256 maxAmountA,
+        address to,
+        uint256 deadline
+    ) internal returns (
+        uint256 amount
+    ) {
+        require(tokenA != tokenB, 'UniswapV2Adapter: IDENTICAL_ADDRESSES');
+
+        address[] memory path = new address[](2);
+        path[0] = tokenA;
+        path[1] = tokenB;
+
+        uint256[] memory amounts;
+
+        if (tokenA == uniswapV2Router.WETH()) {
+            require(maxAmountA == msg.value, "UniswapV2Adapter: INVALID_MAX_AMOUNT_IN");
+            amounts = uniswapV2Router.swapETHForExactTokens{ value: msg.value }(
+                amountB,
+                path,
+                to,
+                deadline);
+        } else if (tokenB == uniswapV2Router.WETH()) {
+            amounts = uniswapV2Router.swapTokensForExactETH(
+                amountB,
+                maxAmountA,
+                path,
+                to,
+                deadline);
+        } else {
+            amounts = uniswapV2Router.swapTokensForExactTokens(
+                amountB,
+                maxAmountA,
+                path,
+                to,
+                deadline);
+        }
+
+        amount = amounts[0];
+    }
+
 }
