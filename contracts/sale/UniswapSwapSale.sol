@@ -163,14 +163,6 @@ contract UniswapSwapSale is OracleSwapSale, UniswapV2Adapter {
     ) internal virtual override returns (
         uint256 fromAmount
     ) {
-        if (fromToken == TOKEN_ETH) {
-            fromToken = uniswapV2Router.WETH();
-        }
-
-        if (toToken == TOKEN_ETH) {
-            toToken = uniswapV2Router.WETH();
-        }
-
         uint256 maxFromAmount;
         uint256 deadlineDuration;
 
@@ -180,7 +172,11 @@ contract UniswapSwapSale is OracleSwapSale, UniswapV2Adapter {
         }
 
         if (maxFromAmount == 0) {
-            maxFromAmount = type(uint256).max;
+            if (fromToken == TOKEN_ETH) {
+                maxFromAmount = msg.value;
+            } else {
+                maxFromAmount = type(uint256).max;
+            }
         }
 
         if (deadlineDuration == 0) {
@@ -188,6 +184,14 @@ contract UniswapSwapSale is OracleSwapSale, UniswapV2Adapter {
         }
 
         uint256 deadline = block.timestamp.add(deadlineDuration);
+
+        if (fromToken == TOKEN_ETH) {
+            fromToken = uniswapV2Router.WETH();
+        }
+
+        if (toToken == TOKEN_ETH) {
+            toToken = uniswapV2Router.WETH();
+        }
 
         fromAmount = _swapTokensForExactAmount(
             fromToken,
