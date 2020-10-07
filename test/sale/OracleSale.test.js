@@ -55,7 +55,7 @@ contract('OracleSale', function (accounts) {
 
     async function doUpdateSkuPricing(params = {}) {
         this.ethTokenAddress = await this.contract.TOKEN_ETH();
-        this.oraclePrice = await this.contract.PRICE_CONVERT_VIA_ORACLE();
+        this.oraclePrice = await this.contract.PRICE_VIA_ORACLE();
 
         const skuTokens = [
             this.referenceToken.address,
@@ -72,20 +72,6 @@ contract('OracleSale', function (accounts) {
             params.tokens || skuTokens,
             params.prices || tokenPrices,
             { from: params.owner || owner });
-    }
-
-    async function doSetConversionRates(params = {}) {
-        const tokenRates = {};
-        tokenRates[this.referenceToken.address] = params.referenceTokenRate != undefined ? params.referenceTokenRate : ether('1');
-        tokenRates[this.ethTokenAddress] = params.ethTokenRate != undefined ? params.ethTokenRate : ether('2');
-        tokenRates[this.erc20Token.address] = params.erc20Rate != undefined ? params.erc20Rate : ether('0.5');
-
-        for (const [token, rate] of Object.entries(tokenRates)) {
-            await this.contract.setMockConversionRate(
-                token,
-                this.referenceToken.address,
-                rate);
-        }
     }
 
     async function doStart(params = {}) {
@@ -106,47 +92,6 @@ contract('OracleSale', function (accounts) {
 
     });
 
-    describe('conversionRates()', function () {
-
-        beforeEach(async function () {
-            await doDeploy.bind(this)();
-            await doCreateSku.bind(this)();
-            await doUpdateSkuPricing.bind(this)();
-        });
-
-        it('should revert if the oracle does not provide a conversion rate for one of the pairs', async function () {
-            await expectRevert(
-                this.contract.conversionRates(
-                    [ this.ethTokenAddress ]),
-                'OracleSaleMock: undefined conversion rate');
-        });
-
-        it(`should return the correct conversion rates`, async function () {
-            await doSetConversionRates.bind(this)();
-
-            const tokens = [
-                this.referenceToken.address,
-                this.ethTokenAddress,
-                this.erc20Token.address
-            ];
-
-            const actualRates = await this.contract.conversionRates(tokens);
-            const expectedRates = [];
-
-            for (const token of tokens) {
-                const rate = await this.contract.mockConversionRates(
-                    token,
-                    this.referenceToken.address);
-                expectedRates.push(rate);
-            }
-
-            for (var index = 0; index < tokens.length; ++index) {
-                actualRates[index].should.be.bignumber.equal(expectedRates[index]);
-            }
-        });
-
-    });
-
     describe('_setTokenPrices()', function () {
 
         beforeEach(async function() {
@@ -156,7 +101,7 @@ contract('OracleSale', function (accounts) {
 
         it('should revert if a SKU has token prices but does not include the reference token (adding)', async function () {
             await expectRevert(
-                this.contract.setTokenPrices(
+                this.contract.callUnderscoreSetTokenPrices(
                     sku,
                     [ await this.contract.TOKEN_ETH() ],
                     [ One ]),
@@ -166,7 +111,7 @@ contract('OracleSale', function (accounts) {
         it('should revert if a SKU has token prices but does not include the reference token (removing)', async function () {
             await doUpdateSkuPricing.bind(this)();
             await expectRevert(
-                this.contract.setTokenPrices(
+                this.contract.callUnderscoreSetTokenPrices(
                     sku,
                     [ this.referenceToken.address ],
                     [ Zero ]),
@@ -192,7 +137,7 @@ contract('OracleSale', function (accounts) {
                     One] // ERC20 token
             });
 
-            const unitPrice = await this.contract.getUnitPrice(
+            const unitPrice = await this.contract.callUnderscoreUnitPrice(
                 ZeroAddress,
                 this.ethTokenAddress,
                 sku,
@@ -206,15 +151,11 @@ contract('OracleSale', function (accounts) {
             unitPrice.should.be.bignumber.equal(ethTokenUnitFixedPrice);
         });
 
-        it('should return the oracle unit price (0 < rate < 1)', async function () {
+        it('should return the oracle unit price magic value', async function () {
             await doUpdateSkuPricing.bind(this)();
-            await doSetConversionRates.bind(this)();
+            const conversionRate = new BN(10).pow(new BN(18));
 
-            const conversionRate = await this.contract.mockConversionRates(
-                this.erc20Token.address,
-                this.referenceToken.address);
-
-            const actualUnitPrice = await this.contract.getUnitPrice(
+            const actualUnitPrice = await this.contract.callUnderscoreUnitPrice(
                 ZeroAddress,
                 this.erc20Token.address,
                 sku,
@@ -225,20 +166,15 @@ contract('OracleSale', function (accounts) {
                 [],
                 []);
 
-            const expectedUnitPrice = referenceTokenPrice.mul(new BN(10).pow(new BN(18))).div(conversionRate);
+            const expectedUnitPrice = await this.contract.PRICE_VIA_ORACLE();
 
             actualUnitPrice.should.be.bignumber.equal(expectedUnitPrice);
         });
 
-        it('should return the oracle unit price (1 == rate)', async function () {
+        it('should return the reference token unit price', async function () {
             await doUpdateSkuPricing.bind(this)();
-            await doSetConversionRates.bind(this)();
 
-            const conversionRate = await this.contract.mockConversionRates(
-                this.referenceToken.address,
-                this.referenceToken.address);
-
-            const actualUnitPrice = await this.contract.getUnitPrice(
+            const actualUnitPrice = await this.contract.callUnderscoreUnitPrice(
                 ZeroAddress,
                 this.referenceToken.address,
                 sku,
@@ -249,34 +185,9 @@ contract('OracleSale', function (accounts) {
                 [],
                 []);
 
-            const expectedUnitPrice = referenceTokenPrice.mul(new BN(10).pow(new BN(18))).div(conversionRate);
-
-            actualUnitPrice.should.be.bignumber.equal(expectedUnitPrice);
+            actualUnitPrice.should.be.bignumber.equal(referenceTokenPrice);
         });
 
-        it('should return the oracle unit price (1 < rate)', async function () {
-            await doUpdateSkuPricing.bind(this)();
-            await doSetConversionRates.bind(this)();
-
-            const conversionRate = await this.contract.mockConversionRates(
-                this.ethTokenAddress,
-                this.referenceToken.address);
-
-            const actualUnitPrice = await this.contract.getUnitPrice(
-                ZeroAddress,
-                this.ethTokenAddress,
-                sku,
-                One,
-                '0x00',
-                Zero,
-                [],
-                [],
-                []);
-
-            const expectedUnitPrice = referenceTokenPrice.mul(new BN(10).pow(new BN(18))).div(conversionRate);
-
-            actualUnitPrice.should.be.bignumber.equal(expectedUnitPrice);
-        });
     });
 
     describe('scenarios', function () {
@@ -285,7 +196,6 @@ contract('OracleSale', function (accounts) {
             await doDeploy.bind(this)();
             await doCreateSku.bind(this)();
             await doUpdateSkuPricing.bind(this)();
-            await doSetConversionRates.bind(this)();
             await doStart.bind(this)();
         });
 

@@ -9,6 +9,8 @@ import "../../sale/UniswapSwapSale.sol";
 
 contract UniswapSwapSaleMock is UniswapSwapSale {
 
+    event UnderscoreSwapResult(uint256 fromAmount);
+
     constructor(
         address payoutWallet_,
         uint256 skusCapacity,
@@ -106,17 +108,11 @@ contract UniswapSwapSaleMock is UniswapSwapSale {
         address toToken,
         uint256 toAmount,
         bytes calldata data
-    ) external returns (
-        uint256 fromAmount
-    ) {
-        fromAmount = _swap(fromToken, toToken, toAmount, data);
+    ) external payable {
+        uint256 fromAmount = _swap(fromToken, toToken, toAmount, data);
+        emit UnderscoreSwapResult(fromAmount);
     }
 
-    function jpdebug(bytes calldata data) external pure returns (bytes memory result, uint256 length, uint256 answer) {
-        result = data;
-        length = data.length;
-
-        assembly { answer := mload(add(result, 32)) }
-    }
+    function addEth() external payable {}
 
 }

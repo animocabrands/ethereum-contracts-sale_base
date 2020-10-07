@@ -1,5 +1,5 @@
 const { BN } = require('@openzeppelin/test-helpers');
-const { One, Two } = require('@animoca/ethereum-contracts-core_library').constants;
+const { One } = require('@animoca/ethereum-contracts-core_library').constants;
 const { stringToBytes32 } = require('../utils/bytes32');
 
 const {
@@ -7,9 +7,9 @@ const {
     shouldRevertAndNotPurchaseFor
 } = require('../behaviors');
 
-const userData = stringToBytes32('userData');
+const defaultUserData = stringToBytes32('userData');
 
-const purchasingScenario = function (accounts, sku) {
+const purchasingScenario = function (accounts, sku, userData = defaultUserData) {
     const [
         purchaser,
         recipient

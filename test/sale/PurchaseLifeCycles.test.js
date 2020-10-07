@@ -1,4 +1,4 @@
-const { ether, expectEvent } = require('@openzeppelin/test-helpers');
+const { ether } = require('@openzeppelin/test-helpers');
 const { Zero, One } = require('@animoca/ethereum-contracts-core_library').constants;
 const { stringToBytes32 } = require('../utils/bytes32');
 

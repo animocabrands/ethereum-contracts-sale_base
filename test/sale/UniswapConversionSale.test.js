@@ -19,7 +19,7 @@ const resolver = new Resolver({
 
 const WETH9 = resolver.require('WETH9', UniswapV2Fixture.UniswapV2PeripheryBuildPath);
 
-const Sale = artifacts.require('UniswapOracleSaleMock');
+const Sale = artifacts.require('UniswapConversionSaleMock');
 const ERC20 = artifacts.require('ERC20Mock');
 
 const skusCapacity = One;
@@ -29,7 +29,7 @@ const skuTotalSupply = Three;
 const skuMaxQuantityPerPurchase = Two;
 const skuNotificationsReceiver = ZeroAddress;
 
-contract('UniswapOracleSale', function (accounts) {
+contract('UniswapConversionSale', function (accounts) {
     const loadFixture = Fixture.createFixtureLoader(accounts, web3.eth.currentProvider);
 
     // uniswapv2 fixture adds `contract` field to each token when it's loaded
@@ -191,7 +191,7 @@ contract('UniswapOracleSale', function (accounts) {
 
     async function doUpdateSkuPricing(params = {}) {
         this.ethTokenAddress = await this.contract.TOKEN_ETH();
-        this.oraclePrice = await this.contract.PRICE_CONVERT_VIA_ORACLE();
+        this.oraclePrice = await this.contract.PRICE_VIA_ORACLE();
 
         const skuTokens = [
             tokens['ReferenceToken'].contract.address,
@@ -222,6 +222,8 @@ contract('UniswapOracleSale', function (accounts) {
 
     describe('_conversionRate()', function () {
 
+        const userData = stringToBytes32('userData');
+
         beforeEach(async function () {
             await doAddLiquidity.bind(this)();
             await doDeploy.bind(this)();
@@ -229,41 +231,46 @@ contract('UniswapOracleSale', function (accounts) {
 
         it('should revert if the source token to convert from is the zero address', async function () {
             await expectRevert(
-                this.contract.getConversionRate(
+                this.contract.callUnderscoreConversionRate(
+                    ZeroAddress,
                     tokens['TokenA'].contract.address,
-                    ZeroAddress),
+                    userData),
                 'UniswapV2Adapter: ZERO_ADDRESS');
         });
 
         it('should revert if the destination token to convert to is the zero address', async function () {
             await expectRevert(
-                this.contract.getConversionRate(
+                this.contract.callUnderscoreConversionRate(
                     tokens['TokenA'].contract.address,
-                    ZeroAddress),
+                    ZeroAddress,
+                    userData),
                 'UniswapV2Adapter: ZERO_ADDRESS');
         });
 
         it('should revert if the source and destination token are the same', async function () {
             await expectRevert(
-                this.contract.getConversionRate(
+                this.contract.callUnderscoreConversionRate(
                     tokens['TokenA'].contract.address,
-                    tokens['TokenA'].contract.address),
+                    tokens['TokenA'].contract.address,
+                    userData),
                 'UniswapV2Adapter: IDENTICAL_ADDRESSES');
         });
 
         it('should revert if the source token to convert from does not belong to a token pair', async function () {
             await expectRevert(
-                this.contract.getConversionRate(
+                this.contract.callUnderscoreConversionRate(
                     tokens['TokenD'].contract.address,
-                    tokens['TokenA'].contract.address),
+                    tokens['TokenA'].contract.address,
+                    userData),
                 'revert');
         });
 
         it('should revert if the destination token to convert to does not belong to a token pair', async function () {
             await expectRevert(
-                this.contract.getConversionRate(
+                this.contract.callUnderscoreConversionRate(
                     tokens['TokenA'].contract.address,
-                    tokens['TokenD'].contract.address),
+                    tokens['TokenD'].contract.address,
+                    userData),
                 'revert');
         });
 
@@ -273,9 +280,10 @@ contract('UniswapOracleSale', function (accounts) {
                 const fromToken = tokens['TokenA'].contract.address;
                 const toToken = tokens['ReferenceToken'].contract.address;
 
-                const actualRate = await this.contract.getConversionRate(
+                const actualRate = await this.contract.callUnderscoreConversionRate(
                     fromToken,
-                    toToken);
+                    toToken,
+                    userData);
 
                 const reserves = await this.contract.getReserves(
                     fromToken,
@@ -290,9 +298,10 @@ contract('UniswapOracleSale', function (accounts) {
                 const fromToken = tokens['TokenB'].contract.address;
                 const toToken = tokens['ReferenceToken'].contract.address;
 
-                const actualRate = await this.contract.getConversionRate(
+                const actualRate = await this.contract.callUnderscoreConversionRate(
                     fromToken,
-                    toToken);
+                    toToken,
+                    userData);
 
                 const reserves = await this.contract.getReserves(
                     fromToken,
@@ -307,9 +316,10 @@ contract('UniswapOracleSale', function (accounts) {
                 const fromToken = tokens['TokenC'].contract.address;
                 const toToken = tokens['ReferenceToken'].contract.address;
 
-                const actualRate = await this.contract.getConversionRate(
+                const actualRate = await this.contract.callUnderscoreConversionRate(
                     fromToken,
-                    toToken);
+                    toToken,
+                    userData);
 
                 const reserves = await this.contract.getReserves(
                     fromToken,
@@ -324,9 +334,10 @@ contract('UniswapOracleSale', function (accounts) {
                 const fromToken = await this.contract.TOKEN_ETH();
                 const toToken = tokens['ReferenceToken'].contract.address;
 
-                const actualRate = await this.contract.getConversionRate(
+                const actualRate = await this.contract.callUnderscoreConversionRate(
                     fromToken,
-                    toToken);
+                    toToken,
+                    userData);
 
                 const reserves = await this.contract.getReserves(
                     fromToken,

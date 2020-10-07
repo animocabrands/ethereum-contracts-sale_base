@@ -25,7 +25,6 @@
     "@animoca/ethereum-contracts-assets_inventory": "^3.0.0",
     "@animoca/ethereum-contracts-core_library": "^3.1.1",
     "@animoca/ethereum-contracts-erc20_base": "^3.0.0",
-    "@truffle/provisioner": "^0.2.5",
     "@uniswap/v2-periphery": "^1.1.0-beta.0"
   }
 }

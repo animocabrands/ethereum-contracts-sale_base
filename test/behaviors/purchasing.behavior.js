@@ -1,6 +1,6 @@
 const { BN, balance, expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
 const { Zero } = require('@animoca/ethereum-contracts-core_library').constants;
-const { fromWei, toChecksumAddress } = require('web3-utils');
+const { toChecksumAddress } = require('web3-utils');
 
 const IERC20 = artifacts.require('IERC20.sol');
 
