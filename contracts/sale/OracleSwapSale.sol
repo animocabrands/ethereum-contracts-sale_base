@@ -3,19 +3,26 @@
 pragma solidity 0.6.8;
 
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-import "./OracleSale.sol";
+import "./OracleConversionSale.sol";
 import "./interfaces/IOracleSwapSale.sol";
 
 /**
  * @title OracleSwapSale
- * An OracleSale which implements an oracle-based token swap pricing strategy. The final implementer is
- *  responsible for implementing any additional pricing and/or delivery logic.
+ * An OracleConversionSale which implements support for an oracle-based token swap pricing strategy. The
+ *  final implementer is responsible for implementing any additional pricing and/or delivery logic.
  *
  * PurchaseData.pricingData:
- *  - a non-zero length array indicates oracle-based pricing, otherwise indicates fixed pricing.
- *  - [0] uint256: the token swap rate used for oracle-based pricing.
+ *  - a zero length array for fixed pricing data.
+ *  - a non-zero length array for oracle-based pricing data
+ *  - [0] uint256: the uninterpolated unit price (i.e. magic value).
+ *  - [1] uint256: the token conversion/swap rate used for oracle-based pricing.
+ *
+ * PurchaseData.paymentData:
+ *  - [0] uint256: the actual payment price in terms of the purchase token.
  */
-abstract contract OracleSwapSale is OracleSale, IOracleSwapSale {
+abstract contract OracleSwapSale is OracleConversionSale, IOracleSwapSale {
+    uint256 public constant override PRICE_SWAP_VIA_ORACLE = PRICE_CONVERT_VIA_ORACLE - 1;
+
     /**
      * Constructor.
      * @dev Emits the `MagicValues` event.
@@ -31,13 +38,18 @@ abstract contract OracleSwapSale is OracleSale, IOracleSwapSale {
         uint256 tokensPerSkuCapacity,
         address referenceToken
     )
-        public
-        OracleSale(
+        internal
+        OracleConversionSale(
             payoutWallet_,
             skusCapacity,
             tokensPerSkuCapacity,
             referenceToken)
-    {}
+    {
+        bytes32[] memory names = new bytes32[](1);
+        bytes32[] memory values = new bytes32[](1);
+        (names[0], values[0]) = ("PRICE_SWAP_VIA_ORACLE", bytes32(PRICE_SWAP_VIA_ORACLE));
+        emit MagicValues(names, values);
+    }
 
     /*                            Public IOracleSwapSale Functions                               */
 
@@ -67,43 +79,6 @@ abstract contract OracleSwapSale is OracleSale, IOracleSwapSale {
     /*                               Internal Life Cycle Functions                               */
 
     /**
-     * Lifecycle step which computes the purchase price.
-     * @dev Responsibilities:
-     *  - Computes the pricing formula, including any discount logic and price conversion;
-     *  - Set the value of `purchase.totalPrice`;
-     *  - Add any relevant extra data related to pricing in `purchase.pricingData` and document how to interpret it.
-     * @dev Reverts if `purchase.sku` does not exist.
-     * @dev Reverts if `purchase.token` is not supported by the SKU.
-     * @dev Reverts in case of price overflow.
-     * @param purchase The purchase conditions.
-     */
-    function _pricing(
-        PurchaseData memory purchase
-    ) internal virtual override view {
-        SkuInfo storage skuInfo = _skuInfos[purchase.sku];
-        require(skuInfo.totalSupply != 0, "Sale: unsupported SKU");
-        EnumMap.Map storage prices = skuInfo.prices;
-        uint256 unitPrice = _unitPrice(purchase, prices);
-
-        if (unitPrice == PRICE_VIA_ORACLE) {
-            uint256 referenceUnitPrice = uint256(prices.get(bytes32(uint256(referenceToken))));
-            uint256 referenceTotalPrice = referenceUnitPrice.mul(purchase.quantity);
-
-            uint256 totalPrice = _estimateSwap(
-                purchase.token,
-                referenceToken,
-                referenceTotalPrice,
-                purchase.userData);
-
-            uint256 swapRate = referenceTotalPrice.mul(10 ** 18).div(totalPrice);
-            purchase.totalPrice = totalPrice;
-            purchase.pricingData[0] = bytes32(swapRate);
-        } else {
-            purchase.totalPrice = unitPrice.mul(purchase.quantity);
-        }
-    }
-
-    /**
      * Lifecycle step which manages the transfer of funds from the purchaser.
      * @dev Responsibilities:
      *  - Ensure the payment reaches destination in the expected output token;
@@ -115,51 +90,53 @@ abstract contract OracleSwapSale is OracleSale, IOracleSwapSale {
     function _payment(
         PurchaseData memory purchase
     ) internal virtual override {
-        if (purchase.pricingData.length != 0) {
-            if (purchase.token == TOKEN_ETH) {
-                require(
-                    msg.value >= purchase.totalPrice,
-                    "OracleSwapSale: insufficient ETH provided");
-            } else {
-                require(
-                    IERC20(purchase.token).transferFrom(_msgSender(), address(this), purchase.totalPrice),
-                    "OracleSwapSale: ERC20 payment failed");
-            }
+        if ((purchase.pricingData.length == 0) ||
+            (uint256(purchase.pricingData[0]) != PRICE_SWAP_VIA_ORACLE)) {
+            super._payment(purchase);
+            return;
+        }
 
-            uint256 swapRate = uint256(purchase.pricingData[0]);
-            uint256 referenceTotalPrice = swapRate.mul(purchase.totalPrice).div(10 ** 18);
+        if (purchase.token == TOKEN_ETH) {
+            require(
+                msg.value >= purchase.totalPrice,
+                "OracleSwapSale: insufficient ETH provided");
+        } else {
+            require(
+                IERC20(purchase.token).transferFrom(_msgSender(), address(this), purchase.totalPrice),
+                "OracleSwapSale: ERC20 payment failed");
+        }
 
-            uint256 fromAmount = _swap(
-                purchase.token,
-                referenceToken,
-                referenceTotalPrice,
-                purchase.userData);
+        uint256 swapRate = uint256(purchase.pricingData[0]);
+        uint256 referenceTotalPrice = swapRate.mul(purchase.totalPrice).div(10 ** 18);
 
-            if (purchase.token == TOKEN_ETH) {
-                uint256 change = msg.value.sub(fromAmount);
+        uint256 fromAmount = _swap(
+            purchase.token,
+            referenceToken,
+            referenceTotalPrice,
+            purchase.userData);
 
-                if (change != 0) {
-                    purchase.purchaser.transfer(change);
-                }
-            } else {
-                uint256 change = purchase.totalPrice.sub(fromAmount);
+        if (purchase.token == TOKEN_ETH) {
+            uint256 change = msg.value.sub(fromAmount);
 
-                if (change != 0) {
-                    require(
-                        IERC20(purchase.token).transfer(purchase.purchaser, change),
-                        "OracleSwapSale: ERC20 payment change failed");
-                }
-            }
-
-            if (referenceToken == TOKEN_ETH) {
-                payoutWallet.transfer(fromAmount);
-            } else {
-                require(
-                    IERC20(referenceToken).transfer(payoutWallet, fromAmount),
-                    "OracleSwapSale: ERC20 payout failed");
+            if (change != 0) {
+                purchase.purchaser.transfer(change);
             }
         } else {
-            super._payment(purchase);
+            uint256 change = purchase.totalPrice.sub(fromAmount);
+
+            if (change != 0) {
+                require(
+                    IERC20(purchase.token).transfer(purchase.purchaser, change),
+                    "OracleSwapSale: ERC20 payment change failed");
+            }
+        }
+
+        if (referenceToken == TOKEN_ETH) {
+            payoutWallet.transfer(fromAmount);
+        } else {
+            require(
+                IERC20(referenceToken).transfer(payoutWallet, fromAmount),
+                "OracleSwapSale: ERC20 payout failed");
         }
     }
 
@@ -189,4 +166,47 @@ abstract contract OracleSwapSale is OracleSale, IOracleSwapSale {
      *  oracle.
      */
     function _swap(address fromToken, address toToken, uint256 toAmount, bytes memory data) internal virtual returns (uint256 fromAmount);
+
+    /**
+     * Computes the oracle-based purchase price.
+     * @dev Responsibilities:
+     *  - Computes the oracle-based pricing formula, including any discount logic and price conversion;
+     *  - Set the value of `purchase.totalPrice`;
+     *  - Add any relevant extra data related to pricing in `purchase.pricingData` and document how to interpret it.
+     * @dev Reverts in case of price overflow.
+     * @param purchase The purchase conditions.
+     * @param tokenPrices Storage pointer to a mapping of SKU token prices.
+     * @param unitPrice The unit price of a SKU for the specified payment token.
+     * @return True if oracle pricing was handled, false otherwise.
+     */
+    function _oraclePricing(
+        PurchaseData memory purchase,
+        EnumMap.Map storage tokenPrices,
+        uint256 unitPrice
+    ) internal virtual override view returns (
+        bool
+    ) {
+        if (unitPrice != PRICE_SWAP_VIA_ORACLE) {
+            return super._oraclePricing(purchase, tokenPrices, unitPrice);
+        }
+
+        uint256 referenceUnitPrice = uint256(tokenPrices.get(bytes32(uint256(referenceToken))));
+        uint256 referenceTotalPrice = referenceUnitPrice.mul(purchase.quantity);
+
+        uint256 totalPrice = _estimateSwap(
+            purchase.token,
+            referenceToken,
+            referenceTotalPrice,
+            purchase.userData);
+
+        uint256 swapRate = referenceTotalPrice.mul(10 ** 18).div(totalPrice);
+
+        purchase.pricingData = new bytes32[](2);
+        purchase.pricingData[0] = bytes32(unitPrice);
+        purchase.pricingData[1] = bytes32(swapRate);
+
+        purchase.totalPrice = totalPrice;
+
+        return true;
+    }
 }

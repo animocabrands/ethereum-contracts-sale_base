@@ -116,6 +116,31 @@ contract UniswapSwapSale is OracleSwapSale, UniswapV2Adapter {
     /*                               Internal Utility Functions                                  */
 
     /**
+     * Retrieves the conversion rate for the `fromToken`/`toToken` pair via the oracle.
+     * @dev Reverts if the oracle does not provide a conversion rate for the pair.
+     * @param fromToken The source token from which the conversion rate is derived from.
+     * @param toToken the destination token from which the conversion rate is derived from.
+     * @param *data* Additional data with no specified format for deriving the conversion rate.
+     * @return rate The conversion rate for the `fromToken`/`toToken` pair, retrieved via the oracle.
+     */
+    function _conversionRate(
+        address fromToken,
+        address toToken,
+        bytes memory /*data*/
+    ) internal virtual override view returns (uint256 rate) {
+        if (fromToken == TOKEN_ETH) {
+            fromToken = uniswapV2Router.WETH();
+        }
+
+        if (toToken == TOKEN_ETH) {
+            toToken = uniswapV2Router.WETH();
+        }
+
+        (uint256 fromReserve, uint256 toReserve) = _getReserves(fromToken, toToken);
+        rate = toReserve.mul(10 ** 18).div(fromReserve);
+    }
+
+    /**
      * Estimates the optimal amount of `fromToken` to provide in order to swap for the specified amount of
      *  `toToken`, via the oracle.
      * @dev Reverts if the oracle cannot estimate the optimal amount of `fromToken` to provide.

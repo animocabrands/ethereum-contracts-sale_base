@@ -10,6 +10,8 @@ contract OracleSwapSaleMock is OracleSwapSale {
     using SafeMath for uint256;
     using SafeCast for int256;
 
+    event UnderscoreOraclePricingResult(bool handled);
+
     mapping(address => mapping(address => uint256)) public mockSwapRates;
 
     int256 public mockSwapVariance;
@@ -43,30 +45,6 @@ contract OracleSwapSaleMock is OracleSwapSale {
         mockSwapVariance = value;
     }
 
-    function callUnderscorePricing(
-        address payable recipient,
-        address token,
-        bytes32 sku,
-        uint256 quantity,
-        bytes calldata userData
-    ) external view returns (
-        uint256 totalPrice,
-        bytes32[] memory pricingData
-    ) {
-        PurchaseData memory purchaseData;
-        purchaseData.purchaser = _msgSender();
-        purchaseData.recipient = recipient;
-        purchaseData.token = token;
-        purchaseData.sku = sku;
-        purchaseData.quantity = quantity;
-        purchaseData.userData = userData;
-
-        _pricing(purchaseData);
-
-        totalPrice = purchaseData.totalPrice;
-        pricingData = purchaseData.pricingData;
-    }
-
     function callUnderscorePayment(
         address payable recipient,
         address token,
@@ -87,6 +65,40 @@ contract OracleSwapSaleMock is OracleSwapSale {
         purchaseData.pricingData = pricingData;
 
         _payment(purchaseData);
+    }
+
+    function callUnderscoreOraclePricing(
+        address payable recipient,
+        address token,
+        bytes32 sku,
+        uint256 quantity,
+        bytes calldata userData
+    ) external {
+        PurchaseData memory purchaseData;
+        purchaseData.purchaser = _msgSender();
+        purchaseData.recipient = recipient;
+        purchaseData.token = token;
+        purchaseData.sku = sku;
+        purchaseData.quantity = quantity;
+        purchaseData.userData = userData;
+
+        SkuInfo storage skuInfo = _skuInfos[sku];
+        EnumMap.Map storage tokenPrices = skuInfo.prices;
+        uint256 unitPrice = _unitPrice(purchaseData, tokenPrices);
+
+        bool handled = _oraclePricing(purchaseData, tokenPrices, unitPrice);
+
+        emit UnderscoreOraclePricingResult(handled);
+    }
+
+    function _conversionRate(
+        address /*fromToken*/,
+        address /*toToken*/,
+        bytes memory /*data*/
+    ) internal override view returns (
+        uint256 rate
+    ) {
+        rate = 1;
     }
 
     function _estimateSwap(
@@ -117,5 +129,4 @@ contract OracleSwapSaleMock is OracleSwapSale {
             data);
         fromAmount.add(mockSwapVariance.toUint256());
     }
-
 }

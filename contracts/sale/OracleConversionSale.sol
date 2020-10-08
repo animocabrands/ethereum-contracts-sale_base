@@ -7,14 +7,18 @@ import "./interfaces/IOracleConversionSale.sol";
 
 /**
  * @title OracleConversionSale
- * An OracleSale which implements an oracle-based token conversion pricing strategy. The final implementer is
- *  responsible for implementing any additional pricing and/or delivery logic.
+ * An OracleSale which implements support for an oracle-based token conversion pricing strategy. The final
+ *  implementer is responsible for implementing any additional pricing and/or delivery logic.
  *
  * PurchaseData.pricingData:
- *  - a non-zero length array indicates oracle-based pricing, otherwise indicates fixed pricing.
- *  - [0] uint256: the token conversion rate used for oracle-based pricing.
+ *  - a zero length array for fixed pricing data.
+ *  - a non-zero length array for oracle-based pricing data
+ *  - [0] uint256: the uninterpolated unit price (i.e. magic value).
+ *  - [1] uint256: the token conversion rate used for oracle-based pricing.
  */
 abstract contract OracleConversionSale is OracleSale, IOracleConversionSale {
+    uint256 public constant override PRICE_CONVERT_VIA_ORACLE = type(uint256).max;
+
     /**
      * Constructor.
      * @dev Emits the `MagicValues` event.
@@ -36,7 +40,12 @@ abstract contract OracleConversionSale is OracleSale, IOracleConversionSale {
             skusCapacity,
             tokensPerSkuCapacity,
             referenceToken)
-    {}
+    {
+        bytes32[] memory names = new bytes32[](1);
+        bytes32[] memory values = new bytes32[](1);
+        (names[0], values[0]) = ("PRICE_CONVERT_VIA_ORACLE", bytes32(PRICE_CONVERT_VIA_ORACLE));
+        emit MagicValues(names, values);
+    }
 
     /*                              Public IOracleConversionSale Functions                             */
 
@@ -73,24 +82,46 @@ abstract contract OracleConversionSale is OracleSale, IOracleConversionSale {
     function _conversionRate(address fromToken, address toToken, bytes memory data) internal virtual view returns (uint256 rate);
 
     /**
-     * Retrieves the unit price of a SKU for the specified payment token.
-     * @dev Reverts if the specified payment token is unsupported.
-     * @param purchase The purchase conditions specifying the payment token with which the unit price will be retrieved.
-     * @param prices Storage pointer to a mapping of SKU token prices to retrieve the unit price from.
-     * @return unitPrice The unit price of a SKU for the specified payment token.
+     * Computes the oracle-based purchase price.
+     * @dev Responsibilities:
+     *  - Computes the oracle-based pricing formula, including any discount logic and price conversion;
+     *  - Set the value of `purchase.totalPrice`;
+     *  - Add any relevant extra data related to pricing in `purchase.pricingData` and document how to interpret it.
+     * @dev Reverts in case of price overflow.
+     * @param purchase The purchase conditions.
+     * @param tokenPrices Storage pointer to a mapping of SKU token prices.
+     * @param unitPrice The unit price of a SKU for the specified payment token.
+     * @return True if oracle pricing was handled, false otherwise.
      */
-    function _unitPrice(
+    function _oraclePricing(
         PurchaseData memory purchase,
-        EnumMap.Map storage prices
-    ) internal virtual override view returns (
+        EnumMap.Map storage tokenPrices,
         uint256 unitPrice
+    ) internal virtual override view returns (
+        bool
     ) {
-        unitPrice = super._unitPrice(purchase, prices);
-        if (unitPrice == PRICE_VIA_ORACLE) {
-            uint256 referenceUnitPrice = uint256(prices.get(bytes32(uint256(referenceToken))));
-            uint256 conversionRate = _conversionRate(purchase.token, referenceToken, purchase.userData);
-            unitPrice = referenceUnitPrice.mul(10 ** 18).div(conversionRate);
-            purchase.pricingData[0] = bytes32(conversionRate);
+        if (unitPrice != PRICE_CONVERT_VIA_ORACLE) {
+            return false;
         }
+
+        uint256 referenceUnitPrice = uint256(tokenPrices.get(bytes32(uint256(referenceToken))));
+
+        uint256 conversionRate = _conversionRate(
+            purchase.token,
+            referenceToken,
+            purchase.userData);
+
+        uint256 totalPrice = referenceUnitPrice
+            .mul(10 ** 18)
+            .div(conversionRate)
+            .mul(purchase.quantity);
+
+        purchase.pricingData = new bytes32[](2);
+        purchase.pricingData[0] = bytes32(unitPrice);
+        purchase.pricingData[1] = bytes32(conversionRate);
+
+        purchase.totalPrice = totalPrice;
+
+        return true;
     }
 }

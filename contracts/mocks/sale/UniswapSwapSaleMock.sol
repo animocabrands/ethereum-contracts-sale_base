@@ -28,6 +28,8 @@ contract UniswapSwapSaleMock is UniswapSwapSale {
         )
     {}
 
+    function addEth() external payable {}
+
     function callUnderscoreValidation(
         address payable recipient,
         address token,
@@ -44,30 +46,6 @@ contract UniswapSwapSaleMock is UniswapSwapSale {
         purchaseData.userData = userData;
 
         _validation(purchaseData);
-    }
-
-    function callUnderscorePricing(
-        address payable recipient,
-        address token,
-        bytes32 sku,
-        uint256 quantity,
-        bytes calldata userData
-    ) external view returns (
-        uint256 totalPrice,
-        bytes32[] memory pricingData
-    ) {
-        PurchaseData memory purchaseData;
-        purchaseData.purchaser = _msgSender();
-        purchaseData.recipient = recipient;
-        purchaseData.token = token;
-        purchaseData.sku = sku;
-        purchaseData.quantity = quantity;
-        purchaseData.userData = userData;
-
-        _pricing(purchaseData);
-
-        totalPrice = purchaseData.totalPrice;
-        pricingData = purchaseData.pricingData;
     }
 
     function callUnderscorePayment(
@@ -92,6 +70,16 @@ contract UniswapSwapSaleMock is UniswapSwapSale {
         _payment(purchaseData);
     }
 
+    function callUnderscoreConversionRate(
+        address fromToken,
+        address toToken,
+        bytes calldata data
+    ) external view returns (
+        uint256 rate
+    ) {
+        rate = _conversionRate(fromToken, toToken, data);
+    }
+
     function callUnderscoreEstimateSwap(
         address fromToken,
         address toToken,
@@ -112,7 +100,5 @@ contract UniswapSwapSaleMock is UniswapSwapSale {
         uint256 fromAmount = _swap(fromToken, toToken, toAmount, data);
         emit UnderscoreSwapResult(fromAmount);
     }
-
-    function addEth() external payable {}
 
 }

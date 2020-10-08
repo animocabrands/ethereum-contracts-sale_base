@@ -9,19 +9,12 @@ import "./interfaces/IOracleSale.sol";
  * @title OracleSale
  * A FixedPricesSale which implements an oracle-based pricing strategy. The final implementer is responsible
  *  for implementing any additional pricing and/or delivery logic.
- *
- * PurchaseData.pricingData:
- *  - a non-zero length array indicates oracle-based pricing, otherwise indicates fixed pricing.
- *  - [0] uint256: the token exchange rate used for oracle-based pricing.
-*/
+ */
 abstract contract OracleSale is FixedPricesSale, IOracleSale {
-    uint256 public constant override PRICE_VIA_ORACLE = type(uint256).max;
-
     address public referenceToken;
 
     /**
      * Constructor.
-     * @dev Emits the `MagicValues` event.
      * @dev Emits the `Paused` event.
      * @param payoutWallet_ the payout wallet.
      * @param skusCapacity the cap for the number of managed SKUs.
@@ -41,11 +34,32 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
             tokensPerSkuCapacity)
     {
         referenceToken = referenceToken_;
+    }
 
-        bytes32[] memory names = new bytes32[](1);
-        bytes32[] memory values = new bytes32[](1);
-        (names[0], values[0]) = ("PRICE_VIA_ORACLE", bytes32(PRICE_VIA_ORACLE));
-        emit MagicValues(names, values);
+    /*                               Internal Life Cycle Functions                               */
+
+    /**
+     * Lifecycle step which computes the purchase price.
+     * @dev Responsibilities:
+     *  - Computes the pricing formula, including any discount logic and price conversion;
+     *  - Set the value of `purchase.totalPrice`;
+     *  - Add any relevant extra data related to pricing in `purchase.pricingData` and document how to interpret it.
+     * @dev Reverts if `purchase.sku` does not exist.
+     * @dev Reverts if `purchase.token` is not supported by the SKU.
+     * @dev Reverts in case of price overflow.
+     * @param purchase The purchase conditions.
+     */
+    function _pricing(
+        PurchaseData memory purchase
+    ) internal virtual override view {
+        SkuInfo storage skuInfo = _skuInfos[purchase.sku];
+        require(skuInfo.totalSupply != 0, "Sale: unsupported SKU");
+        EnumMap.Map storage prices = skuInfo.prices;
+        uint256 unitPrice = _unitPrice(purchase, prices);
+
+        if (!_oraclePricing(purchase, prices, unitPrice)) {
+            purchase.totalPrice = unitPrice.mul(purchase.quantity);
+        }
     }
 
     /*                               Internal Utility Functions                                  */
@@ -74,21 +88,16 @@ abstract contract OracleSale is FixedPricesSale, IOracleSale {
     }
 
     /**
-     * Retrieves the unit price of a SKU for the specified payment token.
-     * @dev Reverts if the specified payment token is unsupported.
-     * @param purchase The purchase conditions specifying the payment token with which the unit price will be retrieved.
-     * @param prices Storage pointer to a mapping of SKU token prices to retrieve the unit price from.
-     * @return unitPrice The unit price of a SKU for the specified payment token.
+     * Computes the oracle-based purchase price.
+     * @dev Responsibilities:
+     *  - Computes the oracle-based pricing formula, including any discount logic and price conversion;
+     *  - Set the value of `purchase.totalPrice`;
+     *  - Add any relevant extra data related to pricing in `purchase.pricingData` and document how to interpret it.
+     * @dev Reverts in case of price overflow.
+     * @param purchase The purchase conditions.
+     * @param tokenPrices Storage pointer to a mapping of SKU token prices.
+     * @param unitPrice The unit price of a SKU for the specified payment token.
+     * @return True if oracle pricing was handled, false otherwise.
      */
-    function _unitPrice(
-        PurchaseData memory purchase,
-        EnumMap.Map storage prices
-    ) internal virtual override view returns (
-        uint256 unitPrice
-    ) {
-        unitPrice = super._unitPrice(purchase, prices);
-        if (unitPrice == PRICE_VIA_ORACLE) {
-            purchase.pricingData = new bytes32[](1);
-        }
-    }
+    function _oraclePricing(PurchaseData memory purchase, EnumMap.Map storage tokenPrices, uint256 unitPrice) internal virtual view returns (bool);
 }
