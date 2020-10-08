@@ -103,8 +103,13 @@ function get(tokens, tokenPairs) {
     return _fixture;
 }
 
+function reset() {
+    _fixture = undefined;
+}
+
 module.exports = {
     UniswapV2PeripheryBuildPath,
     UniswapV2CoreBuildPath,
-    get
+    get,
+    reset
 }

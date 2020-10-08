@@ -216,6 +216,10 @@ contract('UniswapConvertSale', function (accounts) {
         return await this.contract.start({ from: params.owner || owner });
     };
 
+    before(async function () {
+        UniswapV2Fixture.reset();
+    });
+
     beforeEach(async function () {
         await doLoadFixture.bind(this)();
     });
