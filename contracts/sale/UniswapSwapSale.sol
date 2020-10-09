@@ -4,13 +4,13 @@ pragma solidity 0.6.8;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-import "./payment/interfaces/IUniswapV2Router.sol";
-import "./payment/UniswapV2Adapter.sol";
+import "./oracle/interfaces/IUniswapV2Router.sol";
+import "./oracle/UniswapV2Adapter.sol";
 import "./OracleSwapSale.sol";
 
 /**
- * @title UniswapConversionSale
- * An OracleConversionSale which implements a Uniswap-based token conversion pricing strategy. The final
+ * @title UniswapConvertSale
+ * An OracleConvertSale which implements a Uniswap-based token conversion pricing strategy. The final
  *  implementer is responsible for implementing any additional pricing and/or delivery logic.
  *
  * PurchaseData.pricingData:

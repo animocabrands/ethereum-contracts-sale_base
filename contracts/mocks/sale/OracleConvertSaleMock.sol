@@ -3,9 +3,9 @@
 pragma solidity 0.6.8;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../../sale/OracleConversionSale.sol";
+import "../../sale/OracleConvertSale.sol";
 
-contract OracleConversionSaleMock is OracleConversionSale {
+contract OracleConvertSaleMock is OracleConvertSale {
     using SafeMath for uint256;
 
     event UnderscoreOraclePricingResult(bool handled);
@@ -19,7 +19,7 @@ contract OracleConversionSaleMock is OracleConversionSale {
         address referenceToken
     )
         public
-        OracleConversionSale(
+        OracleConvertSale(
             payoutWallet_,
             skusCapacity,
             tokensPerSkuCapacity,
@@ -67,6 +67,6 @@ contract OracleConversionSaleMock is OracleConversionSale {
         uint256 rate
     ) {
         rate = mockConversionRates[fromToken][toToken];
-        require(rate != 0, "OracleConversionSaleMock: undefined conversion rate");
+        require(rate != 0, "OracleConvertSaleMock: undefined conversion rate");
     }
 }

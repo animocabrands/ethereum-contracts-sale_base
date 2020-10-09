@@ -3,20 +3,20 @@
 pragma solidity 0.6.8;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./payment/interfaces/IUniswapV2Router.sol";
-import "./payment/UniswapV2Adapter.sol";
-import "./OracleConversionSale.sol";
+import "./oracle/interfaces/IUniswapV2Router.sol";
+import "./oracle/UniswapV2Adapter.sol";
+import "./OracleConvertSale.sol";
 
 /**
- * @title UniswapConversionSale
- * An OracleConversionSale which implements a Uniswap-based token conversion pricing strategy. The final
+ * @title UniswapConvertSale
+ * An OracleConvertSale which implements a Uniswap-based token conversion pricing strategy. The final
  *  implementer is responsible for implementing any additional pricing and/or delivery logic.
  *
  * PurchaseData.pricingData:
  *  - a non-zero length array indicates Uniswap-based pricing, otherwise indicates fixed pricing.
  *  - [0] uint256: the token conversion rate used for Uniswap-based pricing.
  */
-contract UniswapConversionSale is OracleConversionSale, UniswapV2Adapter {
+contract UniswapConvertSale is OracleConvertSale, UniswapV2Adapter {
     using SafeMath for uint256;
 
     /**
@@ -37,7 +37,7 @@ contract UniswapConversionSale is OracleConversionSale, UniswapV2Adapter {
         IUniswapV2Router uniswapV2Router
     )
         public
-        OracleConversionSale(
+        OracleConvertSale(
             payoutWallet_,
             skusCapacity,
             tokensPerSkuCapacity,

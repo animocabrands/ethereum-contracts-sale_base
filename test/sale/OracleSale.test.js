@@ -6,7 +6,7 @@ const {
     purchasingScenario
 } = require('../scenarios');
 
-const Sale = artifacts.require('OracleSaleMock');
+const Sale = artifacts.require('OracleConvertSaleMock');
 const ERC20 = artifacts.require('ERC20Mock');
 
 const skusCapacity = One;

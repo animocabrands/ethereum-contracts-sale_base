@@ -2,7 +2,6 @@
 
 pragma solidity 0.6.8;
 
-
 /**
  * @title PurchaseLifeCycles
  * An abstract contract which define the life cycles for a purchase implementer.

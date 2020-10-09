@@ -19,7 +19,7 @@ const resolver = new Resolver({
 
 const WETH9 = resolver.require('WETH9', UniswapV2Fixture.UniswapV2PeripheryBuildPath);
 
-const Sale = artifacts.require('UniswapConversionSaleMock');
+const Sale = artifacts.require('UniswapConvertSaleMock');
 const ERC20 = artifacts.require('ERC20Mock');
 
 const skusCapacity = One;
@@ -29,7 +29,7 @@ const skuTotalSupply = Three;
 const skuMaxQuantityPerPurchase = Two;
 const skuNotificationsReceiver = ZeroAddress;
 
-contract('UniswapConversionSale', function (accounts) {
+contract('UniswapConvertSale', function (accounts) {
     const loadFixture = Fixture.createFixtureLoader(accounts, web3.eth.currentProvider);
 
     // uniswapv2 fixture adds `contract` field to each token when it's loaded

@@ -2,10 +2,10 @@
 
 pragma solidity 0.6.8;
 
-import "../../sale/payment/interfaces/IUniswapV2Router.sol";
-import "../../sale/UniswapConversionSale.sol";
+import "../../sale/oracle/interfaces/IUniswapV2Router.sol";
+import "../../sale/UniswapConvertSale.sol";
 
-contract UniswapConversionSaleMock is UniswapConversionSale {
+contract UniswapConvertSaleMock is UniswapConvertSale {
 
     constructor(
         address payoutWallet_,
@@ -15,7 +15,7 @@ contract UniswapConversionSaleMock is UniswapConversionSale {
         IUniswapV2Router uniswapV2Router
     )
         public
-        UniswapConversionSale(
+        UniswapConvertSale(
             payoutWallet_,
             skusCapacity,
             tokensPerSkuCapacity,

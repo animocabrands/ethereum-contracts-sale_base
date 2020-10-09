@@ -3,12 +3,12 @@
 pragma solidity 0.6.8;
 
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-import "./OracleConversionSale.sol";
+import "./OracleConvertSale.sol";
 import "./interfaces/IOracleSwapSale.sol";
 
 /**
  * @title OracleSwapSale
- * An OracleConversionSale which implements support for an oracle-based token swap pricing strategy. The
+ * An OracleConvertSale which implements support for an oracle-based token swap pricing strategy. The
  *  final implementer is responsible for implementing any additional pricing and/or delivery logic.
  *
  * PurchaseData.pricingData:
@@ -20,7 +20,7 @@ import "./interfaces/IOracleSwapSale.sol";
  * PurchaseData.paymentData:
  *  - [0] uint256: the actual payment price in terms of the purchase token.
  */
-abstract contract OracleSwapSale is OracleConversionSale, IOracleSwapSale {
+abstract contract OracleSwapSale is OracleConvertSale, IOracleSwapSale {
     uint256 public constant override PRICE_SWAP_VIA_ORACLE = PRICE_CONVERT_VIA_ORACLE - 1;
 
     /**
@@ -39,7 +39,7 @@ abstract contract OracleSwapSale is OracleConversionSale, IOracleSwapSale {
         address referenceToken
     )
         internal
-        OracleConversionSale(
+        OracleConvertSale(
             payoutWallet_,
             skusCapacity,
             tokensPerSkuCapacity,

@@ -5,9 +5,9 @@ pragma solidity 0.6.8;
 
 /**
  * @title IOracleSwapSale
- * An IOracleSale which can manage token swap pricing for some tokens through an oracle.
+ * An IOracleConvertSale which can manage token swaps through an oracle.
  */
-interface IOracleSwapSale /*is IOracleSale*/ {
+interface IOracleSwapSale /*is IOracleConvertSale*/ {
     /**
      * Returns the price magic value used to represent an oracle-based token swap pricing.
      * @dev MUST NOT be zero. SHOULD BE a prohibitively big value, so that it doesn’t collide with a possible price value.

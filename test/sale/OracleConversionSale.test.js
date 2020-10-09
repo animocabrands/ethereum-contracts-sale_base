@@ -6,7 +6,7 @@ const {
     purchasingScenario
 } = require('../scenarios');
 
-const Sale = artifacts.require('OracleConversionSaleMock');
+const Sale = artifacts.require('OracleConvertSaleMock');
 const ERC20 = artifacts.require('ERC20Mock');
 
 const skusCapacity = One;
@@ -18,7 +18,7 @@ const skuNotificationsReceiver = ZeroAddress;
 
 const referenceTokenPrice = new BN('1000');
 
-contract('OracleConversionSale', function (accounts) {
+contract('OracleConvertSale', function (accounts) {
 
     const [
         owner,
@@ -107,7 +107,7 @@ contract('OracleConversionSale', function (accounts) {
                 this.contract.conversionRates(
                     [ this.ethTokenAddress ],
                     userData),
-                'OracleConversionSaleMock: undefined conversion rate');
+                'OracleConvertSaleMock: undefined conversion rate');
         });
 
         it(`should return the correct conversion rates`, async function () {

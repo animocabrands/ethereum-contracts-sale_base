@@ -17,6 +17,6 @@ abstract contract PurchaseNotificationsReceiver is IPurchaseNotificationsReceive
      * Constructor.
      */
     constructor() internal {
-        _registerInterface(type(IPurchaseNotificationsReceiver).interfaceId);
+        _registerInterface(_PURCHASE_NOTIFICATION_RECEIVED);
     }
 }

@@ -4,10 +4,10 @@ pragma solidity 0.6.8;
 
 
 /**
- * @title IOracleConversionSale
- * An IOracleSale which can manage token conversion pricing for some tokens through an oracle.
+ * @title IOracleConvertSale
+ * An ISale which can manage token conversion rates through an oracle.
  */
-interface IOracleConversionSale /*is IOracleSale*/{
+interface IOracleConvertSale /*is ISale*/ {
     /**
      * Returns the price magic value used to represent an oracle-based token conversion pricing.
      * @dev MUST NOT be zero. SHOULD BE a prohibitively big value, so that it doesn’t collide with a possible price value.

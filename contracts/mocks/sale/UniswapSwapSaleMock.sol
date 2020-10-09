@@ -3,8 +3,8 @@
 pragma solidity 0.6.8;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../../sale/payment/interfaces/IUniswapV2Router.sol";
-import "../../sale/payment/UniswapV2Adapter.sol";
+import "../../sale/oracle/interfaces/IUniswapV2Router.sol";
+import "../../sale/oracle/UniswapV2Adapter.sol";
 import "../../sale/UniswapSwapSale.sol";
 
 contract UniswapSwapSaleMock is UniswapSwapSale {
