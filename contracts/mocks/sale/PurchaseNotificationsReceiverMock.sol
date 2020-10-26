@@ -9,6 +9,7 @@ contract PurchaseNotificationsReceiverMock is PurchaseNotificationsReceiver {
         bytes4(keccak256("onPurchaseNotificationReceived(address,address,address,bytes32,uint256,bytes,uint256,bytes32[],bytes32[],bytes32[])"));
 
     event PurchaseNotificationRecieved();
+    event OnPurchaseNotificationReceivedResult(bytes4 result);
 
     function onPurchaseNotificationReceived(
         address /* purchaser */,
@@ -25,7 +26,9 @@ contract PurchaseNotificationsReceiverMock is PurchaseNotificationsReceiver {
         bytes4
     ) {
         emit PurchaseNotificationRecieved();
-        return PURCHASE_NOTIFICATION_RECEIVED_RESULT;
+        bytes4 result = PURCHASE_NOTIFICATION_RECEIVED_RESULT;
+        emit OnPurchaseNotificationReceivedResult(result);
+        return result;
     }
 
 }
