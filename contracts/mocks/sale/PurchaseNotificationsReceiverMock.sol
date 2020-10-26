@@ -5,6 +5,8 @@ pragma solidity 0.6.8;
 import "../../sale/PurchaseNotificationsReceiver.sol";
 
 contract PurchaseNotificationsReceiverMock is PurchaseNotificationsReceiver {
+    bytes4 public constant PURCHASE_NOTIFICATION_RECEIVED_RESULT =
+        bytes4(keccak256("onPurchaseNotificationReceived(address,address,address,bytes32,uint256,bytes,uint256,bytes32[],bytes32[],bytes32[])"));
 
     event PurchaseNotificationRecieved();
 
@@ -23,7 +25,7 @@ contract PurchaseNotificationsReceiverMock is PurchaseNotificationsReceiver {
         bytes4
     ) {
         emit PurchaseNotificationRecieved();
-        return bytes4(keccak256("onPurchaseNotificationReceived(address,address,address,bytes32,uint256,bytes,uint256,bytes32[],bytes32[],bytes32[])"));
+        return PURCHASE_NOTIFICATION_RECEIVED_RESULT;
     }
 
 }
