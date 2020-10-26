@@ -1072,7 +1072,7 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
             expectEvent.inTransaction(
                 receipt.tx,
                 this.purchaseNotificationsReceiver,
-                'PurchaseNotificationRecieved',
+                'PurchaseNotificationReceived',
                 {});
         });
 

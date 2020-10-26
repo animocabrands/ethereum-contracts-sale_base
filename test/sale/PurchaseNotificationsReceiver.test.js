@@ -37,7 +37,7 @@ contract('PurchaseNotificationsReceiver', function ([_, owner, purchaser, recipi
             expectEvent.inTransaction(
                 receipt.tx,
                 this.contract,
-                'PurchaseNotificationRecieved',
+                'PurchaseNotificationReceived',
                 {});
         });
 

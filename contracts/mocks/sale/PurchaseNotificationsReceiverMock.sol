@@ -8,7 +8,7 @@ contract PurchaseNotificationsReceiverMock is PurchaseNotificationsReceiver {
     bytes4 public constant PURCHASE_NOTIFICATION_RECEIVED_RESULT =
         bytes4(keccak256("onPurchaseNotificationReceived(address,address,address,bytes32,uint256,bytes,uint256,bytes32[],bytes32[],bytes32[])"));
 
-    event PurchaseNotificationRecieved();
+    event PurchaseNotificationReceived();
     event OnPurchaseNotificationReceivedResult(bytes4 result);
 
     function onPurchaseNotificationReceived(
@@ -25,7 +25,7 @@ contract PurchaseNotificationsReceiverMock is PurchaseNotificationsReceiver {
     ) external override returns (
         bytes4
     ) {
-        emit PurchaseNotificationRecieved();
+        emit PurchaseNotificationReceived();
         bytes4 result = PURCHASE_NOTIFICATION_RECEIVED_RESULT;
         emit OnPurchaseNotificationReceivedResult(result);
         return result;
