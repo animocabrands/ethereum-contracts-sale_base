@@ -34,7 +34,7 @@ contract('PurchaseNotificationsReceiver', function ([_, owner, purchaser, recipi
                 [],
                 { from: purchaser });
 
-            expectEvent.inTransaction(
+            await expectEvent.inTransaction(
                 receipt.tx,
                 this.contract,
                 'PurchaseNotificationReceived',

@@ -257,7 +257,7 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
         it('should emit the SkuCreation event', async function () {
             const receipt = await doCreateSku.bind(this)();
 
-            expectEvent.inTransaction(
+            await expectEvent.inTransaction(
                 receipt.tx,
                 this.contract,
                 'SkuCreation',
@@ -344,7 +344,7 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
         it('should emit the SkuPriceUpdate event', async function () {
             const receipt = await doUpdateSkuPricing.bind(this)();
 
-            expectEvent.inTransaction(
+            await expectEvent.inTransaction(
                 receipt.tx,
                 this.contract,
                 'SkuPricingUpdate',
@@ -540,7 +540,7 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
                     value: ethPrice.mul(quantity)
                 });
 
-            expectEvent.inTransaction(
+            await expectEvent.inTransaction(
                 receipt.tx,
                 this.contract,
                 'Purchase',
@@ -1038,7 +1038,7 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
                 [],
                 { from: purchaser });
 
-            expectEvent.inTransaction(
+            await expectEvent.inTransaction(
                 receipt.tx,
                 this.contract,
                 'Purchase',
@@ -1069,7 +1069,7 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
                 [],
                 { from: purchaser });
 
-            expectEvent.inTransaction(
+            await expectEvent.inTransaction(
                 receipt.tx,
                 this.purchaseNotificationsReceiver,
                 'PurchaseNotificationReceived',
