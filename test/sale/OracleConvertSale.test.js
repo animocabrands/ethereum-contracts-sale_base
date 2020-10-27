@@ -1,5 +1,5 @@
-const { BN, ether, expectRevert } = require('@openzeppelin/test-helpers');
-const { ZeroAddress, One, Two, Three, Four } = require('@animoca/ethereum-contracts-core_library').constants;
+const { BN, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
+const { ZeroAddress, Zero, One, Two, Three, Four } = require('@animoca/ethereum-contracts-core_library').constants;
 const { stringToBytes32, bytes32ToUint } = require('../utils/bytes32');
 
 const {
@@ -15,6 +15,7 @@ const sku = stringToBytes32('sku');
 const skuTotalSupply = Three;
 const skuMaxQuantityPerPurchase = Two;
 const skuNotificationsReceiver = ZeroAddress;
+const userData = '0x00';
 
 const referenceTokenPrice = new BN('1000');
 
@@ -55,7 +56,7 @@ contract('OracleConvertSale', function (accounts) {
 
     async function doUpdateSkuPricing(params = {}) {
         this.ethTokenAddress = await this.contract.TOKEN_ETH();
-        this.oraclePrice = await this.contract.PRICE_VIA_ORACLE();
+        this.oraclePrice = await this.contract.PRICE_CONVERT_VIA_ORACLE();
 
         const skuTokens = [
             this.referenceToken.address,
@@ -91,6 +92,49 @@ contract('OracleConvertSale', function (accounts) {
     async function doStart(params = {}) {
         return await this.contract.start({ from: params.owner || owner });
     };
+
+    describe('_pricing()', function () {
+
+        beforeEach(async function () {
+            await doDeploy.bind(this)();
+            await doCreateSku.bind(this)();
+            await doUpdateSkuPricing.bind(this)();
+            await doSetConversionRates.bind(this)();
+        });
+
+        it('should call _oraclePricing() if the sku token price is the PRICE_CONVERT_VIA_ORACLE magic value', async function() {
+            const receipt = await this.contract.callUnderscoreOraclePricing(
+                recipient,
+                this.ethTokenAddress,
+                sku,
+                One,
+                userData,
+                { from: purchaser });
+
+            await expectEvent.inTransaction(
+                receipt.tx,
+                this.contract,
+                'UnderscoreOraclePricingResult',
+                { handled: true });
+        });
+
+        it('should not call _oraclePricing() if the sku token price is not the PRICE_CONVERT_VIA_ORACLE magic value', async function () {
+            const receipt = await this.contract.callUnderscoreOraclePricing(
+                recipient,
+                this.referenceToken.address,
+                sku,
+                One,
+                userData,
+                { from: purchaser });
+
+            await expectEvent.inTransaction(
+                receipt.tx,
+                this.contract,
+                'UnderscoreOraclePricingResult',
+                { handled: false });
+        });
+
+    });
 
     describe('conversionRates()', function () {
 
@@ -136,144 +180,90 @@ contract('OracleConvertSale', function (accounts) {
 
     });
 
-    describe('_unitPrice()', function () {
+    describe('_setTokenPrices()', function () {
 
-        beforeEach(async function () {
+        beforeEach(async function() {
             await doDeploy.bind(this)();
             await doCreateSku.bind(this)();
         });
 
-        it('should return the fixed unit price', async function () {
-            const ethTokenUnitFixedPrice = ether('3');
-
-            await doUpdateSkuPricing.bind(this)({
-                prices: [
-                    One, // reference token
-                    ethTokenUnitFixedPrice, // ETH token
-                    One] // ERC20 token
-            });
-
-            const result = await this.contract.callUnderscoreUnitPrice(
-                ZeroAddress,
-                this.ethTokenAddress,
-                sku,
-                One,
-                '0x00');
-
-            const actualUnitPrice = result.unitPrice;
-            const expectedUnitPrice = ethTokenUnitFixedPrice;
-
-            actualUnitPrice.should.be.bignumber.equal(expectedUnitPrice);
-
-            const pricingData = result.pricingData;
-
-            pricingData.length.should.be.equal(0);
+        it('should revert if a SKU has token prices but does not include the reference token (adding)', async function () {
+            await expectRevert(
+                this.contract.callUnderscoreSetTokenPrices(
+                    sku,
+                    [ await this.contract.TOKEN_ETH() ],
+                    [ One ]),
+                'OracleSale: missing reference token');
         });
 
-        it('should return the oracle unit price (0 < rate < 1)', async function () {
+        it('should revert if a SKU has token prices but does not include the reference token (removing)', async function () {
             await doUpdateSkuPricing.bind(this)();
-            await doSetConversionRates.bind(this)();
-
-            const conversionRate = await this.contract.mockConversionRates(
-                this.erc20Token.address,
-                this.referenceToken.address);
-
-            const result = await this.contract.callUnderscoreUnitPrice(
-                ZeroAddress,
-                this.erc20Token.address,
-                sku,
-                One,
-                '0x00');
-
-            const actualUnitPrice = result.unitPrice;
-            const expectedUnitPrice = referenceTokenPrice.mul(new BN(10).pow(new BN(18))).div(conversionRate);
-
-            actualUnitPrice.should.be.bignumber.equal(expectedUnitPrice);
-
-            const pricingData = result.pricingData;
-
-            pricingData.length.should.be.equal(1);
-
-            const actualConversionRate = bytes32ToUint(pricingData[0]);
-            const expectedConversionRate = conversionRate;
-
-            actualConversionRate.should.be.bignumber.equal(expectedConversionRate);
+            await expectRevert(
+                this.contract.callUnderscoreSetTokenPrices(
+                    sku,
+                    [ this.referenceToken.address ],
+                    [ Zero ]),
+                'OracleSale: missing reference token');
         });
 
-        it('should return the oracle unit price (1 == rate)', async function () {
+    });
+
+    describe('_oraclePricing()', function () {
+
+        beforeEach(async function () {
+            await doDeploy.bind(this)();
+            await doCreateSku.bind(this)();
             await doUpdateSkuPricing.bind(this)();
             await doSetConversionRates.bind(this)();
+        });
 
-            const token = await ERC20.new(
-                ether('1000'),
-                { from: owner });
-
-            await this.contract.updateSkuPricing(
-                sku,
-                [ token.address ],
-                [ this.oraclePrice ],
-                { from: owner });
-
-            await this.contract.setMockConversionRate(
-                token.address,
+        it('should not handle oracle pricing', async function () {
+            const receipt = await this.contract.callUnderscoreOraclePricing(
+                recipient,
                 this.referenceToken.address,
-                ether('1'));
-
-            const conversionRate = await this.contract.mockConversionRates(
-                token.address,
-                this.referenceToken.address);
-
-            const result = await this.contract.callUnderscoreUnitPrice(
-                ZeroAddress,
-                token.address,
                 sku,
                 One,
-                '0x00');
+                userData);
 
-            const actualUnitPrice = result.unitPrice;
-            const expectedUnitPrice = referenceTokenPrice.mul(new BN(10).pow(new BN(18))).div(conversionRate);
-
-            actualUnitPrice.should.be.bignumber.equal(expectedUnitPrice);
-
-            const pricingData = result.pricingData;
-
-            pricingData.length.should.be.equal(1);
-
-            const actualConversionRate = bytes32ToUint(pricingData[0]);
-            const expectedConversionRate = conversionRate;
-
-            actualConversionRate.should.be.bignumber.equal(expectedConversionRate);
+            await expectEvent.inTransaction(
+                receipt.tx,
+                this.contract,
+                'UnderscoreOraclePricingResult',
+                { handled: false });
         });
 
-        it('should return the oracle unit price (1 < rate)', async function () {
-            await doUpdateSkuPricing.bind(this)();
-            await doSetConversionRates.bind(this)();
+        it('should calculate the correct oracle-based purchase price', async function () {
+            const quantity = One;
+
+            const receipt = await this.contract.callUnderscoreOraclePricing(
+                recipient,
+                this.ethTokenAddress,
+                sku,
+                quantity,
+                userData);
 
             const conversionRate = await this.contract.mockConversionRates(
                 this.ethTokenAddress,
                 this.referenceToken.address);
+            const totalPrice = referenceTokenPrice
+                .mul(new BN(10).pow(new BN(18)))
+                .div(conversionRate)
+                .mul(quantity);
 
-            const result = await this.contract.callUnderscoreUnitPrice(
-                ZeroAddress,
-                this.ethTokenAddress,
-                sku,
-                One,
-                '0x00');
-
-            const actualUnitPrice = result.unitPrice;
-            const expectedUnitPrice = referenceTokenPrice.mul(new BN(10).pow(new BN(18))).div(conversionRate);
-
-            actualUnitPrice.should.be.bignumber.equal(expectedUnitPrice);
-
-            const pricingData = result.pricingData;
-
-            pricingData.length.should.be.equal(1);
-
-            const actualConversionRate = bytes32ToUint(pricingData[0]);
-            const expectedConversionRate = conversionRate;
-
-            actualConversionRate.should.be.bignumber.equal(expectedConversionRate);
+            await expectEvent.inTransaction(
+                receipt.tx,
+                this.contract,
+                'UnderscoreOraclePricingResult',
+                {
+                    handled: true,
+                    pricingData: [
+                        web3.utils.padLeft(web3.utils.toHex(this.oraclePrice), 64),
+                        web3.utils.padLeft(web3.utils.toHex(conversionRate), 64)
+                    ],
+                    totalPrice: totalPrice
+                });
         });
+
     });
 
     describe('scenarios', function () {

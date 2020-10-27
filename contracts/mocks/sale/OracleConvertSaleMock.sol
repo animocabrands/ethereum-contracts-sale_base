@@ -8,7 +8,10 @@ import "../../sale/OracleConvertSale.sol";
 contract OracleConvertSaleMock is OracleConvertSale {
     using SafeMath for uint256;
 
-    event UnderscoreOraclePricingResult(bool handled);
+    event UnderscoreOraclePricingResult(
+        bool handled,
+        bytes32[] pricingData,
+        uint256 totalPrice);
 
     mapping(address => mapping(address => uint256)) public mockConversionRates;
 
@@ -56,7 +59,20 @@ contract OracleConvertSaleMock is OracleConvertSale {
 
         bool handled = _oraclePricing(purchaseData, tokenPrices, unitPrice);
 
-        emit UnderscoreOraclePricingResult(handled);
+        emit UnderscoreOraclePricingResult(
+            handled,
+            purchaseData.pricingData,
+            purchaseData.totalPrice);
+    }
+
+    function callUnderscoreSetTokenPrices(
+        bytes32 sku,
+        address[] calldata tokens,
+        uint256[] calldata prices
+    ) external {
+        SkuInfo storage skuInfo = _skuInfos[sku];
+        EnumMap.Map storage tokenPrices = skuInfo.prices;
+        _setTokenPrices(tokenPrices, tokens, prices);
     }
 
     function _conversionRate(
