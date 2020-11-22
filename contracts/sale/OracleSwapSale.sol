@@ -106,7 +106,7 @@ abstract contract OracleSwapSale is OracleConvertSale, IOracleSwapSale {
                 "OracleSwapSale: ERC20 payment failed");
         }
 
-        uint256 swapRate = uint256(purchase.pricingData[0]);
+        uint256 swapRate = uint256(purchase.pricingData[1]);
         uint256 referenceTotalPrice = swapRate.mul(purchase.totalPrice).div(10 ** 18);
 
         uint256 fromAmount = _swap(
