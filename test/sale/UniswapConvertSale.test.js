@@ -191,7 +191,7 @@ contract('UniswapConvertSale', function (accounts) {
 
     async function doUpdateSkuPricing(params = {}) {
         this.ethTokenAddress = await this.contract.TOKEN_ETH();
-        this.oraclePrice = await this.contract.PRICE_VIA_ORACLE();
+        this.oraclePrice = await this.contract.PRICE_CONVERT_VIA_ORACLE();
 
         const skuTokens = [
             tokens['ReferenceToken'].contract.address,
