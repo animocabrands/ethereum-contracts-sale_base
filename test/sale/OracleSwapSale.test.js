@@ -18,6 +18,8 @@ const skuNotificationsReceiver = ZeroAddress;
 
 const referenceTokenPrice = new BN('1000');
 
+const userData = stringToBytes32('userData');
+
 contract('OracleSwapSale', function (accounts) {
 
     const [
@@ -55,7 +57,7 @@ contract('OracleSwapSale', function (accounts) {
 
     async function doUpdateSkuPricing(params = {}) {
         this.ethTokenAddress = await this.contract.TOKEN_ETH();
-        this.oraclePrice = await this.contract.PRICE_VIA_ORACLE();
+        this.oraclePrice = await this.contract.PRICE_SWAP_VIA_ORACLE();
 
         const skuTokens = [
             this.referenceToken.address,
@@ -93,8 +95,6 @@ contract('OracleSwapSale', function (accounts) {
     };
 
     describe('swapRates()', function () {
-
-        const userData = stringToBytes32('userData');
 
         beforeEach(async function () {
             await doDeploy.bind(this)();
@@ -141,177 +141,7 @@ contract('OracleSwapSale', function (accounts) {
 
     });
 
-    describe('_pricing()', function () {
-
-        beforeEach(async function () {
-            await doDeploy.bind(this)();
-            await doCreateSku.bind(this)();
-        });
-
-        it('should revert if the SKU does not exist', async function () {
-            const otherSku = stringToBytes32('other sku');
-
-            await expectRevert(
-                this.contract.callUnderscorePricing(
-                    ZeroAddress,
-                    this.erc20Token.address,
-                    otherSku,
-                    One,
-                    '0x00'),
-                'Sale: unsupported SKU');
-        });
-
-        it('should revert if the payment token is not supported by the SKU', async function () {
-            const otherToken = await ERC20.new(
-                ether('1000'),
-                { from: owner });
-
-            await expectRevert(
-                this.contract.callUnderscorePricing(
-                    ZeroAddress,
-                    otherToken.address,
-                    sku,
-                    One,
-                    '0x00'),
-                'EnumMap: nonexistent key');
-        });
-
-        it('should set the fixed total price', async function () {
-            const ethTokenUnitFixedPrice = ether('3');
-
-            await doUpdateSkuPricing.bind(this)({
-                prices: [
-                    One, // reference token
-                    ethTokenUnitFixedPrice, // ETH token
-                    One] // ERC20 token
-            });
-
-            const result = await this.contract.callUnderscorePricing(
-                ZeroAddress,
-                this.ethTokenAddress,
-                sku,
-                One,
-                '0x00');
-
-            const actualTotalPrice = result.totalPrice;
-            const expectedTotalPrice = ethTokenUnitFixedPrice;
-
-            actualTotalPrice.should.be.bignumber.equal(expectedTotalPrice);
-
-            const pricingData = result.pricingData;
-            pricingData.length.should.be.equal(0);
-        });
-
-        it('should set the oracle total price (0 < rate < 1)', async function () {
-            await doUpdateSkuPricing.bind(this)();
-            await doSetSwapRates.bind(this)();
-
-            const swapRate = await this.contract.mockSwapRates(
-                this.erc20Token.address,
-                this.referenceToken.address);
-
-            const result = await this.contract.callUnderscorePricing(
-                ZeroAddress,
-                this.erc20Token.address,
-                sku,
-                One,
-                '0x00');
-
-            const actualTotalPrice = result.totalPrice;
-            const expectedTotalPrice = referenceTokenPrice.mul(new BN(10).pow(new BN(18))).div(swapRate);
-
-            actualTotalPrice.should.be.bignumber.equal(expectedTotalPrice);
-
-            const pricingData = result.pricingData;
-
-            pricingData.length.should.be.equal(1);
-
-            const actualSwapRate = bytes32ToUint(pricingData[0]);
-            const expectedSwapRate = swapRate;
-
-            actualSwapRate.should.be.bignumber.equal(expectedSwapRate);
-        });
-
-        it('should set the oracle total price (1 == rate)', async function () {
-            await doUpdateSkuPricing.bind(this)();
-            await doSetSwapRates.bind(this)();
-
-            const token = await ERC20.new(
-                ether('1000'),
-                { from: owner });
-
-            await this.contract.updateSkuPricing(
-                sku,
-                [ token.address ],
-                [ this.oraclePrice ],
-                { from: owner });
-
-            await this.contract.setMockSwapRate(
-                token.address,
-                this.referenceToken.address,
-                ether('1'));
-
-            const swapRate = await this.contract.mockSwapRates(
-                token.address,
-                this.referenceToken.address);
-
-            const result = await this.contract.callUnderscorePricing(
-                ZeroAddress,
-                token.address,
-                sku,
-                One,
-                '0x00');
-
-            const actualTotalPrice = result.totalPrice;
-            const expectedTotalPrice = referenceTokenPrice.mul(new BN(10).pow(new BN(18))).div(swapRate);
-
-            actualTotalPrice.should.be.bignumber.equal(expectedTotalPrice);
-
-            const pricingData = result.pricingData;
-
-            pricingData.length.should.be.equal(1);
-
-            const actualSwapRate = bytes32ToUint(pricingData[0]);
-            const expectedSwapRate = swapRate;
-
-            actualSwapRate.should.be.bignumber.equal(expectedSwapRate);
-        });
-
-        it('should set the oracle total price (1 < rate)', async function () {
-            await doUpdateSkuPricing.bind(this)();
-            await doSetSwapRates.bind(this)();
-
-            const swapRate = await this.contract.mockSwapRates(
-                this.ethTokenAddress,
-                this.referenceToken.address);
-
-            const result = await this.contract.callUnderscorePricing(
-                ZeroAddress,
-                this.ethTokenAddress,
-                sku,
-                One,
-                '0x00');
-
-            const actualTotalPrice = result.totalPrice;
-            const expectedTotalPrice = referenceTokenPrice.mul(new BN(10).pow(new BN(18))).div(swapRate);
-
-            actualTotalPrice.should.be.bignumber.equal(expectedTotalPrice);
-
-            const pricingData = result.pricingData;
-
-            pricingData.length.should.be.equal(1);
-
-            const actualSwapRate = bytes32ToUint(pricingData[0]);
-            const expectedSwapRate = swapRate;
-
-            actualSwapRate.should.be.bignumber.equal(expectedSwapRate);
-        });
-
-    });
-
     describe('_payment()', function () {
-
-        const userData = '0x00';
 
         function isEthToken(token, overrides = {}) {
             return token === (overrides.ethTokenAddress || this.ethTokenAddress);
@@ -669,6 +499,192 @@ contract('OracleSwapSale', function (accounts) {
 
             });
 
+        });
+
+    });
+
+    describe('_oraclePricing()', function () {
+
+        beforeEach(async function () {
+            await doDeploy.bind(this)();
+            await doCreateSku.bind(this)();
+        });
+
+        it('should revert if the SKU does not exist', async function () {
+            const otherSku = stringToBytes32('other sku');
+
+            await expectRevert(
+                this.contract.callUnderscorePricing(
+                    ZeroAddress,
+                    this.erc20Token.address,
+                    otherSku,
+                    One,
+                    userData),
+                'Sale: unsupported SKU');
+        });
+
+        it('should revert if the payment token is not supported by the SKU', async function () {
+            const otherToken = await ERC20.new(
+                ether('1000'),
+                { from: owner });
+
+            await expectRevert(
+                this.contract.callUnderscorePricing(
+                    ZeroAddress,
+                    otherToken.address,
+                    sku,
+                    One,
+                    userData),
+                'EnumMap: nonexistent key');
+        });
+
+        it('should not handle a fixed total price', async function () {
+            const ethTokenUnitFixedPrice = ether('3');
+
+            await doUpdateSkuPricing.bind(this)({
+                prices: [
+                    One, // reference token
+                    ethTokenUnitFixedPrice, // ETH token
+                    One] // ERC20 token
+            });
+
+            const result = await this.contract.callUnderscoreOraclePricing(
+                ZeroAddress,
+                this.ethTokenAddress,
+                sku,
+                One,
+                userData);
+
+            result.handled.should.be.false;
+
+            const actualTotalPrice = result.totalPrice;
+            actualTotalPrice.should.be.bignumber.equal(Zero);
+
+            const pricingData = result.pricingData;
+            pricingData.length.should.be.equal(0);
+        });
+
+        it('should set the oracle total price (0 < rate < 1)', async function () {
+            await doUpdateSkuPricing.bind(this)();
+            await doSetSwapRates.bind(this)();
+
+            const swapRate = await this.contract.mockSwapRates(
+                this.erc20Token.address,
+                this.referenceToken.address);
+
+            const result = await this.contract.callUnderscoreOraclePricing(
+                ZeroAddress,
+                this.erc20Token.address,
+                sku,
+                One,
+                userData);
+
+            result.handled.should.be.true;
+
+            const actualTotalPrice = result.totalPrice;
+            const expectedTotalPrice = referenceTokenPrice.mul(new BN(10).pow(new BN(18))).div(swapRate);
+
+            actualTotalPrice.should.be.bignumber.equal(expectedTotalPrice);
+
+            const pricingData = result.pricingData;
+
+            pricingData.length.should.be.equal(2);
+
+            const unitPrice = bytes32ToUint(pricingData[0]);
+
+            unitPrice.should.be.bignumber.equal(this.oraclePrice);
+
+            const actualSwapRate = bytes32ToUint(pricingData[1]);
+            const expectedSwapRate = swapRate;
+
+            actualSwapRate.should.be.bignumber.equal(expectedSwapRate);
+        });
+
+        it('should set the oracle total price (1 == rate)', async function () {
+            await doUpdateSkuPricing.bind(this)();
+            await doSetSwapRates.bind(this)();
+
+            const token = await ERC20.new(
+                ether('1000'),
+                { from: owner });
+
+            await this.contract.updateSkuPricing(
+                sku,
+                [ token.address ],
+                [ this.oraclePrice ],
+                { from: owner });
+
+            await this.contract.setMockSwapRate(
+                token.address,
+                this.referenceToken.address,
+                ether('1'));
+
+            const swapRate = await this.contract.mockSwapRates(
+                token.address,
+                this.referenceToken.address);
+
+            const result = await this.contract.callUnderscoreOraclePricing(
+                ZeroAddress,
+                token.address,
+                sku,
+                One,
+                userData);
+
+            result.handled.should.be.true;
+
+            const actualTotalPrice = result.totalPrice;
+            const expectedTotalPrice = referenceTokenPrice.mul(new BN(10).pow(new BN(18))).div(swapRate);
+
+            actualTotalPrice.should.be.bignumber.equal(expectedTotalPrice);
+
+            const pricingData = result.pricingData;
+
+            pricingData.length.should.be.equal(2);
+
+            const unitPrice = bytes32ToUint(pricingData[0]);
+
+            unitPrice.should.be.bignumber.equal(this.oraclePrice);
+
+            const actualSwapRate = bytes32ToUint(pricingData[1]);
+            const expectedSwapRate = swapRate;
+
+            actualSwapRate.should.be.bignumber.equal(expectedSwapRate);
+        });
+
+        it('should set the oracle total price (1 < rate)', async function () {
+            await doUpdateSkuPricing.bind(this)();
+            await doSetSwapRates.bind(this)();
+
+            const swapRate = await this.contract.mockSwapRates(
+                this.ethTokenAddress,
+                this.referenceToken.address);
+
+            const result = await this.contract.callUnderscoreOraclePricing(
+                ZeroAddress,
+                this.ethTokenAddress,
+                sku,
+                One,
+                userData);
+
+            result.handled.should.be.true;
+
+            const actualTotalPrice = result.totalPrice;
+            const expectedTotalPrice = referenceTokenPrice.mul(new BN(10).pow(new BN(18))).div(swapRate);
+
+            actualTotalPrice.should.be.bignumber.equal(expectedTotalPrice);
+
+            const pricingData = result.pricingData;
+
+            pricingData.length.should.be.equal(2);
+
+            const unitPrice = bytes32ToUint(pricingData[0]);
+
+            unitPrice.should.be.bignumber.equal(this.oraclePrice);
+
+            const actualSwapRate = bytes32ToUint(pricingData[1]);
+            const expectedSwapRate = swapRate;
+
+            actualSwapRate.should.be.bignumber.equal(expectedSwapRate);
         });
 
     });

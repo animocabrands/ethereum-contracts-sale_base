@@ -10,8 +10,6 @@ contract OracleSwapSaleMock is OracleSwapSale {
     using SafeMath for uint256;
     using SafeCast for int256;
 
-    event UnderscoreOraclePricingResult(bool handled);
-
     mapping(address => mapping(address => uint256)) public mockSwapRates;
 
     int256 public mockSwapVariance;
@@ -45,6 +43,30 @@ contract OracleSwapSaleMock is OracleSwapSale {
         mockSwapVariance = value;
     }
 
+    function callUnderscorePricing(
+        address payable recipient,
+        address token,
+        bytes32 sku,
+        uint256 quantity,
+        bytes calldata userData
+    ) external view returns (
+        uint256 totalPrice,
+        bytes32[] memory pricingData
+    ) {
+        PurchaseData memory purchaseData;
+        purchaseData.purchaser = _msgSender();
+        purchaseData.recipient = recipient;
+        purchaseData.token = token;
+        purchaseData.sku = sku;
+        purchaseData.quantity = quantity;
+        purchaseData.userData = userData;
+
+        _pricing(purchaseData);
+
+        totalPrice = purchaseData.totalPrice;
+        pricingData = purchaseData.pricingData;
+    }
+
     function callUnderscorePayment(
         address payable recipient,
         address token,
@@ -73,7 +95,11 @@ contract OracleSwapSaleMock is OracleSwapSale {
         bytes32 sku,
         uint256 quantity,
         bytes calldata userData
-    ) external {
+    ) external view returns (
+        bool handled,
+        uint256 totalPrice,
+        bytes32[] memory pricingData
+    ) {
         PurchaseData memory purchaseData;
         purchaseData.purchaser = _msgSender();
         purchaseData.recipient = recipient;
@@ -86,9 +112,10 @@ contract OracleSwapSaleMock is OracleSwapSale {
         EnumMap.Map storage tokenPrices = skuInfo.prices;
         uint256 unitPrice = _unitPrice(purchaseData, tokenPrices);
 
-        bool handled = _oraclePricing(purchaseData, tokenPrices, unitPrice);
+        handled = _oraclePricing(purchaseData, tokenPrices, unitPrice);
 
-        emit UnderscoreOraclePricingResult(handled);
+        totalPrice = purchaseData.totalPrice;
+        pricingData = purchaseData.pricingData;
     }
 
     function _conversionRate(
