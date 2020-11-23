@@ -48,6 +48,30 @@ contract UniswapSwapSaleMock is UniswapSwapSale {
         _validation(purchaseData);
     }
 
+    function callUnderscorePricing(
+        address payable recipient,
+        address token,
+        bytes32 sku,
+        uint256 quantity,
+        bytes calldata userData
+    ) external view returns (
+        uint256 totalPrice,
+        bytes32[] memory pricingData
+    ) {
+        PurchaseData memory purchaseData;
+        purchaseData.purchaser = _msgSender();
+        purchaseData.recipient = recipient;
+        purchaseData.token = token;
+        purchaseData.sku = sku;
+        purchaseData.quantity = quantity;
+        purchaseData.userData = userData;
+
+        _pricing(purchaseData);
+
+        totalPrice = purchaseData.totalPrice;
+        pricingData = purchaseData.pricingData;
+    }
+
     function callUnderscorePayment(
         address payable recipient,
         address token,
@@ -93,12 +117,44 @@ contract UniswapSwapSaleMock is UniswapSwapSale {
 
     function callUnderscoreSwap(
         address fromToken,
+        uint256 fromAmount,
         address toToken,
         uint256 toAmount,
         bytes calldata data
     ) external payable {
-        uint256 fromAmount = _swap(fromToken, toToken, toAmount, data);
+        if (fromToken != TOKEN_ETH) {
+            require(
+                IERC20(fromToken).approve(address(uniswapV2Router), fromAmount),
+                "UniswapSwapSaleMock: ERC20 swap approval failed");
+
+            require(
+                IERC20(fromToken).allowance(msg.sender, address(this)) >= fromAmount,
+                "UniswapSwapSaleMock: ERC20 allowance insufficient");
+
+            require(
+                IERC20(fromToken).transferFrom(msg.sender, address(this), fromAmount),
+                "UniswapSwapSaleMock: ERC20 transfer from failed");
+        }
+        fromAmount = _swap(fromToken, toToken, toAmount, data);
         emit UnderscoreSwapResult(fromAmount);
+    }
+
+    function getReserves(
+        address tokenA,
+        address tokenB
+    ) external view returns (
+        uint256 reserveA,
+        uint256 reserveB
+    ) {
+        if (tokenA == TOKEN_ETH) {
+            tokenA = uniswapV2Router.WETH();
+        }
+
+        if (tokenB == TOKEN_ETH) {
+            tokenB = uniswapV2Router.WETH();
+        }
+
+        (reserveA, reserveB) = _getReserves(tokenA, tokenB);
     }
 
 }

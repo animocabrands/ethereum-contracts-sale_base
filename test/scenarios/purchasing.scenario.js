@@ -9,11 +9,15 @@ const {
 
 const defaultUserData = stringToBytes32('userData');
 
-const purchasingScenario = function (accounts, sku, userData = defaultUserData) {
+const purchasingScenario = function (accounts, sku, userData, overrides = {}) {
     const [
         purchaser,
         recipient
     ] = accounts;
+
+    if ((userData == null) || (userData == undefined)) {
+        userData = defaultUserData;
+    }
 
     describe('when purchasing with ETH', function () {
 
@@ -30,9 +34,9 @@ const purchasingScenario = function (accounts, sku, userData = defaultUserData) 
                         sku,
                         One,
                         userData,
-                        {
-                            amountVariance: new BN(-1)
-                        });
+                        Object.assign(
+                            { amountVariance: new BN(-1) },
+                            overrides));
                 });
 
             });
@@ -46,7 +50,8 @@ const purchasingScenario = function (accounts, sku, userData = defaultUserData) 
                         this.ethTokenAddress,
                         sku,
                         One,
-                        userData);
+                        userData,
+                        overrides);
                 });
 
             });
@@ -61,9 +66,9 @@ const purchasingScenario = function (accounts, sku, userData = defaultUserData) 
                         sku,
                         One,
                         userData,
-                        {
-                            amountVariance: One
-                        });
+                        Object.assign(
+                            { amountVariance: One },
+                            overrides));
                 });
 
             });
@@ -91,9 +96,9 @@ const purchasingScenario = function (accounts, sku, userData = defaultUserData) 
                         sku,
                         One,
                         userData,
-                        {
-                            amountVariance: new BN(-1)
-                        });
+                        Object.assign(
+                            { amountVariance: new BN(-1) },
+                            overrides));
                 });
 
             });
@@ -107,7 +112,8 @@ const purchasingScenario = function (accounts, sku, userData = defaultUserData) 
                         this.ethTokenAddress,
                         sku,
                         One,
-                        userData);
+                        userData,
+                        overrides);
                 });
 
             });
@@ -122,9 +128,9 @@ const purchasingScenario = function (accounts, sku, userData = defaultUserData) 
                         sku,
                         One,
                         userData,
-                        {
-                            amountVariance: One
-                        });
+                        Object.assign(
+                            { amountVariance: One },
+                            overrides));
                 });
 
             });

@@ -7,6 +7,10 @@ const Resolver = require('@truffle/resolver');
 const UniswapV2Fixture = require('../fixtures/uniswapv2.fixture');
 
 const {
+    shouldBeEqualWithETHDecimalPrecision
+} = require('@animoca/ethereum-contracts-core_library').fixtures;
+
+const {
     purchasingScenario
 } = require('../scenarios');
 
@@ -195,7 +199,7 @@ contract('UniswapSwapSale', function (accounts) {
 
     async function doUpdateSkuPricing(params = {}) {
         this.ethTokenAddress = await this.contract.TOKEN_ETH();
-        this.oraclePrice = await this.contract.PRICE_VIA_ORACLE();
+        this.oraclePrice = await this.contract.PRICE_SWAP_VIA_ORACLE();
 
         const skuTokens = [
             tokens['ReferenceToken'].contract.address,
@@ -357,9 +361,25 @@ contract('UniswapSwapSale', function (accounts) {
             if (isEthToken.bind(this)(token, overrides)) {
                 const gasUsed = new BN(receipt.receipt.gasUsed);
                 const gasPrice = new BN(await web3.eth.getGasPrice());
-                balanceDiff.should.be.bignumber.equal(totalPrice.add(gasUsed.mul(gasPrice)));
+                const expected = totalPrice.add(gasUsed.mul(gasPrice));
+
+                if (overrides.totalPricePrecision) {
+                    shouldBeEqualWithETHDecimalPrecision(
+                        balanceDiff,
+                        expected,
+                        overrides.totalPricePrecision);
+                } else {
+                    balanceDiff.should.be.bignumber.equal(expected);
+                }
             } else {
-                balanceDiff.should.be.bignumber.equal(totalPrice);
+                if (overrides.totalPricePrecision) {
+                    shouldBeEqualWithETHDecimalPrecision(
+                        balanceDiff,
+                        totalPrice,
+                        overrides.totalPricePrecision);
+                } else {
+                    balanceDiff.should.be.bignumber.equal(totalPrice);
+                }
             }
         }
 
@@ -397,100 +417,664 @@ contract('UniswapSwapSale', function (accounts) {
             this.erc20TokenAddress = tokens['TokenA'].contract.address;
         });
 
+        describe('when paying with ETH', function () {
+
+            const quantity = One;
+
+            describe('when the purchaser and the recipient are the same', function () {
+
+                describe('when the payment token max amount to swap does not equal the amount sent', function () {
+
+                    it('should revert and not handle payment', async function () {
+                        const unitPrice = liquidity['ReferenceToken'].price;
+                        const totalPrice = unitPrice.mul(quantity);
+
+                        const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                            this.ethTokenAddress,
+                            tokens['ReferenceToken'].contract.address,
+                            totalPrice,
+                            '0x');
+
+                        const maxFromAmount = uintToBytes32(fromAmount.subn(1));
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldRevertAndNotHandlePayment.bind(this)(
+                            'UniswapV2Adapter: INVALID_MAX_AMOUNT_IN',
+                            recipient,
+                            recipient,
+                            this.ethTokenAddress,
+                            sku,
+                            quantity,
+                            userData,
+                            {
+                                amountVariance: new BN(1),
+                                totalPricePrecision: 14
+                            });
+                    });
+
+                });
+
+                describe('when the payment token max amount to swap is insufficient', function () {
+
+                    it('should revert and not handle payment', async function () {
+                        const unitPrice = liquidity['ReferenceToken'].price;
+                        const totalPrice = unitPrice.mul(quantity);
+
+                        const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                            this.ethTokenAddress,
+                            tokens['ReferenceToken'].contract.address,
+                            totalPrice,
+                            '0x');
+
+                        const maxFromAmount = uintToBytes32(fromAmount.subn(1));
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldRevertAndNotHandlePayment.bind(this)(
+                            'OracleSwapSale: insufficient ETH provided',
+                            recipient,
+                            recipient,
+                            this.ethTokenAddress,
+                            sku,
+                            quantity,
+                            userData,
+                            {
+                                amountVariance: new BN(-1),
+                                totalPricePrecision: 14
+                            });
+                    });
+
+                });
+
+                describe('when the payment token max amount to swap is sufficient', function () {
+
+                    it('should handle payment', async function () {
+                        const unitPrice = liquidity['ReferenceToken'].price;
+                        const totalPrice = unitPrice.mul(quantity);
+
+                        const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                            this.ethTokenAddress,
+                            tokens['ReferenceToken'].contract.address,
+                            totalPrice,
+                            '0x');
+
+                        const maxFromAmount = uintToBytes32(fromAmount);
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldHandlePayment.bind(this)(
+                            recipient,
+                            recipient,
+                            this.ethTokenAddress,
+                            sku,
+                            quantity,
+                            userData,
+                            { totalPricePrecision: 14 });
+                    });
+
+                });
+
+                describe('when the payment token max amount to swap is more than sufficient', function () {
+
+                    it('should handle payment', async function () {
+                        const unitPrice = liquidity['ReferenceToken'].price;
+                        const totalPrice = unitPrice.mul(quantity);
+
+                        const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                            this.ethTokenAddress,
+                            tokens['ReferenceToken'].contract.address,
+                            totalPrice,
+                            '0x');
+
+                        const maxFromAmount = uintToBytes32(fromAmount.addn(1));
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldHandlePayment.bind(this)(
+                            recipient,
+                            recipient,
+                            this.ethTokenAddress,
+                            sku,
+                            quantity,
+                            userData,
+                            {
+                                amountVariance: new BN(1),
+                                totalPricePrecision: 14
+                            });
+                    });
+
+                });
+
+                describe('when the payment token max amount to swap is the maximum amount supported', function () {
+
+                    it('should handle payment', async function () {
+                        const maxFromAmount = uintToBytes32(Zero);
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldHandlePayment.bind(this)(
+                            recipient,
+                            recipient,
+                            this.ethTokenAddress,
+                            sku,
+                            quantity,
+                            userData,
+                            { totalPricePrecision: 14 });
+                    });
+
+                });
+
+            });
+
+            describe('when the purchaser and the recipient are different', function () {
+
+                describe('when the payment token max amount to swap does not equal the amount sent', function () {
+
+                    it('should revert and not handle payment', async function () {
+                        const unitPrice = liquidity['ReferenceToken'].price;
+                        const totalPrice = unitPrice.mul(quantity);
+
+                        const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                            this.ethTokenAddress,
+                            tokens['ReferenceToken'].contract.address,
+                            totalPrice,
+                            '0x');
+
+                        const maxFromAmount = uintToBytes32(fromAmount.subn(1));
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldRevertAndNotHandlePayment.bind(this)(
+                            'UniswapV2Adapter: INVALID_MAX_AMOUNT_IN',
+                            purchaser,
+                            recipient,
+                            this.ethTokenAddress,
+                            sku,
+                            quantity,
+                            userData,
+                            {
+                                amountVariance: new BN(1),
+                                totalPricePrecision: 14
+                            });
+                    });
+
+                });
+
+                describe('when the payment token max amount to swap is insufficient', function () {
+
+                    it('should revert and not handle payment', async function () {
+                        const unitPrice = liquidity['ReferenceToken'].price;
+                        const totalPrice = unitPrice.mul(quantity);
+
+                        const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                            this.ethTokenAddress,
+                            tokens['ReferenceToken'].contract.address,
+                            totalPrice,
+                            '0x');
+
+                        const maxFromAmount = uintToBytes32(fromAmount.subn(1));
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldRevertAndNotHandlePayment.bind(this)(
+                            'OracleSwapSale: insufficient ETH provided',
+                            purchaser,
+                            recipient,
+                            this.ethTokenAddress,
+                            sku,
+                            quantity,
+                            userData,
+                            {
+                                amountVariance: new BN(-1),
+                                totalPricePrecision: 14
+                            });
+                    });
+
+                });
+
+                describe('when the payment token max amount to swap is sufficient', function () {
+
+                    it('should handle payment', async function () {
+                        const unitPrice = liquidity['ReferenceToken'].price;
+                        const totalPrice = unitPrice.mul(quantity);
+
+                        const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                            this.ethTokenAddress,
+                            tokens['ReferenceToken'].contract.address,
+                            totalPrice,
+                            '0x');
+
+                        const maxFromAmount = uintToBytes32(fromAmount);
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldHandlePayment.bind(this)(
+                            purchaser,
+                            recipient,
+                            this.ethTokenAddress,
+                            sku,
+                            quantity,
+                            userData,
+                            { totalPricePrecision: 14 });
+                    });
+
+                });
+
+                describe('when the payment token max amount to swap is more than sufficient', function () {
+
+                    it('should handle payment', async function () {
+                        const unitPrice = liquidity['ReferenceToken'].price;
+                        const totalPrice = unitPrice.mul(quantity);
+
+                        const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                            this.ethTokenAddress,
+                            tokens['ReferenceToken'].contract.address,
+                            totalPrice,
+                            '0x');
+
+                        const maxFromAmount = uintToBytes32(fromAmount.addn(1));
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldHandlePayment.bind(this)(
+                            purchaser,
+                            recipient,
+                            this.ethTokenAddress,
+                            sku,
+                            quantity,
+                            userData,
+                            {
+                                amountVariance: new BN(1),
+                                totalPricePrecision: 14
+                            });
+                    });
+
+                });
+
+                describe('when the payment token max amount to swap is the maximum amount supported', function () {
+
+                    it('should handle payment', async function () {
+                        const maxFromAmount = uintToBytes32(Zero);
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldHandlePayment.bind(this)(
+                            purchaser,
+                            recipient,
+                            this.ethTokenAddress,
+                            sku,
+                            quantity,
+                            userData,
+                            { totalPricePrecision: 14 });
+                    });
+
+                });
+
+            });
+
+        });
+
         describe('when paying with ERC20', function () {
 
             const quantity = One;
 
-            describe('when the payment token max amount to swap is insufficient', function () {
+            describe('when the purchaser and the recipient are the same', function () {
 
-                it('should revert and not handle payment', async function () {
-                    const unitPrice = liquidity['ReferenceToken'].price;
-                    const totalPrice = unitPrice.mul(quantity);
+                describe('when the payment token max amount to swap is insufficient', function () {
 
-                    const fromAmount = await this.contract.callUnderscoreEstimateSwap(
-                        this.erc20TokenAddress,
-                        tokens['ReferenceToken'].contract.address,
-                        totalPrice,
-                        '0x');
+                    it('should revert and not handle payment', async function () {
+                        const unitPrice = liquidity['ReferenceToken'].price;
+                        const totalPrice = unitPrice.mul(quantity);
 
-                    const userData = bytes32ArrayToBytes([uintToBytes32(fromAmount.subn(1))]);
+                        const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                            this.erc20TokenAddress,
+                            tokens['ReferenceToken'].contract.address,
+                            totalPrice,
+                            '0x');
 
-                    await shouldRevertAndNotHandlePayment.bind(this)(
-                        'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT',
-                        purchaser,
-                        recipient,
-                        this.erc20TokenAddress,
-                        sku,
-                        quantity,
-                        userData);
+                        const maxFromAmount = uintToBytes32(fromAmount.subn(1));
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldRevertAndNotHandlePayment.bind(this)(
+                            'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT',
+                            recipient,
+                            recipient,
+                            this.erc20TokenAddress,
+                            sku,
+                            quantity,
+                            userData);
+                    });
+
+                });
+
+                describe('when the payment token max amount to swap is sufficient', function () {
+
+                    it('should handle payment', async function () {
+                        const unitPrice = liquidity['ReferenceToken'].price;
+                        const totalPrice = unitPrice.mul(quantity);
+
+                        const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                            this.erc20TokenAddress,
+                            tokens['ReferenceToken'].contract.address,
+                            totalPrice,
+                            '0x');
+
+                        const maxFromAmount = uintToBytes32(fromAmount);
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldHandlePayment.bind(this)(
+                            recipient,
+                            recipient,
+                            this.erc20TokenAddress,
+                            sku,
+                            quantity,
+                            userData);
+                    });
+
+                });
+
+                describe('when the payment token max amount to swap is more than sufficient', function () {
+
+                    it('should handle payment', async function () {
+                        const unitPrice = liquidity['ReferenceToken'].price;
+                        const totalPrice = unitPrice.mul(quantity);
+
+                        const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                            this.erc20TokenAddress,
+                            tokens['ReferenceToken'].contract.address,
+                            totalPrice,
+                            '0x');
+
+                        const maxFromAmount = uintToBytes32(fromAmount.addn(1));
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldHandlePayment.bind(this)(
+                            recipient,
+                            recipient,
+                            this.erc20TokenAddress,
+                            sku,
+                            quantity,
+                            userData);
+                    });
+
+                });
+
+                describe('when the payment token max amount to swap is the maximum amount supported', function () {
+
+                    it('should handle payment', async function () {
+                        const maxFromAmount = uintToBytes32(Zero);
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldHandlePayment.bind(this)(
+                            recipient,
+                            recipient,
+                            this.erc20TokenAddress,
+                            sku,
+                            quantity,
+                            userData);
+                    });
+
                 });
 
             });
 
-            describe('when the payment token max amount to swap is sufficient', function () {
+            describe('when the purchaser and the recipient are different', function () {
 
-                it('should handle payment', async function () {
-                    const unitPrice = liquidity['ReferenceToken'].price;
-                    const totalPrice = unitPrice.mul(quantity);
+                describe('when the payment token max amount to swap is insufficient', function () {
 
-                    const fromAmount = await this.contract.callUnderscoreEstimateSwap(
-                        this.erc20TokenAddress,
-                        tokens['ReferenceToken'].contract.address,
-                        totalPrice,
-                        '0x00');
+                    it('should revert and not handle payment', async function () {
+                        const unitPrice = liquidity['ReferenceToken'].price;
+                        const totalPrice = unitPrice.mul(quantity);
 
-                    const userData = bytes32ArrayToBytes([uintToBytes32(fromAmount)]);
+                        const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                            this.erc20TokenAddress,
+                            tokens['ReferenceToken'].contract.address,
+                            totalPrice,
+                            '0x');
 
-                    await shouldHandlePayment.bind(this)(
-                        purchaser,
-                        recipient,
-                        this.erc20TokenAddress,
-                        sku,
-                        quantity,
-                        userData);
+                        const maxFromAmount = uintToBytes32(fromAmount.subn(1));
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldRevertAndNotHandlePayment.bind(this)(
+                            'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT',
+                            purchaser,
+                            recipient,
+                            this.erc20TokenAddress,
+                            sku,
+                            quantity,
+                            userData);
+                    });
+
+                });
+
+                describe('when the payment token max amount to swap is sufficient', function () {
+
+                    it('should handle payment', async function () {
+                        const unitPrice = liquidity['ReferenceToken'].price;
+                        const totalPrice = unitPrice.mul(quantity);
+
+                        const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                            this.erc20TokenAddress,
+                            tokens['ReferenceToken'].contract.address,
+                            totalPrice,
+                            '0x');
+
+                        const maxFromAmount = uintToBytes32(fromAmount);
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldHandlePayment.bind(this)(
+                            purchaser,
+                            recipient,
+                            this.erc20TokenAddress,
+                            sku,
+                            quantity,
+                            userData);
+                    });
+
+                });
+
+                describe('when the payment token max amount to swap is more than sufficient', function () {
+
+                    it('should handle payment', async function () {
+                        const unitPrice = liquidity['ReferenceToken'].price;
+                        const totalPrice = unitPrice.mul(quantity);
+
+                        const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                            this.erc20TokenAddress,
+                            tokens['ReferenceToken'].contract.address,
+                            totalPrice,
+                            '0x');
+
+                        const maxFromAmount = uintToBytes32(fromAmount.addn(1));
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldHandlePayment.bind(this)(
+                            purchaser,
+                            recipient,
+                            this.erc20TokenAddress,
+                            sku,
+                            quantity,
+                            userData);
+                    });
+
+                });
+
+                describe('when the payment token max amount to swap is the maximum amount supported', function () {
+
+                    it('should handle payment', async function () {
+                        const maxFromAmount = uintToBytes32(Zero);
+                        const deadlineDuration = uintToBytes32(Zero);
+
+                        const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                        await shouldHandlePayment.bind(this)(
+                            purchaser,
+                            recipient,
+                            this.erc20TokenAddress,
+                            sku,
+                            quantity,
+                            userData);
+                    });
+
                 });
 
             });
 
-            describe('when the payment token max amount to swap is more than sufficient', function () {
+        });
 
-                it('should handle payment', async function () {
-                    const unitPrice = liquidity['ReferenceToken'].price;
-                    const totalPrice = unitPrice.mul(quantity);
+    });
 
-                    const fromAmount = await this.contract.callUnderscoreEstimateSwap(
-                        this.erc20TokenAddress,
-                        tokens['ReferenceToken'].contract.address,
-                        totalPrice,
-                        '0x00');
+    describe('_conversionRate()', function () {
 
-                    const userData = bytes32ArrayToBytes([uintToBytes32(fromAmount.addn(1))]);
+        const userData = bytes32ArrayToBytes([uintToBytes32(Zero), uintToBytes32(Zero)]);
 
-                    await shouldHandlePayment.bind(this)(
-                        purchaser,
-                        recipient,
-                        this.erc20TokenAddress,
-                        sku,
-                        quantity,
-                        userData);
-                });
+        beforeEach(async function () {
+            await doAddLiquidity.bind(this)();
+            await doDeploy.bind(this)();
+        });
 
+        it('should revert if the source token to convert from is the zero address', async function () {
+            await expectRevert(
+                this.contract.callUnderscoreConversionRate(
+                    ZeroAddress,
+                    tokens['TokenA'].contract.address,
+                    userData),
+                'UniswapV2Adapter: ZERO_ADDRESS');
+        });
+
+        it('should revert if the destination token to convert to is the zero address', async function () {
+            await expectRevert(
+                this.contract.callUnderscoreConversionRate(
+                    tokens['TokenA'].contract.address,
+                    ZeroAddress,
+                    userData),
+                'UniswapV2Adapter: ZERO_ADDRESS');
+        });
+
+        it('should revert if the source and destination token are the same', async function () {
+            await expectRevert(
+                this.contract.callUnderscoreConversionRate(
+                    tokens['TokenA'].contract.address,
+                    tokens['TokenA'].contract.address,
+                    userData),
+                'UniswapV2Adapter: IDENTICAL_ADDRESSES');
+        });
+
+        it('should revert if the source token to convert from does not belong to a token pair', async function () {
+            await expectRevert(
+                this.contract.callUnderscoreConversionRate(
+                    tokens['TokenD'].contract.address,
+                    tokens['TokenA'].contract.address,
+                    userData),
+                'revert');
+        });
+
+        it('should revert if the destination token to convert to does not belong to a token pair', async function () {
+            await expectRevert(
+                this.contract.callUnderscoreConversionRate(
+                    tokens['TokenA'].contract.address,
+                    tokens['TokenD'].contract.address,
+                    userData),
+                'revert');
+        });
+
+        describe(`should return the correct conversion rates`, async function () {
+
+            it('when the source token has a reserve less than the destination token', async function () {
+                const fromToken = tokens['TokenA'].contract.address;
+                const toToken = tokens['ReferenceToken'].contract.address;
+
+                const actualRate = await this.contract.callUnderscoreConversionRate(
+                    fromToken,
+                    toToken,
+                    userData);
+
+                const reserves = await this.contract.getReserves(
+                    fromToken,
+                    toToken);
+
+                const expectedRate = reserves.reserveB.mul(new BN(10).pow(new BN(18))).div(reserves.reserveA);
+
+                actualRate.should.be.bignumber.equal(expectedRate);
             });
 
-            describe('when the payment token max amount to swap is the maximum amount supported', function () {
+            it('when the source token has a reserve more than the destination token', async function () {
+                const fromToken = tokens['TokenB'].contract.address;
+                const toToken = tokens['ReferenceToken'].contract.address;
 
-                it('should handle payment', async function () {
-                    const userData = bytes32ArrayToBytes([uintToBytes32(Zero)]);
+                const actualRate = await this.contract.callUnderscoreConversionRate(
+                    fromToken,
+                    toToken,
+                    userData);
 
-                    await shouldHandlePayment.bind(this)(
-                        purchaser,
-                        recipient,
-                        this.erc20TokenAddress,
-                        sku,
-                        quantity,
-                        userData);
-                });
+                const reserves = await this.contract.getReserves(
+                    fromToken,
+                    toToken);
 
+                const expectedRate = reserves.reserveB.mul(new BN(10).pow(new BN(18))).div(reserves.reserveA);
+
+                actualRate.should.be.bignumber.equal(expectedRate);
+            });
+
+            it('when the source token has a reserve equal to the destination token', async function () {
+                const fromToken = tokens['TokenC'].contract.address;
+                const toToken = tokens['ReferenceToken'].contract.address;
+
+                const actualRate = await this.contract.callUnderscoreConversionRate(
+                    fromToken,
+                    toToken,
+                    userData);
+
+                const reserves = await this.contract.getReserves(
+                    fromToken,
+                    toToken);
+
+                const expectedRate = reserves.reserveB.mul(new BN(10).pow(new BN(18))).div(reserves.reserveA);
+
+                actualRate.should.be.bignumber.equal(expectedRate);
+            });
+
+            it('when the source token is the ETH token', async function () {
+                const fromToken = await this.contract.TOKEN_ETH();
+                const toToken = tokens['ReferenceToken'].contract.address;
+
+                const actualRate = await this.contract.callUnderscoreConversionRate(
+                    fromToken,
+                    toToken,
+                    userData);
+
+                const reserves = await this.contract.getReserves(
+                    fromToken,
+                    toToken);
+
+                const expectedRate = reserves.reserveB.mul(new BN(10).pow(new BN(18))).div(reserves.reserveA);
+
+                actualRate.should.be.bignumber.equal(expectedRate);
             });
 
         });
@@ -588,48 +1172,377 @@ contract('UniswapSwapSale', function (accounts) {
 
     });
 
-    describe.skip('TODO: _swap()', function () {
+    describe('_swap()', function () {
+
+        function isEthToken(token, overrides = {}) {
+            return token === (overrides.ethTokenAddress || this.ethTokenAddress);
+        }
+
+        async function doCallUnderscoreSwap(fromToken, fromAmount, toToken, toAmount, data, overrides = {}) {
+            const contract = overrides.contract || this.contract;
+
+            let amount = overrides.amount || fromAmount;
+            let amountVariance = overrides.amountVariance;
+
+            if (!amountVariance) {
+                amountVariance = Zero;
+            }
+
+            amount = amount.add(amountVariance);
+
+            let etherValue;
+
+            if (isEthToken.bind(this)(fromToken, overrides)) {
+                etherValue = amount;
+            } else {
+                const erc20Contract = await ERC20.at(fromToken);
+                await erc20Contract.approve(this.contract.address, amount, { from: purchaser });
+                etherValue = Zero;
+            }
+
+            const callUnderscoreSwap = contract.callUnderscoreSwap(
+                fromToken,
+                amount,
+                toToken,
+                toAmount,
+                data,
+                {
+                    from: purchaser,
+                    value: etherValue
+                });
+
+            return { callUnderscoreSwap };
+        }
+
+        async function shouldHandleSwap(fromToken, fromAmount, toToken, toAmount, data, overrides = {}) {
+            const contract = overrides.contract || this.contract;
+
+            const { callUnderscoreSwap } = await doCallUnderscoreSwap.bind(this)(
+                fromToken,
+                fromAmount,
+                toToken,
+                toAmount,
+                data,
+                overrides);
+
+            const receipt = await callUnderscoreSwap;
+
+            const events = await this.contract.getPastEvents(
+                'UnderscoreSwapResult',
+                { fromBlock: 'latest' });
+
+            const actualFromAmount = events[0].args.fromAmount;
+
+            actualFromAmount.should.be.bignumber.equal(fromAmount);
+        }
+
+        async function shouldRevertAndNotHandleSwap(revertMessage, fromToken, fromAmount, toToken, toAmount, data, overrides = {}) {
+            const { callUnderscoreSwap } = await doCallUnderscoreSwap.bind(this)(
+                fromToken,
+                fromAmount,
+                toToken,
+                toAmount,
+                data,
+                overrides);
+
+            if (revertMessage) {
+                await expectRevert(callUnderscoreSwap, revertMessage);
+            } else {
+                await expectRevert.unspecified(callUnderscoreSwap);
+            }
+        }
 
         beforeEach(async function () {
             await doAddLiquidity.bind(this)();
             await doDeploy.bind(this)();
             await doCreateSku.bind(this)();
+
+            this.ethTokenAddress = await this.contract.TOKEN_ETH();
+
+            await tokens['TokenA'].contract.transfer(purchaser, ether('1'));
+
+            this.erc20TokenAddress = tokens['TokenA'].contract.address;
         });
 
-        it('TODO: write the _swap() tests', async function () {
-            // const fromTokenAddress = await this.contract.TOKEN_ETH();
-            // const toToken = tokens['ReferenceToken'].contract;
-            // const toAmount = liquidity['ReferenceToken'].price;
-            // const data = bytes32ArrayToBytes([uintToBytes32(Zero), uintToBytes32(Zero)]);
-            //
-            // const expectedFromAmount = await this.contract.callUnderscoreEstimateSwap(
-            //     fromTokenAddress,
-            //     toToken.address,
-            //     toAmount,
-            //     data);
-            //
-            // const receipt = await this.contract.callUnderscoreSwap(
-            //     fromTokenAddress,
-            //     toToken.address,
-            //     toAmount,
-            //     data,
-            //     {
-            //         from: purchaser,
-            //         value: expectedFromAmount
-            //     });
-            //
-            // const events = await this.contract.getPastEvents(
-            //     'UnderscoreSwapResult',
-            //     { fromBlock: 'latest' });
-            //
-            // const actualFromAmount = events[0].args.fromAmount;
+        describe('when swapping ETH', function () {
 
-            false.should.be.true;
+            describe('when the max amount to swap does not equal the amount sent', function () {
+
+                it('should revert and not handle swap', async function () {
+                    const fromToken = this.ethTokenAddress;
+                    const toToken = tokens['ReferenceToken'].contract.address;
+                    const toAmount = liquidity['ReferenceToken'].price;
+
+                    const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                        fromToken,
+                        toToken,
+                        toAmount,
+                        '0x');
+
+                    const maxFromAmount = uintToBytes32(fromAmount.subn(1));
+                    const deadlineDuration = uintToBytes32(Zero);
+
+                    const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                    await shouldRevertAndNotHandleSwap.bind(this)(
+                        'UniswapV2Adapter: INVALID_MAX_AMOUNT_IN',
+                        fromToken,
+                        fromAmount,
+                        toToken,
+                        toAmount,
+                        data,
+                        {
+                            amountVariance: new BN(1)
+                        });
+                });
+
+            });
+
+            describe('when the amount to swap is insufficient', function () {
+
+                it('should revert and not handle swap', async function () {
+                    const fromToken = this.ethTokenAddress;
+                    const toToken = tokens['ReferenceToken'].contract.address;
+                    const toAmount = liquidity['ReferenceToken'].price;
+
+                    const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                        fromToken,
+                        toToken,
+                        toAmount,
+                        '0x');
+
+                    const maxFromAmount = uintToBytes32(fromAmount.subn(1));
+                    const deadlineDuration = uintToBytes32(Zero);
+
+                    const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                    await shouldRevertAndNotHandleSwap.bind(this)(
+                        'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT',
+                        fromToken,
+                        fromAmount,
+                        toToken,
+                        toAmount,
+                        data,
+                        {
+                            amountVariance: new BN(-1)
+                        });
+                });
+
+            });
+
+            describe('when the amount to swap is sufficient', function () {
+
+                it('should handle swap', async function () {
+                    const fromToken = this.ethTokenAddress;
+                    const toToken = tokens['ReferenceToken'].contract.address;
+                    const toAmount = liquidity['ReferenceToken'].price;
+
+                    const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                        fromToken,
+                        toToken,
+                        toAmount,
+                        '0x');
+
+                    const maxFromAmount = uintToBytes32(fromAmount);
+                    const deadlineDuration = uintToBytes32(Zero);
+
+                    const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                    await shouldHandleSwap.bind(this)(
+                        fromToken,
+                        fromAmount,
+                        toToken,
+                        toAmount,
+                        data);
+                });
+
+            });
+
+            describe('when the amount to swap is more than sufficient', function () {
+
+                it('should handle swap', async function () {
+                    const fromToken = this.ethTokenAddress;
+                    const toToken = tokens['ReferenceToken'].contract.address;
+                    const toAmount = liquidity['ReferenceToken'].price;
+
+                    const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                        fromToken,
+                        toToken,
+                        toAmount,
+                        '0x');
+
+                    const maxFromAmount = uintToBytes32(fromAmount.addn(1));
+                    const deadlineDuration = uintToBytes32(Zero);
+
+                    const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                    await shouldHandleSwap.bind(this)(
+                        fromToken,
+                        fromAmount,
+                        toToken,
+                        toAmount,
+                        data,
+                        {
+                            amountVariance: new BN(1)
+                        });
+                });
+
+            });
+
+            describe('when the amount to swap is the maximum amount supported', function () {
+
+                it('should handle swap', async function () {
+                    const fromToken = this.ethTokenAddress;
+                    const toToken = tokens['ReferenceToken'].contract.address;
+                    const toAmount = liquidity['ReferenceToken'].price;
+
+                    const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                        fromToken,
+                        toToken,
+                        toAmount,
+                        '0x');
+
+                    const maxFromAmount = uintToBytes32(Zero);
+                    const deadlineDuration = uintToBytes32(Zero);
+
+                    const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                    await shouldHandleSwap.bind(this)(
+                        fromToken,
+                        fromAmount,
+                        toToken,
+                        toAmount,
+                        data);
+                });
+
+            });
+
+        });
+
+        describe('when swapping ERC20', function () {
+
+            describe('when the amount to swap is insufficient', function () {
+
+                it('should revert and not handle swap', async function () {
+                    const fromToken = this.erc20TokenAddress;
+                    const toToken = tokens['ReferenceToken'].contract.address;
+                    const toAmount = liquidity['ReferenceToken'].price;
+
+                    const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                        fromToken,
+                        toToken,
+                        toAmount,
+                        '0x');
+
+                    const maxFromAmount = uintToBytes32(fromAmount.subn(1));
+                    const deadlineDuration = uintToBytes32(Zero);
+
+                    const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                    await shouldRevertAndNotHandleSwap.bind(this)(
+                        'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT',
+                        fromToken,
+                        fromAmount,
+                        toToken,
+                        toAmount,
+                        data,
+                        {
+                            amountVariance: new BN(-1)
+                        });
+                });
+
+            });
+
+            describe('when the amount to swap is sufficient', function () {
+
+                it('should handle swap', async function () {
+                    const fromToken = this.erc20TokenAddress;
+                    const toToken = tokens['ReferenceToken'].contract.address;
+                    const toAmount = liquidity['ReferenceToken'].price;
+
+                    const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                        fromToken,
+                        toToken,
+                        toAmount,
+                        '0x');
+
+                    const maxFromAmount = uintToBytes32(fromAmount);
+                    const deadlineDuration = uintToBytes32(Zero);
+
+                    const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                    await shouldHandleSwap.bind(this)(
+                        fromToken,
+                        fromAmount,
+                        toToken,
+                        toAmount,
+                        data);
+                });
+
+            });
+
+            describe('when the amount to swap is more than sufficient', function () {
+
+                it('should handle swap', async function () {
+                    const fromToken = this.erc20TokenAddress;
+                    const toToken = tokens['ReferenceToken'].contract.address;
+                    const toAmount = liquidity['ReferenceToken'].price;
+
+                    const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                        fromToken,
+                        toToken,
+                        toAmount,
+                        '0x');
+
+                    const maxFromAmount = uintToBytes32(fromAmount.addn(1));
+                    const deadlineDuration = uintToBytes32(Zero);
+
+                    const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                    await shouldHandleSwap.bind(this)(
+                        fromToken,
+                        fromAmount,
+                        toToken,
+                        toAmount,
+                        data,
+                        { amountVariance: new BN(1) });
+                });
+
+            });
+
+            describe('when the amount to swap is the maximum amount supported', function () {
+
+                it('should handle swap', async function () {
+                    const fromToken = this.erc20TokenAddress;
+                    const toToken = tokens['ReferenceToken'].contract.address;
+                    const toAmount = liquidity['ReferenceToken'].price;
+
+                    const fromAmount = await this.contract.callUnderscoreEstimateSwap(
+                        fromToken,
+                        toToken,
+                        toAmount,
+                        '0x');
+
+                    const maxFromAmount = uintToBytes32(Zero);
+                    const deadlineDuration = uintToBytes32(Zero);
+
+                    const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
+
+                    await shouldHandleSwap.bind(this)(
+                        fromToken,
+                        fromAmount,
+                        toToken,
+                        toAmount,
+                        data);
+                });
+
+            });
+
         });
 
     });
 
-    describe.skip('TODO: scenarios', function () {
+    describe('scenarios', function () {
 
         beforeEach(async function () {
             await doAddLiquidity.bind(this)();
@@ -660,15 +1573,12 @@ contract('UniswapSwapSale', function (accounts) {
                     ether('1'));
             });
 
-            it('TODO: fix the balance test in the shouldPurchaseFor() behavior', async function () {
-                false.should.be.true;
-            });
-
-            // This is currently failing because of the balance test in the
-            // shouldPurchaseFor() behavior. It's relying on the estimate total
-            // amount in the test against the actual amount, and the estimate
-            // is not always accurate to what was actually spent in payment.
-            purchasingScenario([ purchaser, recipient ], sku, userData);
+            // This scenario requires an explicit total price precision set
+            // because the shouldPurchaseFor() behavior relies on the estimate
+            // purchase total amount, which is not always accurate to what was
+            // actually spent in payment. This is due solely to the fact that
+            // the Oracle swap produces an approximate exchange rate.
+            purchasingScenario([ purchaser, recipient ], sku, userData, { totalPricePrecision: 14 });
 
         });
 

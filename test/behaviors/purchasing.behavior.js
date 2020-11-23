@@ -2,6 +2,10 @@ const { BN, balance, expectRevert, expectEvent } = require('@openzeppelin/test-h
 const { Zero } = require('@animoca/ethereum-contracts-core_library').constants;
 const { toChecksumAddress } = require('web3-utils');
 
+const {
+    shouldBeEqualWithETHDecimalPrecision
+} = require('@animoca/ethereum-contracts-core_library').fixtures;
+
 const IERC20 = artifacts.require('IERC20.sol');
 
 /*
@@ -113,9 +117,25 @@ async function shouldPurchaseFor(purchaser, recipient, token, sku, quantity, use
     if (isEthToken.bind(this)(token, overrides)) {
         const gasUsed = new BN(receipt.receipt.gasUsed);
         const gasPrice = new BN(await web3.eth.getGasPrice());
-        balanceDiff.should.be.bignumber.equal(totalPrice.add(gasUsed.mul(gasPrice)));
+        const expected = totalPrice.add(gasUsed.mul(gasPrice));
+
+        if (overrides.totalPricePrecision) {
+            shouldBeEqualWithETHDecimalPrecision(
+                balanceDiff,
+                expected,
+                overrides.totalPricePrecision);
+        } else {
+            balanceDiff.should.be.bignumber.equal(expected);
+        }
     } else {
-        balanceDiff.should.be.bignumber.equal(totalPrice);
+        if (overrides.totalPricePrecision) {
+            shouldBeEqualWithETHDecimalPrecision(
+                balanceDiff,
+                totalPrice,
+                overrides.totalPricePrecision);
+        } else {
+            balanceDiff.should.be.bignumber.equal(totalPrice);
+        }
     }
 }
 
