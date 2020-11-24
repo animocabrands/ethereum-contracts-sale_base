@@ -9,6 +9,8 @@ const {
     toBN
 } = require('web3-utils');
 
+const AbiCoder = require('web3-eth-abi');
+
 function addressToBytes32(value) {
     return uintToBytes32(value);
 }
@@ -37,6 +39,10 @@ function bytes32ArrayToBytes(values) {
     return bytesToHex([].concat(...values.map(value => hexToBytes(value))));
 }
 
+function bytes32ArraysToBytes(arrays) {
+    return AbiCoder.encodeParameters(Array(arrays.length).fill('bytes32[]'), arrays);
+}
+
 module.exports = {
     addressToBytes32,
     stringToBytes32,
@@ -44,5 +50,6 @@ module.exports = {
     bytes32ToAddress,
     bytes32ToString,
     bytes32ToUint,
-    bytes32ArrayToBytes
+    bytes32ArrayToBytes,
+    bytes32ArraysToBytes
 }

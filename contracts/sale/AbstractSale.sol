@@ -413,10 +413,10 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
             purchase.quantity,
             purchase.userData,
             purchase.totalPrice,
-            purchase.pricingData,
-            purchase.paymentData,
-            purchase.deliveryData
-        );
+            abi.encode(
+                purchase.pricingData,
+                purchase.paymentData,
+                purchase.deliveryData));
 
         address notificationsReceiver = _skuInfos[purchase.sku].notificationsReceiver;
         if (notificationsReceiver != address(0)) {

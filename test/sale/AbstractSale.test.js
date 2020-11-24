@@ -1,6 +1,6 @@
 const { ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const { ZeroAddress, Zero, One, Two, Three } = require('@animoca/ethereum-contracts-core_library').constants;
-const { stringToBytes32 } = require('../utils/bytes32');
+const { addressToBytes32, stringToBytes32, uintToBytes32, bytes32ArraysToBytes } = require('../utils/bytes32');
 
 const Sale = artifacts.require('AbstractSaleMock.sol');
 const ERC20 = artifacts.require('ERC20Mock.sol');
@@ -526,7 +526,7 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
                 'Sale: non-existent sku token');
         });
 
-        it('should perform a purchase', async function () {
+        it.only('should perform a purchase', async function () {
             await doStart.bind(this)();
             const quantity = One;
             const receipt = await this.contract.purchaseFor(
@@ -552,9 +552,7 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
                     quantity: One,
                     userData: userData,
                     totalPrice: this.tokenPrice.mul(One),
-                    pricingData: [],
-                    paymentData: [],
-                    deliveryData: []
+                    extData: bytes32ArraysToBytes([[], [], []])
                 });
         });
 
@@ -1026,6 +1024,10 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
         });
 
         it('should emit the Purchase event', async function () {
+            const pricingData = [stringToBytes32('abcde')];
+            const paymentData = [];
+            const deliveryData = [uintToBytes32(Two), addressToBytes32(this.ethTokenAddress)];
+
             const receipt = await this.contract.notification(
                 recipient,
                 this.ethTokenAddress,
@@ -1033,9 +1035,9 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
                 One,
                 userData,
                 ethPrice,
-                [],
-                [],
-                [],
+                pricingData,
+                paymentData,
+                deliveryData,
                 { from: purchaser });
 
             await expectEvent.inTransaction(
@@ -1050,9 +1052,11 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
                     quantity: One,
                     userData: userData,
                     totalPrice: ethPrice,
-                    pricingData: [],
-                    paymentData: [],
-                    deliveryData: []
+                    extData: bytes32ArraysToBytes([
+                        pricingData,
+                        paymentData,
+                        deliveryData
+                    ])
                 });
         });
 
