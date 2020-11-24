@@ -526,7 +526,7 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
                 'Sale: non-existent sku token');
         });
 
-        it.only('should perform a purchase', async function () {
+        it('should perform a purchase', async function () {
             await doStart.bind(this)();
             const quantity = One;
             const receipt = await this.contract.purchaseFor(
