@@ -9,9 +9,6 @@ import "./AbstractSale.sol";
  * @title FixedPricesSale
  * An AbstractSale which implements a fixed prices strategy.
  *  The final implementer is responsible for implementing any additional pricing and/or delivery logic.
- *
- * PurchaseData.pricingData:
- *  - [0] uint256: unit price
  */
 contract FixedPricesSale is AbstractSale {
     /**
