@@ -413,7 +413,7 @@ abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Start
             purchase.quantity,
             purchase.userData,
             purchase.totalPrice,
-            abi.encode(
+            abi.encodePacked(
                 purchase.pricingData,
                 purchase.paymentData,
                 purchase.deliveryData));

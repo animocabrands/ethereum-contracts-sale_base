@@ -1,6 +1,6 @@
 const { ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const { ZeroAddress, Zero, One, Two, Three } = require('@animoca/ethereum-contracts-core_library').constants;
-const { addressToBytes32, stringToBytes32, uintToBytes32, bytes32ArraysToBytes } = require('../utils/bytes32');
+const { addressToBytes32, stringToBytes32, uintToBytes32, bytes32ArraysToBytesPacked } = require('../utils/bytes32');
 
 const Sale = artifacts.require('AbstractSaleMock.sol');
 const ERC20 = artifacts.require('ERC20Mock.sol');
@@ -552,7 +552,7 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
                     quantity: One,
                     userData: userData,
                     totalPrice: this.tokenPrice.mul(One),
-                    extData: bytes32ArraysToBytes([[], [], []])
+                    extData: bytes32ArraysToBytesPacked([[], [], []])
                 });
         });
 
@@ -1052,7 +1052,7 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
                     quantity: One,
                     userData: userData,
                     totalPrice: ethPrice,
-                    extData: bytes32ArraysToBytes([
+                    extData: bytes32ArraysToBytesPacked([
                         pricingData,
                         paymentData,
                         deliveryData
