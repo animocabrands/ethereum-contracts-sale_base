@@ -4,7 +4,7 @@ pragma solidity 0.6.8;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/SafeCast.sol";
-import "../../sale/abstract/SwapSale.sol";
+import "../../../sale/abstract/SwapSale.sol";
 
 contract SwapSaleMock is SwapSale {
     using SafeMath for uint256;

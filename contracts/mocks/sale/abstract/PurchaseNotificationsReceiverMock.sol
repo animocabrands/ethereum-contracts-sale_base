@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.8;
 
-import "../../sale/abstract/PurchaseNotificationsReceiver.sol";
+import "../../../sale/abstract/PurchaseNotificationsReceiver.sol";
 
 contract PurchaseNotificationsReceiverMock is PurchaseNotificationsReceiver {
     bytes4 public constant PURCHASE_NOTIFICATION_RECEIVED_RESULT =

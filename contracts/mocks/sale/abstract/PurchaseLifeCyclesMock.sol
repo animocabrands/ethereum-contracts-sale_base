@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.8;
 
-import "../../sale/abstract/PurchaseLifeCycles.sol";
+import "../../../sale/abstract/PurchaseLifeCycles.sol";
 
 contract PurchaseLifeCyclesMock is PurchaseLifeCycles {
 

@@ -1,10 +1,10 @@
 const { BN, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const { ZeroAddress, Zero, One, Two, Three, Four } = require('@animoca/ethereum-contracts-core_library').constants;
-const { stringToBytes32, bytes32ToUint } = require('../utils/bytes32');
+const { stringToBytes32 } = require('../../utils/bytes32');
 
 const {
     purchasingScenario
-} = require('../scenarios');
+} = require('../../scenarios');
 
 const Sale = artifacts.require('OracleSaleMock');
 const ERC20 = artifacts.require('ERC20Mock');

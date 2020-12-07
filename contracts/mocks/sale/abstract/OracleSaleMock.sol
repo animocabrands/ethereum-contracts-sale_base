@@ -3,7 +3,7 @@
 pragma solidity 0.6.8;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../../sale/abstract/OracleSale.sol";
+import "../../../sale/abstract/OracleSale.sol";
 
 contract OracleSaleMock is OracleSale {
     using SafeMath for uint256;
