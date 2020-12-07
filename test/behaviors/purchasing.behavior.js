@@ -97,9 +97,8 @@ async function shouldPurchaseFor(purchaser, recipient, token, sku, quantity, use
     const receipt = await purchaseFor;
     const contract = overrides.contract || this.contract;
 
-    await expectEvent.inTransaction(
-        receipt.tx,
-        contract,
+    expectEvent(
+        receipt,
         'Purchase',
         {
             purchaser: purchaser,

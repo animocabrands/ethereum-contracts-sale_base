@@ -2,7 +2,7 @@ const { ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers
 const { ZeroAddress, Zero, One, Two, Three } = require('@animoca/ethereum-contracts-core_library').constants;
 const { addressToBytes32, stringToBytes32, uintToBytes32, bytes32ArraysToBytesPacked } = require('../utils/bytes32');
 
-const Sale = artifacts.require('AbstractSaleMock.sol');
+const Sale = artifacts.require('SaleMock.sol');
 const ERC20 = artifacts.require('ERC20Mock.sol');
 const PurchaseNotificationsReceiver = artifacts.require('PurchaseNotificationsReceiverMock');
 
@@ -19,7 +19,7 @@ const erc20Price = ether('1');
 const ethPrice = ether('0.01');
 const userData = '0x00';
 
-contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient]) {
+contract('Sale', function ([_, owner, payoutWallet, purchaser, recipient]) {
 
     async function doDeploy(params = {}) {
         this.contract = await Sale.new(
@@ -257,9 +257,8 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
         it('should emit the SkuCreation event', async function () {
             const receipt = await doCreateSku.bind(this)();
 
-            await expectEvent.inTransaction(
-                receipt.tx,
-                this.contract,
+            expectEvent(
+                receipt,
                 'SkuCreation',
                 {
                     sku: sku,
@@ -341,17 +340,16 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
             skuInfoAfter.prices[1].should.be.bignumber.equal(newErc20Price);
         });
 
-        it('should emit the SkuPriceUpdate event', async function () {
+        it('should emit the SkuPricingUpdate event', async function () {
             const receipt = await doUpdateSkuPricing.bind(this)();
 
-            await expectEvent.inTransaction(
-                receipt.tx,
-                this.contract,
+            expectEvent(
+                receipt,
                 'SkuPricingUpdate',
                 {
                     sku: sku,
                     tokens: [ this.ethTokenAddress ],
-                    prices: [ ethPrice.toString() ]
+                    prices: [ ethPrice ]
                 });
         });
 
@@ -540,9 +538,8 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
                     value: ethPrice.mul(quantity)
                 });
 
-            await expectEvent.inTransaction(
-                receipt.tx,
-                this.contract,
+            expectEvent(
+                receipt,
                 'Purchase',
                 {
                     purchaser: purchaser,
@@ -1040,9 +1037,8 @@ contract('AbstractSale', function ([_, owner, payoutWallet, purchaser, recipient
                 deliveryData,
                 { from: purchaser });
 
-            await expectEvent.inTransaction(
-                receipt.tx,
-                this.contract,
+            expectEvent(
+                receipt,
                 'Purchase',
                 {
                     purchaser: purchaser,

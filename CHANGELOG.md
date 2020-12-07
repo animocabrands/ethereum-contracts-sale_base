@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.0.0
+
+### New Features
+ * Added `UniswapOracleSale.sol` and `UniswapSwapSale.sol`.
+### Breaking changes
+ * `Purchase` event `extData` as packed-encoded arrays.
+ * Contract folders restructuring.
+
 ## 6.0.0
 
 ### New Features

@@ -6,7 +6,7 @@ const {
     purchasingScenario
 } = require('../scenarios');
 
-const Sale = artifacts.require('OracleSwapSaleMock');
+const Sale = artifacts.require('SwapSaleMock');
 const ERC20 = artifacts.require('ERC20Mock');
 
 const skusCapacity = One;
@@ -20,7 +20,7 @@ const referenceTokenPrice = new BN('1000');
 
 const userData = stringToBytes32('userData');
 
-contract('OracleSwapSale', function (accounts) {
+contract('SwapSale', function (accounts) {
 
     const [
         owner,
@@ -108,7 +108,7 @@ contract('OracleSwapSale', function (accounts) {
                     [ this.ethTokenAddress ],
                     referenceTokenPrice,
                     userData),
-                'OracleSwapSaleMock: undefined swap rate');
+                'SwapSaleMock: undefined swap rate');
         });
 
         it(`should return the correct swap rates`, async function () {

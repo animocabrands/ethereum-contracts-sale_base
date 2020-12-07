@@ -2,11 +2,11 @@
 
 pragma solidity 0.6.8;
 
-import "./FixedPricesSale.sol";
-import "./interfaces/IOracleConvertSale.sol";
+import "../FixedPricesSale.sol";
+import "../interfaces/IOracleSale.sol";
 
 /**
- * @title OracleConvertSale
+ * @title OracleSale
  * A FixedPricesSale which implements support for an oracle-based token conversion pricing strategy.
  *  The final implementer is responsible for implementing any additional pricing and/or delivery logic.
  *
@@ -16,7 +16,7 @@ import "./interfaces/IOracleConvertSale.sol";
  *  - [0] uint256: the uninterpolated unit price (i.e. magic value).
  *  - [1] uint256: the token conversion rate used for oracle-based pricing.
  */
-abstract contract OracleConvertSale is IOracleConvertSale, FixedPricesSale {
+abstract contract OracleSale is IOracleSale, FixedPricesSale {
     uint256 public constant override PRICE_CONVERT_VIA_ORACLE = type(uint256).max;
 
     address public referenceToken;
@@ -75,7 +75,7 @@ abstract contract OracleConvertSale is IOracleConvertSale, FixedPricesSale {
         }
     }
 
-    /*                              Public IOracleConvertSale Functions                             */
+    /*                              Public IOracleSale Functions                             */
 
     /**
      * Retrieves the token conversion rates for the `tokens`/`referenceToken` pairs via the oracle.

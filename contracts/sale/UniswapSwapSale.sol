@@ -4,26 +4,27 @@ pragma solidity 0.6.8;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-import "./oracle/interfaces/IUniswapV2Router.sol";
-import "./oracle/UniswapV2Adapter.sol";
-import "./OracleSwapSale.sol";
+import "../oracle/interfaces/IUniswapV2Router.sol";
+import "../oracle/UniswapV2Adapter.sol";
+import "./abstract/SwapSale.sol";
 
 /**
- * @title UniswapConvertSale
- * An OracleConvertSale which implements a Uniswap-based token conversion pricing strategy. The final
+ * @title UniswapSwapSale
+ * An SwapSale which implements a UniswapV2-based token conversion pricing strategy. The final
  *  implementer is responsible for implementing any additional pricing and/or delivery logic.
  *
  * PurchaseData.pricingData:
  *  - a non-zero length array indicates Uniswap-based pricing, otherwise indicates fixed pricing.
  *  - [0] uint256: the token conversion rate used for Uniswap-based pricing.
  *
- * PurchaseData.userData:
- *  - [0] uint256: the maximum amount of purchase tokens to swap for reference tokens, in payment for a
- *    purchase. A value of 0 will use the maximum supported amount (default: type(uint256).max).
- *  - [1] uint256: the overriding value to use for the swap deadline duration. A value of 0 will use the
- *    value returned by SWAP_DEADLINE_DURATION_SECONDS (default: 300 seconds)
+ * PurchaseData.userData MUST be encoded as follow:
+ *  - uint256: the maximum amount of purchase tokens to swap for reference tokens, in payment for a
+ *    purchase. A value of 0 will use the maximum supported amount (default: type(uint256).max),
+ *  - uint256: the overriding value to use for the swap deadline duration. A value of 0 will use the
+ *    value returned by SWAP_DEADLINE_DURATION_SECONDS (default: 300 seconds),
+ *  - additional fields defined by implementer contract.
  */
-contract UniswapSwapSale is OracleSwapSale, UniswapV2Adapter {
+contract UniswapSwapSale is SwapSale, UniswapV2Adapter {
     using SafeMath for uint256;
 
     uint256 public constant SWAP_DEADLINE_DURATION_SECONDS = 300;
@@ -46,7 +47,7 @@ contract UniswapSwapSale is OracleSwapSale, UniswapV2Adapter {
         IUniswapV2Router uniswapV2Router
     )
         public
-        OracleSwapSale(
+        SwapSale(
             payoutWallet_,
             skusCapacity,
             tokensPerSkuCapacity,
@@ -176,8 +177,8 @@ contract UniswapSwapSale is OracleSwapSale, UniswapV2Adapter {
      * @param fromToken The source token to swap from.
      * @param toToken The destination token to swap to.
      * @param toAmount The amount of destination tokens to swap for.
-     * @param data Additional data with no specified format for performing the swap.
-     * return fromAmount The amount of `fromToken` swapped for the specified amount of `toToken`, via the
+     * @param data Additional data for UniswapV2 (uint256 `maxFromAmount`, uint256 `deadlineDuration`).
+     * @return fromAmount The amount of `fromToken` swapped for the specified amount of `toToken`, via the
      *  oracle.
      */
     function _swap(

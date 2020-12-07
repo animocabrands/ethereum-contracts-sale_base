@@ -3,14 +3,14 @@
 pragma solidity 0.6.8;
 
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-import "./AbstractSale.sol";
+import "./abstract/Sale.sol";
 
 /**
  * @title FixedPricesSale
- * An AbstractSale which implements a fixed prices strategy.
+ * An Sale which implements a fixed prices strategy.
  *  The final implementer is responsible for implementing any additional pricing and/or delivery logic.
  */
-contract FixedPricesSale is AbstractSale {
+contract FixedPricesSale is Sale {
     /**
      * Constructor.
      * @dev Emits the `MagicValues` event.
@@ -25,7 +25,7 @@ contract FixedPricesSale is AbstractSale {
         uint256 tokensPerSkuCapacity
     )
         internal
-        AbstractSale(
+        Sale(
             payoutWallet_,
             skusCapacity,
             tokensPerSkuCapacity)

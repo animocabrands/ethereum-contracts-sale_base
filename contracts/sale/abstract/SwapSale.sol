@@ -2,13 +2,12 @@
 
 pragma solidity 0.6.8;
 
-import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-import "./OracleConvertSale.sol";
-import "./interfaces/IOracleSwapSale.sol";
+import "../interfaces/ISwapSale.sol";
+import "./OracleSale.sol";
 
 /**
- * @title OracleSwapSale
- * An OracleConvertSale which implements support for an oracle-based token swap pricing strategy. The
+ * @title SwapSale
+ * An OracleSale which implements support for an oracle-based token swap pricing strategy. The
  *  final implementer is responsible for implementing any additional pricing and/or delivery logic.
  *
  * PurchaseData.pricingData:
@@ -20,7 +19,7 @@ import "./interfaces/IOracleSwapSale.sol";
  * PurchaseData.paymentData:
  *  - [0] uint256: the actual payment price in terms of the purchase token.
  */
-abstract contract OracleSwapSale is OracleConvertSale, IOracleSwapSale {
+abstract contract SwapSale is OracleSale, ISwapSale {
     uint256 public constant override PRICE_SWAP_VIA_ORACLE = PRICE_CONVERT_VIA_ORACLE - 1;
 
     /**
@@ -39,7 +38,7 @@ abstract contract OracleSwapSale is OracleConvertSale, IOracleSwapSale {
         address referenceToken
     )
         internal
-        OracleConvertSale(
+        OracleSale(
             payoutWallet_,
             skusCapacity,
             tokensPerSkuCapacity,
@@ -51,7 +50,7 @@ abstract contract OracleSwapSale is OracleConvertSale, IOracleSwapSale {
         emit MagicValues(names, values);
     }
 
-    /*                            Public IOracleSwapSale Functions                               */
+    /*                            Public ISwapSale Functions                               */
 
     /**
      * Retrieves the token swap rates for the `tokens`/`referenceToken` pairs via the oracle.
@@ -99,11 +98,11 @@ abstract contract OracleSwapSale is OracleConvertSale, IOracleSwapSale {
         if (purchase.token == TOKEN_ETH) {
             require(
                 msg.value >= purchase.totalPrice,
-                "OracleSwapSale: insufficient ETH provided");
+                "SwapSale: insufficient ETH provided");
         } else {
             require(
                 IERC20(purchase.token).transferFrom(_msgSender(), address(this), purchase.totalPrice),
-                "OracleSwapSale: ERC20 payment failed");
+                "SwapSale: ERC20 payment failed");
         }
 
         uint256 swapRate = uint256(purchase.pricingData[1]);
@@ -127,7 +126,7 @@ abstract contract OracleSwapSale is OracleConvertSale, IOracleSwapSale {
             if (change != 0) {
                 require(
                     IERC20(purchase.token).transfer(purchase.purchaser, change),
-                    "OracleSwapSale: ERC20 payment change failed");
+                    "SwapSale: ERC20 payment change failed");
             }
         }
 
@@ -136,7 +135,7 @@ abstract contract OracleSwapSale is OracleConvertSale, IOracleSwapSale {
         } else {
             require(
                 IERC20(referenceToken).transfer(payoutWallet, fromAmount),
-                "OracleSwapSale: ERC20 payout failed");
+                "SwapSale: ERC20 payout failed");
         }
     }
 

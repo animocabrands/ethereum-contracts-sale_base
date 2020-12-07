@@ -9,17 +9,17 @@ import "@animoca/ethereum-contracts-core_library/contracts/utils/Startable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./interfaces/ISale.sol";
-import "./interfaces/IPurchaseNotificationsReceiver.sol";
+import "../interfaces/ISale.sol";
+import "../interfaces/IPurchaseNotificationsReceiver.sol";
 import "./PurchaseLifeCycles.sol";
 
 /**
- * @title AbstractSale
+ * @title Sale
  * An abstract base sale contract with a minimal implementation of ISale and administration functions.
  *  A minimal implementation of the `_validation`, `_delivery` and `notification` life cycle step functions
  *  are provided, but the inheriting contract must implement `_pricing` and `_payment`.
  */
-abstract contract AbstractSale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pausable {
+abstract contract Sale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pausable {
     using Address for address;
     using SafeMath for uint256;
     using EnumSet for EnumSet.Set;

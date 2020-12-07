@@ -474,7 +474,7 @@ contract('UniswapSwapSale', function (accounts) {
                         const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
                         await shouldRevertAndNotHandlePayment.bind(this)(
-                            'OracleSwapSale: insufficient ETH provided',
+                            'SwapSale: insufficient ETH provided',
                             recipient,
                             recipient,
                             this.ethTokenAddress,
@@ -550,7 +550,7 @@ contract('UniswapSwapSale', function (accounts) {
 
                 });
 
-                describe('when the payment token max amount to swap is the maximum amount supported', function () {
+                describe('when the payment token max amount to swap is the default 0 value (no limit)', function () {
 
                     it('should handle payment', async function () {
                         const maxFromAmount = uintToBytes32(Zero);
@@ -625,7 +625,7 @@ contract('UniswapSwapSale', function (accounts) {
                         const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
                         await shouldRevertAndNotHandlePayment.bind(this)(
-                            'OracleSwapSale: insufficient ETH provided',
+                            'SwapSale: insufficient ETH provided',
                             purchaser,
                             recipient,
                             this.ethTokenAddress,

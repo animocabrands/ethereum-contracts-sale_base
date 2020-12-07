@@ -149,9 +149,8 @@ contract('FixedPricesSale', function ([_, payoutWallet, owner, purchaser, recipi
                             userData,
                             { amount: totalPrice.add(overvalue) });
 
-                        await expectEvent.inTransaction(
-                            receipt.tx,
-                            this.contract,
+                        expectEvent(
+                            receipt,
                             'Purchase',
                             {
                                 purchaser: operator,

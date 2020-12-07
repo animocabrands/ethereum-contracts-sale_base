@@ -2,9 +2,9 @@
 
 pragma solidity 0.6.8;
 
-import "../../sale/AbstractSale.sol";
+import "../../sale/abstract/Sale.sol";
 
-contract AbstractSaleMock is AbstractSale {
+contract SaleMock is Sale {
 
     event PurchaseForCalled(
         address payable recipient,
@@ -20,7 +20,7 @@ contract AbstractSaleMock is AbstractSale {
         uint256 tokensPerSkuCapacity
     )
         public
-        AbstractSale(
+        Sale(
             payoutWallet_,
             skusCapacity,
             tokensPerSkuCapacity

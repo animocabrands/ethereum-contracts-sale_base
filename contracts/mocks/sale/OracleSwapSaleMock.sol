@@ -4,9 +4,9 @@ pragma solidity 0.6.8;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/SafeCast.sol";
-import "../../sale/OracleSwapSale.sol";
+import "../../sale/abstract/SwapSale.sol";
 
-contract OracleSwapSaleMock is OracleSwapSale {
+contract SwapSaleMock is SwapSale {
     using SafeMath for uint256;
     using SafeCast for int256;
 
@@ -21,7 +21,7 @@ contract OracleSwapSaleMock is OracleSwapSale {
         address referenceToken
     )
         public
-        OracleSwapSale(
+        SwapSale(
             payoutWallet_,
             skusCapacity,
             tokensPerSkuCapacity,
@@ -137,7 +137,7 @@ contract OracleSwapSaleMock is OracleSwapSale {
         uint256 fromAmount
     ) {
         uint256 swapRate = mockSwapRates[fromToken][toToken];
-        require(swapRate != 0, "OracleSwapSaleMock: undefined swap rate");
+        require(swapRate != 0, "SwapSaleMock: undefined swap rate");
         fromAmount = toAmount.mul(10 ** 18).div(swapRate);
     }
 

@@ -6,7 +6,7 @@ const {
     purchasingScenario
 } = require('../scenarios');
 
-const Sale = artifacts.require('OracleConvertSaleMock');
+const Sale = artifacts.require('OracleSaleMock');
 const ERC20 = artifacts.require('ERC20Mock');
 
 const skusCapacity = One;
@@ -19,7 +19,7 @@ const userData = '0x00';
 
 const referenceTokenPrice = new BN('1000');
 
-contract('OracleConvertSale', function (accounts) {
+contract('OracleSale', function (accounts) {
 
     const [
         owner,
@@ -111,9 +111,8 @@ contract('OracleConvertSale', function (accounts) {
                 userData,
                 { from: purchaser });
 
-            await expectEvent.inTransaction(
-                receipt.tx,
-                this.contract,
+            expectEvent(
+                receipt,
                 'UnderscoreOraclePricingResult',
                 { handled: true });
         });
@@ -127,9 +126,8 @@ contract('OracleConvertSale', function (accounts) {
                 userData,
                 { from: purchaser });
 
-            await expectEvent.inTransaction(
-                receipt.tx,
-                this.contract,
+            expectEvent(
+                receipt,
                 'UnderscoreOraclePricingResult',
                 { handled: false });
         });
@@ -151,7 +149,7 @@ contract('OracleConvertSale', function (accounts) {
                 this.contract.conversionRates(
                     [ this.ethTokenAddress ],
                     userData),
-                'OracleConvertSaleMock: undefined conversion rate');
+                'OracleSaleMock: undefined conversion rate');
         });
 
         it(`should return the correct conversion rates`, async function () {
@@ -225,9 +223,8 @@ contract('OracleConvertSale', function (accounts) {
                 One,
                 userData);
 
-            await expectEvent.inTransaction(
-                receipt.tx,
-                this.contract,
+            expectEvent(
+                receipt,
                 'UnderscoreOraclePricingResult',
                 { handled: false });
         });
@@ -250,9 +247,8 @@ contract('OracleConvertSale', function (accounts) {
                 .div(conversionRate)
                 .mul(quantity);
 
-            await expectEvent.inTransaction(
-                receipt.tx,
-                this.contract,
+            expectEvent(
+                receipt,
                 'UnderscoreOraclePricingResult',
                 {
                     handled: true,

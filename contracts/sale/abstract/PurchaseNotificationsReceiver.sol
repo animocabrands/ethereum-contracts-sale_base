@@ -3,7 +3,7 @@
 pragma solidity 0.6.8;
 
 import "@openzeppelin/contracts/introspection/ERC165.sol";
-import "./interfaces/IPurchaseNotificationsReceiver.sol";
+import "../interfaces/IPurchaseNotificationsReceiver.sol";
 
 /**
  * @title PurchaseNotificationsReceiver
