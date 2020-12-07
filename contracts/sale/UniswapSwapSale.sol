@@ -20,14 +20,11 @@ import "./abstract/SwapSale.sol";
  * PurchaseData.userData MUST be encoded as follow:
  *  - uint256: the maximum amount of purchase tokens to swap for reference tokens, in payment for a
  *    purchase. A value of 0 will use the maximum supported amount (default: type(uint256).max),
- *  - uint256: the overriding value to use for the swap deadline duration. A value of 0 will use the
- *    value returned by SWAP_DEADLINE_DURATION_SECONDS (default: 300 seconds),
+ *  - uint256: the deadline as a UNIX timestamp. A value of 0 will not apply any deadline.
  *  - additional fields defined by implementer contract.
  */
 contract UniswapSwapSale is SwapSale, UniswapV2Adapter {
     using SafeMath for uint256;
-
-    uint256 public constant SWAP_DEADLINE_DURATION_SECONDS = 300;
 
     /**
      * Constructor.
@@ -177,7 +174,7 @@ contract UniswapSwapSale is SwapSale, UniswapV2Adapter {
      * @param fromToken The source token to swap from.
      * @param toToken The destination token to swap to.
      * @param toAmount The amount of destination tokens to swap for.
-     * @param data Additional data for UniswapV2 (uint256 `maxFromAmount`, uint256 `deadlineDuration`).
+     * @param data Additional data for UniswapV2 (uint256 `maxFromAmount`, uint256 `deadline`).
      * @return fromAmount The amount of `fromToken` swapped for the specified amount of `toToken`, via the
      *  oracle.
      */
@@ -190,11 +187,11 @@ contract UniswapSwapSale is SwapSale, UniswapV2Adapter {
         uint256 fromAmount
     ) {
         uint256 maxFromAmount;
-        uint256 deadlineDuration;
+        uint256 deadline;
 
         assembly {
             maxFromAmount := mload(add(data, 32))
-            deadlineDuration := mload(add(data, 64))
+            deadline := mload(add(data, 64))
         }
 
         if (maxFromAmount == 0) {
@@ -205,11 +202,9 @@ contract UniswapSwapSale is SwapSale, UniswapV2Adapter {
             }
         }
 
-        if (deadlineDuration == 0) {
-            deadlineDuration = SWAP_DEADLINE_DURATION_SECONDS;
+        if (deadline == 0) {
+            deadline = type(uint256).max;
         }
-
-        uint256 deadline = block.timestamp.add(deadlineDuration);
 
         if (fromToken == TOKEN_ETH) {
             fromToken = uniswapV2Router.WETH();

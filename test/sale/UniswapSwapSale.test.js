@@ -1152,6 +1152,7 @@ contract('UniswapSwapSale', function (accounts) {
                     liquidity['ReferenceToken'].price,
                     userData);
 
+                // TODO replace with computed estimation
                 fromAmount.should.be.bignumber.not.equal(Zero);
             });
 
@@ -1165,6 +1166,7 @@ contract('UniswapSwapSale', function (accounts) {
                     liquidity['ReferenceToken'].price,
                     userData);
 
+                // TODO replace with computed estimation
                 fromAmount.should.be.bignumber.not.equal(Zero);
             });
 
