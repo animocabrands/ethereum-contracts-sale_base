@@ -1,6 +1,6 @@
 {
   "name": "@animoca/ethereum-contracts-sale_base",
-  "version": "6.0.0",
+  "version": "7.0.0",
   "description": "Solidity sale contracts managing inventory purchases with ETH/ERC-20 token payments",
   "scripts": {
     "compile": "./node_modules/@animoca/ethereum-contracts-core_library/scripts/oz-compile.sh",
