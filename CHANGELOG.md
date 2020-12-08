@@ -3,10 +3,48 @@
 ## 7.0.0
 
 ### New Features
- * Added `UniswapOracleSale.sol` and `UniswapSwapSale.sol`.
+ * `IUniswapV2Pair.sol`: A new interface for interacting with Uniswap V2 token pair contracts.
+ * `SwapSale.sol`: A new abstract oracle-based sale contract using token swap rates for dynamically determining SKU prices.
+ * `UniswapOracleSale.sol`: A new Uniswap-based implementation of `OracleSale.sol` that uses token reserve conversion rates for dynamically determining SKU prices.
+ * `UniswapSwapSale.sol`: A new Uniswap-based implementation of `SwapSale.sol` that uses token swap rates for dynamically determining SKU prices.
+ * `UniswapV2Router.sol`: Added `factory()` interface for retrieving the Uniswap V2 factory used by the router.
+ * `UniswapV2Router.sol`: Added `swapETHForExactTokens()` interface for performing a token swap with ETH.
+ * `UniswapV2Router.sol`: Added `swapTokensForExactETH()` interface for performint a token swap to ETH.
+
 ### Breaking changes
- * `Purchase` event `extData` as packed-encoded arrays.
- * Contract folders restructuring.
+ * `AbstractSale.sol`: Relocated from `contracts/sale/` to `contracts/sale/abstract/`.
+ * `AbstractSale.sol`: Renamed to `Sale.sol`.
+ * `IKyberNetworkProxy.sol`: Relocated from `contracts/sale/payment/interfaces/` to `contracts/oracle/interfaces/`.
+ * `ISale.sol`: `Purchase` event pricing, payment, and delivery data parameters are aggregated into a packed encoding (`bytes`) of the arrays.
+ * `IUniswapV2Router.sol`: Relocated from `contracts/sale/payment/interfaces/` to `contracts/oracle/interfaces/`.
+ * `IWETH.sol`: Removed.
+ * `KyberAdapter.sol`: Relocated from `contracts/sale/payment/` to `contracts/oracle/`.
+ * `OracleSale.sol`: Relocated from `contracts/sale/` to `contracts/sale/abstract/`.
+ * `OracleSale.sol`: Renamed `_referenceToken` state member variable to `referenceToken`.
+ * `OracleSale.sol`: Removed `referenceToken()` getter function and mad `referenceToken` state member variable public.
+ * `OracleSale.sol`: Changed `conversionRates()` override to accept an additional argument for implementation-specific extra `bytes` data for deriving the conversion rate.
+ * `OracleSale.sol`: Changed `_conversionRate()` abstract function to accept an additiona argument for implementation-specific extra `bytes` data for deriving the conversion rate.
+ * `OracleSale.sol`: Removed `_unitPrice()`.
+ * `PayoutToken.sol`: Removed.
+ * `PurchaseLifeCycles.sol`: Relocated from `contracts/sale/` to `contracts/sale/abstract/`.
+ * `PurchaseNotificationsReceiver.sol`: Relocated from `contracts/sale/` to `contracts/sale/abstract/`.
+ * `Sale.sol`: `estimatePurchase()` return parameter `priceInfo` renamed to `pricingData`.
+ * `UniswapV2Adapter.sol`: Relocated from `contracts/sale/payment/` to `contracts/oracle/`.
+ * `UniswapV2Adapter.sol`: Replaced `_conversionRate()` with `_getAmountsIn()` for retrieving the amount of source tokens necessary to convert into an amount of target tokens.
+ * `UniswapV2Adapter.sol`: Replaced `_swap()` with `_swapTokensForExactAmount()` for performing a token swap of source tokens to target tokens.
+
+### Improvements
+ * Improved/corrected NatSpec documentation.
+ * `OracleSale.sol`: Added `_pricing()` override for calculating oracle-based pricing in addition to fixed pricing.
+ * `OracleSale.sol`: Added `_oraclePricing()` for handling the calculation of oracle-based pricing of a purchase.
+ * `PurchaseNotificationsReceiver.sol`: Minor gas optimization in its construction.
+ * `Sale.sol`: Added a `require` validation to `getSkuInfo()` to ensure that the sku being queried for exists.
+ * `Sale.sol`: Added a `require` validation to `_validation()` to ensure that the purchase token is not the zero address.
+ * `Sale.sol`: Added a `require` validation to `_validation()` to ensure that the SKU being purchased exists.
+ * `Sale.sol`: Added a `require` validation to `_validation()` to ensure that the purchase token is valid for the SKU.
+ * `UniswapV2Adapter.sol`: Added `_sortTokens()` utility function for deterministically ordering a token pair.
+ * `UniswapV2Adapter.sol`: Added `_pairFor()` utility function for retrieving the Uniswap V2 token pair contract for a given token pair.
+ * `UniswapV2Adapter.sol`: Added `_getReserves()` utility function for retrieving the total reserve amounts for a token pair.
 
 ## 6.0.0
 
