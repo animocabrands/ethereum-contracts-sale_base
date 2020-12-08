@@ -17,12 +17,12 @@ import "./abstract/SwapSale.sol";
  *  - a non-zero length array indicates Uniswap-based pricing, otherwise indicates fixed pricing.
  *  - [0] uint256: the token conversion rate used for Uniswap-based pricing.
  *
- * PurchaseData.userData MUST be encoded inline as follows:
+ * PurchaseData.userData MUST be encoded in-place as follows:
  *  - uint256: the maximum amount of purchase tokens to swap for reference tokens, in payment for
  *    a purchase. A value of 0 will use the maximum supported amount (default: type(uint256).max).
  *  - uint256: the token swap deadline as a UNIX timestamp. A value of 0 will not apply any
  *    deadline.
- *  - any additional fields may be defined inline by deriving contracts (to be documented by the
+ *  - any additional fields may be defined in-place by deriving contracts (to be documented by the
  *    deriving contract).
  */
 contract UniswapSwapSale is SwapSale, UniswapV2Adapter {
