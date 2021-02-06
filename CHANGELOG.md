@@ -3,6 +3,7 @@
 ## 7.0.0
 
 ### New Features
+ * `FixedOrderInventorySale.sol`: A new FixedPricesSale contract for selling inventory in a fixed sequential order.
  * `IUniswapV2Pair.sol`: A new interface for interacting with Uniswap V2 token pair contracts.
  * `SwapSale.sol`: A new abstract oracle-based sale contract using token swap rates for dynamically determining SKU prices.
  * `UniswapOracleSale.sol`: A new Uniswap-based implementation of `OracleSale.sol` that uses token reserve conversion rates for dynamically determining SKU prices.

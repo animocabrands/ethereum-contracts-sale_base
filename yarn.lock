@@ -2,6 +2,18 @@
 # yarn lockfile v1
 
 
+"@animoca/blockchain-inventory_metadata@=0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@animoca/blockchain-inventory_metadata/-/blockchain-inventory_metadata-0.1.0.tgz#fddcc64e8af3ecb4246160a4547e14db7bec629f"
+  integrity sha512-dSaTxsMv9uZlwqfFwEwwKFBPaBYbOdklNm/TgUEJ8AvHgMLtvgJdBabjTbFDmtxREVCm4l2Zu6G7UUO3/izeew==
+  dependencies:
+    big-integer "^1.6.48"
+
+"@animoca/ethereum-contracts-assets_inventory@=5.0.0":
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/@animoca/ethereum-contracts-assets_inventory/-/ethereum-contracts-assets_inventory-5.0.0.tgz#1b5517fe8e4631004ffa4a0c00b265f19077c650"
+  integrity sha512-1S+DUYhZXYe16dZTMWBRL79j52Ju7TiF6yAl6yKiFSf91XrE3SBiIRNKJgnnKdhz4i0+11AE0e2qzAD5H9DNeA==
+
 "@animoca/ethereum-contracts-core_library@=4.0.3":
   version "4.0.3"
   resolved "https://registry.yarnpkg.com/@animoca/ethereum-contracts-core_library/-/ethereum-contracts-core_library-4.0.3.tgz#cabcc655416ffa3cd5cfeec65c5597883bdac60e"
@@ -1395,6 +1407,11 @@ bech32@1.1.4:
   version "1.1.4"
   resolved "https://registry.yarnpkg.com/bech32/-/bech32-1.1.4.tgz#e38c9f37bf179b8eb16ae3a772b40c356d4832e9"
   integrity sha512-s0IrSOzLlbvX7yp4WBfPITzpAU8sqQcpsmwXDiKwrG4r491vwCO/XpejasRNl0piBMe/DvP4Tz0mIS/X1DPJBQ==
+
+big-integer@^1.6.48:
+  version "1.6.48"
+  resolved "https://registry.yarnpkg.com/big-integer/-/big-integer-1.6.48.tgz#8fd88bd1632cba4a1c8c3e3d7159f08bb95b4b9e"
+  integrity sha512-j51egjPa7/i+RdiRuJbPdJ2FIUYYPhvYLjzoYbcMMm62ooO6F94fETG4MTs46zPAF9Brs04OajboA/qTGuz78w==
 
 big.js@^5.2.2:
   version "5.2.2"

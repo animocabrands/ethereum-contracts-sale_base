@@ -50,6 +50,8 @@
     "ganache-cli": "^6.12.2"
   },
   "devDependencies": {
+    "@animoca/blockchain-inventory_metadata": "=0.1.0",
+    "@animoca/ethereum-contracts-assets_inventory": "=5.0.0",
     "@animoca/ethereum-contracts-core_library": "=4.0.3",
     "@animoca/ethereum-contracts-erc20_base": "=3.0.0",
     "@openzeppelin/test-helpers": "git+https://github.com/nataouze/openzeppelin-test-helpers.git#fix_bn_array_event_args",
