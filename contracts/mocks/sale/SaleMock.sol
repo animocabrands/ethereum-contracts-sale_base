@@ -37,6 +37,15 @@ contract SaleMock is Sale {
         }
     }
 
+    function createSku(
+        bytes32 sku,
+        uint256 totalSupply,
+        uint256 maxQuantityPerPurchase,
+        address notificationsReceiver
+    ) external {
+        _createSku(sku, totalSupply, maxQuantityPerPurchase, notificationsReceiver);
+    }
+
     function setTokenPrices(
         bytes32 sku,
         address[] calldata tokens,

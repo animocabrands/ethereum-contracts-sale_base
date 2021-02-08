@@ -30,6 +30,15 @@ contract OracleSaleMock is OracleSale {
         )
     {}
 
+    function createSku(
+        bytes32 sku,
+        uint256 totalSupply,
+        uint256 maxQuantityPerPurchase,
+        address notificationsReceiver
+    ) external {
+        _createSku(sku, totalSupply, maxQuantityPerPurchase, notificationsReceiver);
+    }
+
     function setMockConversionRate(
         address fromToken,
         address toToken,

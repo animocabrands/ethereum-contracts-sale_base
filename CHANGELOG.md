@@ -29,6 +29,7 @@
  * `PurchaseLifeCycles.sol`: Relocated from `contracts/sale/` to `contracts/sale/abstract/`.
  * `PurchaseNotificationsReceiver.sol`: Relocated from `contracts/sale/` to `contracts/sale/abstract/`.
  * `Sale.sol`: `estimatePurchase()` return parameter `priceInfo` renamed to `pricingData`.
+ * `Sale.sol`: Changed `createSku()` into an internal function `_createSku()` for added flexibility in defining an implementation-specific sku creation function. 
  * `UniswapV2Adapter.sol`: Relocated from `contracts/sale/payment/` to `contracts/oracle/`.
  * `UniswapV2Adapter.sol`: Replaced `_conversionRate()` with `_getAmountsIn()` for retrieving the amount of source tokens necessary to convert into an amount of target tokens.
  * `UniswapV2Adapter.sol`: Replaced `_swap()` with `_swapTokensForExactAmount()` for performing a token swap of source tokens to target tokens.

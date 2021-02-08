@@ -106,40 +106,6 @@ abstract contract Sale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pa
     }
 
     /**
-     * Creates an SKU.
-     * @dev Reverts if called by any other than the contract owner.
-     * @dev Reverts if `totalSupply` is zero.
-     * @dev Reverts if `sku` already exists.
-     * @dev Reverts if `notificationsReceiver` is not the zero address and is not a contract address.
-     * @dev Reverts if the update results in too many SKUs.
-     * @dev Emits the `SkuCreation` event.
-     * @param sku the SKU identifier.
-     * @param totalSupply the initial total supply.
-     * @param maxQuantityPerPurchase The maximum allowed quantity for a single purchase.
-     * @param notificationsReceiver The purchase notifications receiver contract address.
-     *  If set to the zero address, the notification is not enabled.
-     */
-    function createSku(
-        bytes32 sku,
-        uint256 totalSupply,
-        uint256 maxQuantityPerPurchase,
-        address notificationsReceiver
-    ) public virtual onlyOwner {
-        require(totalSupply != 0, "Sale: zero supply");
-        require(_skus.length() < _skusCapacity, "Sale: too many skus");
-        require(_skus.add(sku), "Sale: sku already created");
-        if (notificationsReceiver != address(0)) {
-            require(notificationsReceiver.isContract(), "Sale: receiver is not a contract");
-        }
-        SkuInfo storage skuInfo = _skuInfos[sku];
-        skuInfo.totalSupply = totalSupply;
-        skuInfo.remainingSupply = totalSupply;
-        skuInfo.maxQuantityPerPurchase = maxQuantityPerPurchase;
-        skuInfo.notificationsReceiver = notificationsReceiver;
-        emit SkuCreation(sku, totalSupply, maxQuantityPerPurchase, notificationsReceiver);
-    }
-
-    /**
      * Sets the token prices for the specified product SKU.
      * @dev Reverts if called by any other than the contract owner.
      * @dev Reverts if `tokens` and `prices` have different lengths.
@@ -312,6 +278,39 @@ abstract contract Sale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pa
 
 
     /*                               Internal Utility Functions                                  */
+
+    /**
+     * Creates an SKU.
+     * @dev Reverts if `totalSupply` is zero.
+     * @dev Reverts if `sku` already exists.
+     * @dev Reverts if `notificationsReceiver` is not the zero address and is not a contract address.
+     * @dev Reverts if the update results in too many SKUs.
+     * @dev Emits the `SkuCreation` event.
+     * @param sku the SKU identifier.
+     * @param totalSupply the initial total supply.
+     * @param maxQuantityPerPurchase The maximum allowed quantity for a single purchase.
+     * @param notificationsReceiver The purchase notifications receiver contract address.
+     *  If set to the zero address, the notification is not enabled.
+     */
+    function _createSku(
+        bytes32 sku,
+        uint256 totalSupply,
+        uint256 maxQuantityPerPurchase,
+        address notificationsReceiver
+    ) internal virtual {
+        require(totalSupply != 0, "Sale: zero supply");
+        require(_skus.length() < _skusCapacity, "Sale: too many skus");
+        require(_skus.add(sku), "Sale: sku already created");
+        if (notificationsReceiver != address(0)) {
+            require(notificationsReceiver.isContract(), "Sale: receiver is not a contract");
+        }
+        SkuInfo storage skuInfo = _skuInfos[sku];
+        skuInfo.totalSupply = totalSupply;
+        skuInfo.remainingSupply = totalSupply;
+        skuInfo.maxQuantityPerPurchase = maxQuantityPerPurchase;
+        skuInfo.notificationsReceiver = notificationsReceiver;
+        emit SkuCreation(sku, totalSupply, maxQuantityPerPurchase, notificationsReceiver);
+    }
 
     /**
      * Updates SKU token prices.

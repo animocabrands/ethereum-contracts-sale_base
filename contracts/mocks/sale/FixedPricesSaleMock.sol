@@ -27,4 +27,13 @@ contract FixedPricesSaleMock is FixedPricesSale {
         )
     {}
 
+    function createSku(
+        bytes32 sku,
+        uint256 totalSupply,
+        uint256 maxQuantityPerPurchase,
+        address notificationsReceiver
+    ) external {
+        _createSku(sku, totalSupply, maxQuantityPerPurchase, notificationsReceiver);
+    }
+
 }

@@ -195,81 +195,6 @@ contract('Sale', function ([_, owner, payoutWallet, purchaser, recipient]) {
 
     });
 
-    describe('createSku()', function () {
-
-        beforeEach(async function () {
-            await doDeploy.bind(this)();
-        });
-
-        it('reverts if called by any other than the contract owner', async function () {
-            await expectRevert(
-                doCreateSku.bind(this)({ owner: purchaser }),
-                'Ownable: caller is not the owner');
-        });
-
-        it('reverts if `totalSupply` is zero', async function () {
-            await expectRevert(
-                doCreateSku.bind(this)({ skuTotalSupply: Zero }),
-                'Sale: zero supply');
-        });
-
-        it('reverts if `sku` already exists', async function () {
-            await doCreateSku.bind(this)();
-            await expectRevert(
-                doCreateSku.bind(this)(),
-                'Sale: sku already created');
-        });
-
-        it('reverts if `notificationsReceiver` is not the zero address and is not a contract address', async function () {
-            await expectRevert(
-                doCreateSku.bind(this)({ skuNotificationsReceiver: purchaser }),
-                'Sale: receiver is not a contract'
-            )
-        });
-
-        it('reverts if the update results in too many SKUs', async function() {
-            await doCreateSku.bind(this)();
-            await doCreateSku.bind(this)({ sku: stringToBytes32('otherSku') })
-            await expectRevert(
-                doCreateSku.bind(this)({ sku: stringToBytes32('anotherSku') }),
-                'Sale: too many skus');
-        });
-
-        it('should create a SKU', async function () {
-            const skusBefore = await this.contract.getSkus();
-            skusBefore.length.should.be.equal(0);
-
-            await doCreateSku.bind(this)();
-
-            const skusAfter = await this.contract.getSkus();
-            skusAfter.length.should.be.equal(1);
-            (skusAfter[0] === sku).should.be.true;
-
-            const skuInfo = await this.contract.getSkuInfo(sku);
-            skuInfo.totalSupply.should.be.bignumber.equal(skuTotalSupply);
-            skuInfo.remainingSupply.should.be.bignumber.equal(skuTotalSupply);
-            skuInfo.maxQuantityPerPurchase.should.be.bignumber.equal(skuMaxQuantityPerPurchase);
-            skuInfo.notificationsReceiver.should.be.equal(ZeroAddress);
-            skuInfo.tokens.length.should.equal(0);
-            skuInfo.prices.length.should.equal(0);
-        });
-
-        it('should emit the SkuCreation event', async function () {
-            const receipt = await doCreateSku.bind(this)();
-
-            expectEvent(
-                receipt,
-                'SkuCreation',
-                {
-                    sku: sku,
-                    totalSupply: skuTotalSupply,
-                    maxQuantityPerPurchase: skuMaxQuantityPerPurchase,
-                    notificationsReceiver: skuNotificationsReceiver
-                });
-        });
-
-    });
-
     describe('updateSkuPricing()', function () {
 
         beforeEach(async function () {
@@ -756,6 +681,75 @@ contract('Sale', function ([_, owner, payoutWallet, purchaser, recipient]) {
             const skus = await this.contract.getSkus();
             skus.length.should.be.equal(1);
             skus[0].should.be.equal(sku);
+        });
+
+    });
+
+    describe('_createSku()', function () {
+
+        beforeEach(async function () {
+            await doDeploy.bind(this)();
+        });
+
+        it('reverts if `totalSupply` is zero', async function () {
+            await expectRevert(
+                doCreateSku.bind(this)({ skuTotalSupply: Zero }),
+                'Sale: zero supply');
+        });
+
+        it('reverts if `sku` already exists', async function () {
+            await doCreateSku.bind(this)();
+            await expectRevert(
+                doCreateSku.bind(this)(),
+                'Sale: sku already created');
+        });
+
+        it('reverts if `notificationsReceiver` is not the zero address and is not a contract address', async function () {
+            await expectRevert(
+                doCreateSku.bind(this)({ skuNotificationsReceiver: purchaser }),
+                'Sale: receiver is not a contract'
+            )
+        });
+
+        it('reverts if the update results in too many SKUs', async function() {
+            await doCreateSku.bind(this)();
+            await doCreateSku.bind(this)({ sku: stringToBytes32('otherSku') })
+            await expectRevert(
+                doCreateSku.bind(this)({ sku: stringToBytes32('anotherSku') }),
+                'Sale: too many skus');
+        });
+
+        it('should create a SKU', async function () {
+            const skusBefore = await this.contract.getSkus();
+            skusBefore.length.should.be.equal(0);
+
+            await doCreateSku.bind(this)();
+
+            const skusAfter = await this.contract.getSkus();
+            skusAfter.length.should.be.equal(1);
+            (skusAfter[0] === sku).should.be.true;
+
+            const skuInfo = await this.contract.getSkuInfo(sku);
+            skuInfo.totalSupply.should.be.bignumber.equal(skuTotalSupply);
+            skuInfo.remainingSupply.should.be.bignumber.equal(skuTotalSupply);
+            skuInfo.maxQuantityPerPurchase.should.be.bignumber.equal(skuMaxQuantityPerPurchase);
+            skuInfo.notificationsReceiver.should.be.equal(ZeroAddress);
+            skuInfo.tokens.length.should.equal(0);
+            skuInfo.prices.length.should.equal(0);
+        });
+
+        it('should emit the SkuCreation event', async function () {
+            const receipt = await doCreateSku.bind(this)();
+
+            expectEvent(
+                receipt,
+                'SkuCreation',
+                {
+                    sku: sku,
+                    totalSupply: skuTotalSupply,
+                    maxQuantityPerPurchase: skuMaxQuantityPerPurchase,
+                    notificationsReceiver: skuNotificationsReceiver
+                });
         });
 
     });
