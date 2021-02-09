@@ -37,6 +37,7 @@
  * Removed `package-lock.json` in preference for using `yarn` as the default package manager.
  * Removed `@animoca/ethereum-contracts-assets_inventory` as a package dependency.
  * Removed `@animoca/blockchain-inventory_metadata` as a package dependency.
+ * Removed `@animoca/ethereum-contracts-assets_inventory/contracts/mocks/token/ERC1155721/AssetsInventoryMock.sol` as an imported test dependency.
 
 ### Improvements
  * Improved/corrected NatSpec documentation.
