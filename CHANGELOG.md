@@ -33,6 +33,10 @@
  * `UniswapV2Adapter.sol`: Relocated from `contracts/sale/payment/` to `contracts/oracle/`.
  * `UniswapV2Adapter.sol`: Replaced `_conversionRate()` with `_getAmountsIn()` for retrieving the amount of source tokens necessary to convert into an amount of target tokens.
  * `UniswapV2Adapter.sol`: Replaced `_swap()` with `_swapTokensForExactAmount()` for performing a token swap of source tokens to target tokens.
+ * Updated the `package.json` package dependency versions.
+ * Removed `package-lock.json` in preference for using `yarn` as the default package manager.
+ * Removed `@animoca/ethereum-contracts-assets_inventory` as a package dependency.
+ * Removed `@animoca/blockchain-inventory_metadata` as a package dependency.
 
 ### Improvements
  * Improved/corrected NatSpec documentation.
