@@ -52,6 +52,7 @@
  * `UniswapV2Adapter.sol`: Added `_pairFor()` utility function for retrieving the Uniswap V2 token pair contract for a given token pair.
  * `UniswapV2Adapter.sol`: Added `_getReserves()` utility function for retrieving the total reserve amounts for a token pair.
  * Updated the purchase scenario behavior testing so that ETH purchases and ERC20 purchases can be tested in isolation of one another.
+ * Updated the `truffle-config.js` with a workaround for an issue with Truffle in a test context, which should improve test run times.
 
 ## 6.0.0
 
