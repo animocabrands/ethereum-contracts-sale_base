@@ -38,6 +38,8 @@
  * Removed `@animoca/ethereum-contracts-assets_inventory` as a package dependency.
  * Removed `@animoca/blockchain-inventory_metadata` as a package dependency.
  * Removed `@animoca/ethereum-contracts-assets_inventory/contracts/mocks/token/ERC1155721/AssetsInventoryMock.sol` as an imported test dependency.
+ * Updated the `@animoca/ethereum-contracts-core_library` package dependency version to v4.0.3.
+ * Using the Hardhat toolchain for source compilation and testing instead of vanilla Truffle.
 
 ### Improvements
  * Improved/corrected NatSpec documentation.
