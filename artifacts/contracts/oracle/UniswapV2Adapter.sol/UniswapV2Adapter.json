@@ -1,0 +1,48 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "UniswapV2Adapter",
+  "sourceName": "contracts/oracle/UniswapV2Adapter.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "contract IUniswapV2Router",
+          "name": "uniswapV2Router_",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "contract IUniswapV2Router",
+          "name": "uniswapV2Router",
+          "type": "address"
+        }
+      ],
+      "name": "UniswapV2RouterSet",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "uniswapV2Router",
+      "outputs": [
+        {
+          "internalType": "contract IUniswapV2Router",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608060405234801561001057600080fd5b5060405161015d38038061015d8339818101604052602081101561003357600080fd5b5051610047816001600160e01b0361004d16565b506100a1565b600080546001600160a01b0383166001600160a01b0319909116811790915560408051918252517ffe70995e26c62b71bbd53a5b9e09215c42e2006fad72ba845051faa8de1510ba9181900360200190a150565b60ae806100af6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c80631694505e14602d575b600080fd5b6033605c565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b60005473ffffffffffffffffffffffffffffffffffffffff168156fea2646970667358221220d545310f0a1656942eb8e6000c484c9962f9df12f10550241723bfbd5d96942564736f6c63430006080033",
+  "deployedBytecode": "0x6080604052348015600f57600080fd5b506004361060285760003560e01c80631694505e14602d575b600080fd5b6033605c565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b60005473ffffffffffffffffffffffffffffffffffffffff168156fea2646970667358221220d545310f0a1656942eb8e6000c484c9962f9df12f10550241723bfbd5d96942564736f6c63430006080033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
