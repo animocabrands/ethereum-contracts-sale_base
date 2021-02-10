@@ -21,7 +21,7 @@
     "ganache-cli": "^6.12.2"
   },
   "devDependencies": {
-    "@animoca/ethereum-contracts-core_library": "=3.1.1",
+    "@animoca/ethereum-contracts-core_library": "=4.0.3",
     "@animoca/ethereum-contracts-erc20_base": "=3.0.0",
     "@openzeppelin/test-helpers": "git+https://github.com/nataouze/openzeppelin-test-helpers.git#fix_bn_array_event_args",
     "@uniswap/v2-periphery": "^1.1.0-beta.0"
