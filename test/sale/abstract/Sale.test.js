@@ -1,9 +1,10 @@
+const { artifacts } = require('hardhat');
 const { ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const { ZeroAddress, Zero, One, Two, Three } = require('@animoca/ethereum-contracts-core_library').constants;
 const { addressToBytes32, stringToBytes32, uintToBytes32, bytes32ArraysToBytesPacked } = require('../../utils/bytes32');
 
-const Sale = artifacts.require('SaleMock.sol');
-const ERC20 = artifacts.require('ERC20Mock.sol');
+const Sale = artifacts.require('SaleMock');
+const ERC20 = artifacts.require('ERC20Mock');
 const PurchaseNotificationsReceiver = artifacts.require('PurchaseNotificationsReceiverMock');
 
 const skusCapacity = Two;
@@ -19,7 +20,19 @@ const erc20Price = ether('1');
 const ethPrice = ether('0.01');
 const userData = '0x00';
 
-contract('Sale', function ([_, owner, payoutWallet, purchaser, recipient]) {
+let _, owner, payoutWallet, purchaser, recipient;
+
+describe('Sale', function () {
+
+    before(async function () {
+        [
+            _,
+            owner,
+            payoutWallet,
+            purchaser,
+            recipient
+        ] = await web3.eth.getAccounts();
+    });
 
     async function doDeploy(params = {}) {
         this.contract = await Sale.new(

@@ -1,21 +1,9 @@
-const Path = require('path');
-const Resolver = require('@truffle/resolver');
+const { artifacts, web3 } = require('hardhat');
 
-const resolver = new Resolver({
-    working_directory: __dirname,
-    contracts_build_directory: Path.join(__dirname, '../../build'),
-    provider: web3.eth.currentProvider,
-    gas: 9999999
-});
-
-const UniswapV2PeripheryBuildPath = Path.join(__dirname, '../../node_modules/@uniswap/v2-periphery/build');
-const UniswapV2CoreBuildPath = Path.join(__dirname, '../../node_modules/@uniswap/v2-core/build');
-
-const UniswapV2Factory = resolver.require('UniswapV2Factory', UniswapV2CoreBuildPath);
-const UniswapV2Router = resolver.require('UniswapV2Router02', UniswapV2PeripheryBuildPath);
-const RouterEventEmitter = resolver.require('RouterEventEmitter', UniswapV2PeripheryBuildPath);
-
-const IUniswapV2Pair = require('@uniswap/v2-core/build/IUniswapV2Pair.json');
+const UniswapV2Factory = artifacts.require('UniswapV2Factory');
+const UniswapV2Router = artifacts.require('UniswapV2Router02');
+const RouterEventEmitter = artifacts.require('RouterEventEmitter');
+const IUniswapV2Pair = artifacts.require('node_modules/@uniswap/v2-core/build:IUniswapV2Pair');
 
 let _fixture;
 
@@ -108,8 +96,6 @@ function reset() {
 }
 
 module.exports = {
-    UniswapV2PeripheryBuildPath,
-    UniswapV2CoreBuildPath,
     get,
     reset
 }

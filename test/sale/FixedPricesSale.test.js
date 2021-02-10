@@ -1,12 +1,12 @@
+const { artifacts, web3 } = require('hardhat');
 const { BN, balance, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const { ZeroAddress, Zero, One, Two } = require('@animoca/ethereum-contracts-core_library').constants;
-const { fromWei, toChecksumAddress } = require('web3-utils');
 
 const { stringToBytes32 } = require('../utils/bytes32');
 
-const Sale = artifacts.require('FixedPricesSaleMock.sol');
-const ERC20 = artifacts.require('ERC20Mock.sol');
-const IERC20 = artifacts.require('IERC20.sol');
+const Sale = artifacts.require('FixedPricesSaleMock');
+const ERC20 = artifacts.require('ERC20Mock');
+const IERC20 = artifacts.require('@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol:IERC20');
 
 const sku = stringToBytes32('sku');
 const skuTotalSupply = Two;
@@ -21,9 +21,22 @@ const tokensPerSkuCapacity = One;
 
 const erc20TotalSupply = ether('1000000000');
 const purchaserErc20Balance = ether('100000');
-const recipientErc20Balance = ether('100000')
+const recipientErc20Balance = ether('100000');
 
-contract('FixedPricesSale', function ([_, payoutWallet, owner, purchaser, recipient]) {
+let _, payoutWallet, owner, purchaser, recipient;
+
+describe('FixedPricesSale', function () {
+
+    before(async function () {
+        [
+            _,
+            payoutWallet,
+            owner,
+            purchaser,
+            recipient
+        ] = await web3.eth.getAccounts();
+    });
+
     async function doFreshDeploy(params) {
         this.contract = await Sale.new(
             params.payoutWallet || payoutWallet,
@@ -120,10 +133,12 @@ contract('FixedPricesSale', function ([_, payoutWallet, owner, purchaser, recipi
                 return await contract.balanceOf(address);
             }
 
-            async function testPurchases(quantities, operator, overvalue) {
+            function testPurchases(quantities, overvalue) {
                 for (const quantity of quantities) {
                     it('<this.test.title>', async function () {
-                        const estimate = await this.contract.estimatePurchase(
+                      const operator = this.operator;
+
+                      const estimate = await this.contract.estimatePurchase(
                             recipient,
                             this.tokenAddress,
                             sku,
@@ -133,7 +148,7 @@ contract('FixedPricesSale', function ([_, payoutWallet, owner, purchaser, recipi
 
                         const totalPrice = estimate.totalPrice;
 
-                        this.test.title = `purchasing ${quantity.toString()} items for ${fromWei(totalPrice.toString())} ${this.token == this.ethTokenAddress ? 'ETH' : 'ERC20'}`;
+                        this.test.title = `purchasing ${quantity.toString()} items for ${web3.utils.fromWei(totalPrice.toString())} ${this.token == this.ethTokenAddress ? 'ETH' : 'ERC20'}`;
 
                         const balanceBefore =
                             this.tokenAddress == this.ethTokenAddress ?
@@ -155,7 +170,7 @@ contract('FixedPricesSale', function ([_, payoutWallet, owner, purchaser, recipi
                             {
                                 purchaser: operator,
                                 recipient: recipient,
-                                token: toChecksumAddress(this.tokenAddress),
+                                token: web3.utils.toChecksumAddress(this.tokenAddress),
                                 sku: sku,
                                 quantity: quantity,
                                 userData: userData,
@@ -229,9 +244,11 @@ contract('FixedPricesSale', function ([_, payoutWallet, owner, purchaser, recipi
                                 skuMaxQuantityPerPurchase: skuMaxQuantityPerPurchase,
                                 useErc20: useErc20
                             });
+
+                            this.operator = purchaser;
                         });
 
-                        await testPurchases(quantities, purchaser, Zero);
+                        testPurchases(quantities, Zero);
                     });
 
                     describe('with overvalue (change)', async function () {
@@ -241,9 +258,11 @@ contract('FixedPricesSale', function ([_, payoutWallet, owner, purchaser, recipi
                                 skuMaxQuantityPerPurchase: skuMaxQuantityPerPurchase,
                                 useErc20: useErc20
                             });
+
+                            this.operator = purchaser;
                         });
 
-                        await testPurchases(quantities, purchaser, ether('1'));
+                        testPurchases(quantities, ether('1'));
                     });
                 });
 
@@ -255,9 +274,11 @@ contract('FixedPricesSale', function ([_, payoutWallet, owner, purchaser, recipi
                                 skuMaxQuantityPerPurchase: skuMaxQuantityPerPurchase,
                                 useErc20: useErc20
                             });
+
+                            this.operator = recipient;
                         });
 
-                        await testPurchases(quantities, recipient, Zero);
+                        testPurchases(quantities, Zero);
                     });
 
                     describe('with overvalue (change)', async function () {
@@ -267,9 +288,11 @@ contract('FixedPricesSale', function ([_, payoutWallet, owner, purchaser, recipi
                                 skuMaxQuantityPerPurchase: skuMaxQuantityPerPurchase,
                                 useErc20: useErc20
                             });
+
+                            this.operator = recipient;
                         });
 
-                        await testPurchases(quantities, recipient, ether('1'));
+                        testPurchases(quantities, ether('1'));
                     });
                 });
             });

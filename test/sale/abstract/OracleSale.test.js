@@ -1,3 +1,4 @@
+const { web3 } = require('hardhat');
 const { BN, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const { ZeroAddress, Zero, One, Two, Three, Four } = require('@animoca/ethereum-contracts-core_library').constants;
 const { stringToBytes32 } = require('../../utils/bytes32');
@@ -19,14 +20,18 @@ const userData = '0x00';
 
 const referenceTokenPrice = new BN('1000');
 
-contract('OracleSale', function (accounts) {
+let owner, payoutWallet, purchaser, recipient;
 
-    const [
-        owner,
-        payoutWallet,
-        purchaser,
-        recipient
-    ] = accounts;
+describe('OracleSale', function () {
+
+    before(async function () {
+        [
+            owner,
+            payoutWallet,
+            purchaser,
+            recipient
+        ] = await web3.eth.getAccounts();
+    });
 
     async function doDeploy(params = {}) {
         this.referenceToken = await ERC20.new(

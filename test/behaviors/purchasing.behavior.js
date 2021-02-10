@@ -1,12 +1,12 @@
+const { artifacts, web3 } = require('hardhat');
 const { BN, balance, expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
 const { Zero } = require('@animoca/ethereum-contracts-core_library').constants;
-const { toChecksumAddress } = require('web3-utils');
 
 const {
     shouldBeEqualWithETHDecimalPrecision
-} = require('@animoca/ethereum-contracts-core_library').fixtures;
+} = require('@animoca/ethereum-contracts-core_library/test/utils/weiPrecision');
 
-const IERC20 = artifacts.require('IERC20.sol');
+const IERC20 = artifacts.require('@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol:IERC20');
 
 /*
  * behavior overrides
@@ -103,7 +103,7 @@ async function shouldPurchaseFor(purchaser, recipient, token, sku, quantity, use
         {
             purchaser: purchaser,
             recipient: recipient,
-            token: toChecksumAddress(token),
+            token: web3.utils.toChecksumAddress(token),
             sku: sku,
             quantity: quantity,
             userData: userData,

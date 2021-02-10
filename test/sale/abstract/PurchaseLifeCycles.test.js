@@ -1,16 +1,29 @@
+const { artifacts } = require('hardhat');
 const { ether } = require('@openzeppelin/test-helpers');
 const { Zero, One } = require('@animoca/ethereum-contracts-core_library').constants;
 const { stringToBytes32 } = require('../../utils/bytes32');
 
-const PurchaseLifeCycles = artifacts.require('PurchaseLifeCyclesMock.sol');
-const ERC20 = artifacts.require('ERC20Mock.sol');
+const PurchaseLifeCycles = artifacts.require('PurchaseLifeCyclesMock');
+const ERC20 = artifacts.require('ERC20Mock');
 
 const sku = stringToBytes32('sku');
 const quantity = One;
 const tokenSupply = ether('1000000000');
 const userData = '0x00';
 
-contract('PurchaseLifeCycles', function ([_, owner, purchaser, recipient]) {
+let _, owner, purchaser, recipient;
+
+describe('PurchaseLifeCycles', function () {
+
+    before(async function () {
+        [
+            _,
+            owner,
+            payoutWallet,
+            purchaser,
+            recipient
+        ] = await web3.eth.getAccounts();
+    });
 
     beforeEach(async function () {
         this.contract = await PurchaseLifeCycles.new({ from: owner });

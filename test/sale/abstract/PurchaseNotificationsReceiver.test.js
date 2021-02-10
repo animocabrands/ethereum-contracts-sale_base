@@ -1,3 +1,4 @@
+const { web3 } = require('hardhat');
 const { ether, expectEvent } = require('@openzeppelin/test-helpers');
 const { ZeroAddress, One } = require('@animoca/ethereum-contracts-core_library').constants;
 const { stringToBytes32 } = require('../../utils/bytes32');
@@ -8,7 +9,19 @@ const sku = stringToBytes32('sku');
 const ethPrice = ether('0.01');
 const userData = '0x00';
 
-contract('PurchaseNotificationsReceiver', function ([_, owner, purchaser, recipient]) {
+let _, owner, purchaser, recipient;
+
+describe('PurchaseNotificationsReceiver', function () {
+
+    before(async function () {
+        [
+            _,
+            owner,
+            payoutWallet,
+            purchaser,
+            recipient
+        ] = await web3.eth.getAccounts();
+    });
 
     async function doDeploy(params = {}) {
         this.contract = await PurchaseNotificationsReceiver.new({ from: params.owner || owner });

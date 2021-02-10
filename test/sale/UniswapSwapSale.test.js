@@ -1,27 +1,19 @@
+const { artifacts, web3 } = require('hardhat');
 const { BN, balance, ether, time, expectRevert } = require('@openzeppelin/test-helpers');
 const { ZeroAddress, Zero, One, Two, Three, Four } = require('@animoca/ethereum-contracts-core_library').constants;
 const { stringToBytes32, bytes32ArrayToBytes, uintToBytes32 } = require('../utils/bytes32');
-const Fixture = require('../utils/fixture');
-const Path = require('path');
-const Resolver = require('@truffle/resolver');
+const Fixture = require('@animoca/ethereum-contracts-core_library/test/utils/fixture');
 const UniswapV2Fixture = require('../fixtures/uniswapv2.fixture');
 
 const {
     shouldBeEqualWithETHDecimalPrecision
-} = require('@animoca/ethereum-contracts-core_library').fixtures;
+} = require('@animoca/ethereum-contracts-core_library/test/utils/weiPrecision');
 
 const {
     purchasingScenario
 } = require('../scenarios');
 
-const resolver = new Resolver({
-    working_directory: __dirname,
-    contracts_build_directory: Path.join(__dirname, '../../build'),
-    provider: web3.eth.currentProvider,
-    gas: 9999999
-});
-
-const WETH9 = resolver.require('WETH9', UniswapV2Fixture.UniswapV2PeripheryBuildPath);
+const WETH9 = artifacts.require('WETH9');
 
 const Sale = artifacts.require('UniswapSwapSaleMock');
 const ERC20 = artifacts.require('ERC20Mock');
@@ -33,8 +25,24 @@ const skuTotalSupply = Three;
 const skuMaxQuantityPerPurchase = Two;
 const skuNotificationsReceiver = ZeroAddress;
 
-contract('UniswapSwapSale', function (accounts) {
-    const loadFixture = Fixture.createFixtureLoader(accounts, web3.eth.currentProvider);
+let owner, payoutWallet, purchaser, recipient;
+
+describe('UniswapSwapSale', function () {
+
+    let loadFixture;
+
+    before(async function () {
+        let accounts = await web3.eth.getAccounts();
+
+        loadFixture = Fixture.createFixtureLoader(accounts, web3.eth.currentProvider);
+
+        [
+            owner,
+            payoutWallet,
+            purchaser,
+            recipient
+        ] = accounts;
+    });
 
     // uniswapv2 fixture adds `contract` field to each token when it's loaded
     const tokens = {
@@ -79,13 +87,6 @@ contract('UniswapSwapSale', function (accounts) {
             amount: new BN('1000000'),
             price: new BN('1000')}
     };
-
-    const [
-        owner,
-        payoutWallet,
-        purchaser,
-        recipient
-    ] = accounts;
 
     async function doLoadFixture(params = {}) {
         const fixture = UniswapV2Fixture.get(
@@ -491,7 +492,7 @@ contract('UniswapSwapSale', function (accounts) {
 
                 describe('when the payment token max amount to swap is sufficient', function () {
 
-                    it('should handle payment', async function () {
+                    it('should handle payment [ @skip-on-coverage ]', async function () {
                         const unitPrice = liquidity['ReferenceToken'].price;
                         const totalPrice = unitPrice.mul(quantity);
 
@@ -520,7 +521,7 @@ contract('UniswapSwapSale', function (accounts) {
 
                 describe('when the payment token max amount to swap is more than sufficient', function () {
 
-                    it('should handle payment', async function () {
+                    it('should handle payment [ @skip-on-coverage ]', async function () {
                         const unitPrice = liquidity['ReferenceToken'].price;
                         const totalPrice = unitPrice.mul(quantity);
 
@@ -552,7 +553,7 @@ contract('UniswapSwapSale', function (accounts) {
 
                 describe('when the payment token max amount to swap is the default 0 value (no limit)', function () {
 
-                    it('should handle payment', async function () {
+                    it('should handle payment [ @skip-on-coverage ]', async function () {
                         const maxFromAmount = uintToBytes32(Zero);
                         const deadlineDuration = uintToBytes32(Zero);
 
@@ -642,7 +643,7 @@ contract('UniswapSwapSale', function (accounts) {
 
                 describe('when the payment token max amount to swap is sufficient', function () {
 
-                    it('should handle payment', async function () {
+                    it('should handle payment [ @skip-on-coverage ]', async function () {
                         const unitPrice = liquidity['ReferenceToken'].price;
                         const totalPrice = unitPrice.mul(quantity);
 
@@ -671,7 +672,7 @@ contract('UniswapSwapSale', function (accounts) {
 
                 describe('when the payment token max amount to swap is more than sufficient', function () {
 
-                    it('should handle payment', async function () {
+                    it('should handle payment [ @skip-on-coverage ]', async function () {
                         const unitPrice = liquidity['ReferenceToken'].price;
                         const totalPrice = unitPrice.mul(quantity);
 
@@ -703,7 +704,7 @@ contract('UniswapSwapSale', function (accounts) {
 
                 describe('when the payment token max amount to swap is the maximum amount supported', function () {
 
-                    it('should handle payment', async function () {
+                    it('should handle payment [ @skip-on-coverage ]', async function () {
                         const maxFromAmount = uintToBytes32(Zero);
                         const deadlineDuration = uintToBytes32(Zero);
 

@@ -1,26 +1,15 @@
-const {
-    utf8ToHex,
-    hexToUtf8,
-    bytesToHex,
-    hexToBytes,
-    toHex,
-    padLeft,
-    padRight,
-    toBN,
-} = require('web3-utils');
-
-const AbiCoder = require('web3-eth-abi');
+const { web3 } = require('hardhat');
 
 function addressToBytes32(value) {
     return uintToBytes32(value);
 }
 
 function stringToBytes32(value) {
-    return padRight(utf8ToHex(value.slice(0, 32)), 64);
+    return web3.utils.padRight(web3.utils.utf8ToHex(value.slice(0, 32)), 64);
 }
 
 function uintToBytes32(value) {
-    return padLeft(toHex(value), 64);
+    return web3.utils.padLeft(web3.utils.toHex(value), 64);
 }
 
 function bytes32ToAddress(value) {
@@ -28,19 +17,19 @@ function bytes32ToAddress(value) {
 }
 
 function bytes32ToString(value) {
-    return hexToUtf8(value);
+    return web3.utils.hexToUtf8(value);
 }
 
 function bytes32ToUint(value) {
-    return toBN(value);
+    return web3.utils.toBN(value);
 }
 
 function bytes32ArrayToBytes(values) {
-    return bytesToHex([].concat(...values.map(value => hexToBytes(value))));
+    return web3.utils.bytesToHex([].concat(...values.map(value => web3.utils.hexToBytes(value))));
 }
 
 function bytes32ArraysToBytes(arrays) {
-    return AbiCoder.encodeParameters(Array(arrays.length).fill('bytes32[]'), arrays);
+    return web3.eth.abi.encodeParameters(Array(arrays.length).fill('bytes32[]'), arrays);
 }
 
 function bytes32ArraysToBytesPacked(arrays) {
@@ -55,7 +44,7 @@ function bytes32ArraysToBytesPacked(arrays) {
             }
 
             return bytesOut.concat(bytes32Array.reduce((bytesOut, bytes32Value) => {
-                const bytesAppend = hexToBytes(bytes32Value);
+                const bytesAppend = web3.utils.hexToBytes(bytes32Value);
                 return bytesOut.concat(bytesAppend);
             }, []));
         }, []);
@@ -65,7 +54,7 @@ function bytes32ArraysToBytesPacked(arrays) {
         return null;
     }
 
-    return bytesToHex(result);
+    return web3.utils.bytesToHex(result);
 }
 
 module.exports = {
