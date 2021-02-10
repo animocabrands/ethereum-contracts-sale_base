@@ -1,0 +1,21 @@
+require('@animoca/ethereum-contracts-core_library/hardhat-plugins');
+
+module.exports = {
+  imports: [],
+  solidity: {
+    compilers: [
+      {
+        version: '0.6.8',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 2000,
+          },
+        },
+      },
+    ],
+  },
+  gasReporter: {
+    enabled: process.env.REPORT_GAS ? true : false,
+  },
+};
