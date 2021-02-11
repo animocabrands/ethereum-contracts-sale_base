@@ -121,16 +121,17 @@ describe('SwapSale', function () {
     async function getBalance(token, account, overrides = {}) {
       if (isEthToken.bind(this)(token, overrides)) {
         return await balance.current(account);
-      } else {
-        const contract = await ERC20.at(token);
-        return await contract.balanceOf(account);
       }
+      const contract = await ERC20.at(token);
+      return await contract.balanceOf(account);
     }
 
-    async function doCallUnderscorePayment(purchaser, recipient, token, sku, quantity, userData, overrides = {}) {
+    async function doCallUnderscorePayment(purchase, overrides = {}) {
       const contract = overrides.contract || this.contract;
 
-      const result = await contract.callUnderscorePricing(recipient, token, sku, quantity, userData, {from: purchaser});
+      const result = await contract.callUnderscorePricing(purchase.recipient, purchase.token, purchase.sku, purchase.quantity, purchase.userData, {
+        from: purchase.purchaser,
+      });
 
       const totalPrice = result.totalPrice;
       const pricingData = result.pricingData;
@@ -146,18 +147,27 @@ describe('SwapSale', function () {
 
       let etherValue;
 
-      if (isEthToken.bind(this)(token, overrides)) {
+      if (isEthToken.bind(this)(purchase.token, overrides)) {
         etherValue = amount;
       } else {
-        const erc20Contract = await ERC20.at(token);
-        await erc20Contract.approve(contract.address, amount, {from: purchaser});
+        const erc20Contract = await ERC20.at(purchase.token);
+        await erc20Contract.approve(contract.address, amount, {from: purchase.purchaser});
         etherValue = Zero;
       }
 
-      const callUnderscorePayment = contract.callUnderscorePayment(recipient, token, sku, quantity, userData, totalPrice, pricingData, {
-        from: purchaser,
-        value: etherValue,
-      });
+      const callUnderscorePayment = contract.callUnderscorePayment(
+        purchase.recipient,
+        purchase.token,
+        purchase.sku,
+        purchase.quantity,
+        purchase.userData,
+        totalPrice,
+        pricingData,
+        {
+          from: purchase.purchaser,
+          value: etherValue,
+        }
+      );
 
       return {
         callUnderscorePayment,
@@ -165,26 +175,18 @@ describe('SwapSale', function () {
       };
     }
 
-    async function shouldHandlePayment(purchaser, recipient, token, sku, quantity, userData, overrides = {}) {
-      const balanceBefore = await getBalance.bind(this)(token, purchaser, overrides);
+    async function shouldHandlePayment(purchase, overrides = {}) {
+      const balanceBefore = await getBalance.bind(this)(purchase.token, purchase.purchaser, overrides);
 
-      const {callUnderscorePayment, totalPrice} = await doCallUnderscorePayment.bind(this)(
-        purchaser,
-        recipient,
-        token,
-        sku,
-        quantity,
-        userData,
-        overrides
-      );
+      const {callUnderscorePayment, totalPrice} = await doCallUnderscorePayment.bind(this)(purchase, overrides);
 
       const receipt = await callUnderscorePayment;
       const contract = overrides.contract || this.contract;
 
-      const balanceAfter = await getBalance.bind(this)(token, purchaser, overrides);
+      const balanceAfter = await getBalance.bind(this)(purchase.token, purchase.purchaser, overrides);
       const balanceDiff = balanceBefore.sub(balanceAfter);
 
-      if (isEthToken.bind(this)(token, overrides)) {
+      if (isEthToken.bind(this)(purchase.token, overrides)) {
         const gasUsed = new BN(receipt.receipt.gasUsed);
         const gasPrice = new BN(network.config.gasPrice);
         balanceDiff.should.be.bignumber.equal(totalPrice.add(gasUsed.mul(gasPrice)));
@@ -193,8 +195,8 @@ describe('SwapSale', function () {
       }
     }
 
-    async function shouldRevertAndNotHandlePayment(revertMessage, purchaser, recipient, token, sku, quantity, userData, overrides = {}) {
-      const {callUnderscorePayment} = await doCallUnderscorePayment.bind(this)(purchaser, recipient, token, sku, quantity, userData, overrides);
+    async function shouldRevertAndNotHandlePayment(revertMessage, purchase, overrides = {}) {
+      const {callUnderscorePayment} = await doCallUnderscorePayment.bind(this)(purchase, overrides);
 
       if (revertMessage) {
         await expectRevert(callUnderscorePayment, revertMessage);
@@ -223,12 +225,14 @@ describe('SwapSale', function () {
           it('should revert and not handle payment', async function () {
             await shouldRevertAndNotHandlePayment.bind(this)(
               'Sale: insufficient ETH provided',
-              recipient,
-              recipient,
-              this.ethTokenAddress,
-              sku,
-              One,
-              userData,
+              {
+                purchaser: recipient,
+                recipient: recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
               {
                 amountVariance: new BN(-1),
               }
@@ -238,15 +242,35 @@ describe('SwapSale', function () {
 
         describe('when the payment amount is sufficient', function () {
           it('should handle payment', async function () {
-            await shouldHandlePayment.bind(this)(recipient, recipient, this.ethTokenAddress, sku, One, userData);
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: recipient,
+                recipient: recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
+              {}
+            );
           });
         });
 
         describe('when the payment amount is more than sufficient', function () {
           it('should handle payment', async function () {
-            await shouldHandlePayment.bind(this)(recipient, recipient, this.ethTokenAddress, sku, One, userData, {
-              amountVariance: One,
-            });
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: recipient,
+                recipient: recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
+              {
+                amountVariance: One,
+              }
+            );
           });
         });
       });
@@ -258,12 +282,14 @@ describe('SwapSale', function () {
 
             await shouldRevertAndNotHandlePayment.bind(this)(
               'Sale: insufficient ETH provided',
-              purchaser,
-              recipient,
-              this.ethTokenAddress,
-              sku,
-              One,
-              userData,
+              {
+                purchaser: purchaser,
+                recipient: recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
               {
                 amountVariance: new BN(-1),
               }
@@ -273,15 +299,35 @@ describe('SwapSale', function () {
 
         describe('when the payment amount is sufficient', function () {
           it('should handle payment', async function () {
-            await shouldHandlePayment.bind(this)(purchaser, recipient, this.ethTokenAddress, sku, One, userData);
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: purchaser,
+                recipient: recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
+              {}
+            );
           });
         });
 
         describe('when the payment amount is more than sufficient', function () {
           it('should handle payment', async function () {
-            await shouldHandlePayment.bind(this)(purchaser, recipient, this.ethTokenAddress, sku, One, userData, {
-              amountVariance: One,
-            });
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: purchaser,
+                recipient: recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
+              {
+                amountVariance: One,
+              }
+            );
           });
         });
       });
@@ -293,12 +339,14 @@ describe('SwapSale', function () {
           it('should revert and not handle payment', async function () {
             await shouldRevertAndNotHandlePayment.bind(this)(
               'ERC20: transfer amount exceeds allowance',
-              recipient,
-              recipient,
-              this.erc20TokenAddress,
-              sku,
-              One,
-              userData,
+              {
+                purchaser: recipient,
+                recipient: recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
               {
                 amountVariance: new BN(-1),
               }
@@ -308,15 +356,35 @@ describe('SwapSale', function () {
 
         describe('when the payment amount is sufficient', function () {
           it('should handle payment', async function () {
-            await shouldHandlePayment.bind(this)(recipient, recipient, this.erc20TokenAddress, sku, One, userData);
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: recipient,
+                recipient: recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
+              {}
+            );
           });
         });
 
         describe('when the payment amount is more than sufficient', function () {
           it('should handle payment', async function () {
-            await shouldHandlePayment.bind(this)(recipient, recipient, this.erc20TokenAddress, sku, One, userData, {
-              amountVariance: One,
-            });
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: recipient,
+                recipient: recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
+              {
+                amountVariance: One,
+              }
+            );
           });
         });
       });
@@ -326,12 +394,14 @@ describe('SwapSale', function () {
           it('should revert and not handle payment', async function () {
             await shouldRevertAndNotHandlePayment.bind(this)(
               'ERC20: transfer amount exceeds allowance',
-              purchaser,
-              recipient,
-              this.erc20TokenAddress,
-              sku,
-              One,
-              userData,
+              {
+                purchaser: purchaser,
+                recipient: recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
               {
                 amountVariance: new BN(-1),
               }
@@ -341,15 +411,35 @@ describe('SwapSale', function () {
 
         describe('when the payment amount is sufficient', function () {
           it('should handle payment', async function () {
-            await shouldHandlePayment.bind(this)(purchaser, recipient, this.erc20TokenAddress, sku, One, userData);
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: purchaser,
+                recipient: recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
+              {}
+            );
           });
         });
 
         describe('when the payment amount is more than sufficient', function () {
           it('should handle payment', async function () {
-            await shouldHandlePayment.bind(this)(purchaser, recipient, this.erc20TokenAddress, sku, One, userData, {
-              amountVariance: One,
-            });
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: purchaser,
+                recipient: recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
+              {
+                amountVariance: One,
+              }
+            );
           });
         });
       });

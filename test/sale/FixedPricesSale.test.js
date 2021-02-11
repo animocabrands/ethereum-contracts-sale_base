@@ -71,10 +71,17 @@ describe('FixedPricesSale', function () {
     await this.contract.start({from: params.owner || owner});
   }
 
-  describe('Purchase', async function () {
+  describe('Purchase', function () {
     function purchase(useErc20) {
-      async function purchaseFor(purchaser, recipient, token, sku, quantity, userData, overrides) {
-        const estimatePurchase = await this.contract.estimatePurchase(recipient, token, sku, quantity, userData, {from: purchaser});
+      async function purchaseFor(purchase, overrides) {
+        const estimatePurchase = await this.contract.estimatePurchase(
+          purchase.recipient,
+          purchase.token,
+          purchase.sku,
+          purchase.quantity,
+          purchase.userData,
+          {from: purchase.purchaser}
+        );
 
         let amount = estimatePurchase.totalPrice;
 
@@ -86,18 +93,18 @@ describe('FixedPricesSale', function () {
 
         let etherValue;
 
-        if (token === this.ethTokenAddress) {
+        if (purchase.token === this.ethTokenAddress) {
           etherValue = amount;
         } else {
-          const ERC20Contract = await IERC20.at(token);
+          const ERC20Contract = await IERC20.at(purchase.token);
           // approve first for sale
-          await ERC20Contract.approve(this.contract.address, amount, {from: purchaser});
+          await ERC20Contract.approve(this.contract.address, amount, {from: purchase.purchaser});
           // do not send any ether
           etherValue = 0;
         }
 
-        return this.contract.purchaseFor(recipient, token, sku, quantity, userData, {
-          from: purchaser,
+        return this.contract.purchaseFor(purchase.recipient, purchase.token, purchase.sku, purchase.quantity, purchase.userData, {
+          from: purchase.purchaser,
           value: etherValue,
           gasPrice: 1,
         });
@@ -124,9 +131,19 @@ describe('FixedPricesSale', function () {
             const balanceBefore =
               this.tokenAddress == this.ethTokenAddress ? await balance.current(operator) : await getBalance(this.tokenAddress, operator);
 
-            const receipt = await purchaseFor.bind(this)(operator, recipient, this.tokenAddress, sku, quantity, userData, {
-              amount: totalPrice.add(overvalue),
-            });
+            const receipt = await purchaseFor.bind(this)(
+              {
+                purchaser: operator,
+                recipient: recipient,
+                token: this.tokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
+              {
+                amount: totalPrice.add(overvalue),
+              }
+            );
 
             expectEvent(receipt, 'Purchase', {
               purchaser: operator,
@@ -164,13 +181,23 @@ describe('FixedPricesSale', function () {
           const unitPrice = estimate.totalPrice;
 
           await expectRevert(
-            purchaseFor.bind(this)(purchaser, recipient, this.tokenAddress, sku, Two, userData, {amount: unitPrice}),
+            purchaseFor.bind(this)(
+              {
+                purchaser: purchaser,
+                recipient: recipient,
+                token: this.tokenAddress,
+                sku: sku,
+                quantity: Two,
+                userData: userData,
+              },
+              {amount: unitPrice}
+            ),
             useErc20 ? 'ERC20: transfer amount exceeds allowance' : 'Sale: insufficient ETH provided'
           );
         });
       });
 
-      describe('should emit a Purchase event and update balances', async function () {
+      describe('should emit a Purchase event and update balances', function () {
         const quantities = [One, new BN('10'), new BN('1000')];
 
         const skuTotalSupply = quantities.reduce((sum, value) => {
@@ -181,8 +208,8 @@ describe('FixedPricesSale', function () {
           return BN.max(max, value);
         });
 
-        describe('when buying for oneself', async function () {
-          describe('with exact amount', async function () {
+        describe('when buying for oneself', function () {
+          describe('with exact amount', function () {
             before(async function () {
               await doFreshDeploy.bind(this)({
                 skuTotalSupply: skuTotalSupply,
@@ -196,7 +223,7 @@ describe('FixedPricesSale', function () {
             testPurchases(quantities, Zero);
           });
 
-          describe('with overvalue (change)', async function () {
+          describe('with overvalue (change)', function () {
             before(async function () {
               await doFreshDeploy.bind(this)({
                 skuTotalSupply: skuTotalSupply,
@@ -211,8 +238,8 @@ describe('FixedPricesSale', function () {
           });
         });
 
-        describe('when buying via operator', async function () {
-          describe('with exact amount', async function () {
+        describe('when buying via operator', function () {
+          describe('with exact amount', function () {
             before(async function () {
               await doFreshDeploy.bind(this)({
                 skuTotalSupply: skuTotalSupply,
@@ -226,7 +253,7 @@ describe('FixedPricesSale', function () {
             testPurchases(quantities, Zero);
           });
 
-          describe('with overvalue (change)', async function () {
+          describe('with overvalue (change)', function () {
             before(async function () {
               await doFreshDeploy.bind(this)({
                 skuTotalSupply: skuTotalSupply,
@@ -243,11 +270,11 @@ describe('FixedPricesSale', function () {
       });
     }
 
-    describe('purchase with ether', async function () {
+    describe('purchase with ether', function () {
       purchase(false);
     });
 
-    describe('purchase with ERC20', async function () {
+    describe('purchase with ERC20', function () {
       purchase(true);
     });
   });

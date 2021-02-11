@@ -30,6 +30,8 @@ describe('UniswapOracleSale', function () {
     loadFixture = Fixture.createFixtureLoader(accounts, web3.eth.currentProvider);
 
     [owner, payoutWallet, purchaser, recipient] = accounts;
+
+    UniswapV2Fixture.reset();
   });
 
   // uniswapv2 fixture adds `contract` field to each token when it's loaded
@@ -209,10 +211,6 @@ describe('UniswapOracleSale', function () {
     return await this.contract.start({from: params.owner || owner});
   }
 
-  before(async function () {
-    UniswapV2Fixture.reset();
-  });
-
   beforeEach(async function () {
     await doLoadFixture.bind(this)();
   });
@@ -260,7 +258,7 @@ describe('UniswapOracleSale', function () {
       );
     });
 
-    describe(`should return the correct conversion rates`, async function () {
+    describe(`should return the correct conversion rates`, function () {
       it('when the source token has a reserve less than the destination token', async function () {
         const fromToken = tokens['TokenA'].contract.address;
         const toToken = tokens['ReferenceToken'].contract.address;

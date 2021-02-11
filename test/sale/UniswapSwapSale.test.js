@@ -32,6 +32,8 @@ describe('UniswapSwapSale', function () {
     loadFixture = Fixture.createFixtureLoader(accounts, web3.eth.currentProvider);
 
     [owner, payoutWallet, purchaser, recipient] = accounts;
+
+    UniswapV2Fixture.reset();
   });
 
   // uniswapv2 fixture adds `contract` field to each token when it's loaded
@@ -213,10 +215,6 @@ describe('UniswapSwapSale', function () {
     return await this.contract.start({from: params.owner || owner});
   }
 
-  before(async function () {
-    UniswapV2Fixture.reset();
-  });
-
   beforeEach(async function () {
     await doLoadFixture.bind(this)();
   });
@@ -256,16 +254,17 @@ describe('UniswapSwapSale', function () {
     async function getBalance(token, account, overrides = {}) {
       if (isEthToken.bind(this)(token, overrides)) {
         return await balance.current(account);
-      } else {
-        const contract = await ERC20.at(token);
-        return await contract.balanceOf(account);
       }
+      const contract = await ERC20.at(token);
+      return await contract.balanceOf(account);
     }
 
-    async function doCallUnderscorePayment(purchaser, recipient, token, sku, quantity, userData, overrides = {}) {
+    async function doCallUnderscorePayment(purchase, overrides = {}) {
       const contract = overrides.contract || this.contract;
 
-      const result = await contract.callUnderscorePricing(recipient, token, sku, quantity, userData, {from: purchaser});
+      const result = await contract.callUnderscorePricing(purchase.recipient, purchase.token, purchase.sku, purchase.quantity, purchase.userData, {
+        from: purchase.purchaser,
+      });
 
       const totalPrice = result.totalPrice;
       const pricingData = result.pricingData;
@@ -281,18 +280,27 @@ describe('UniswapSwapSale', function () {
 
       let etherValue;
 
-      if (isEthToken.bind(this)(token, overrides)) {
+      if (isEthToken.bind(this)(purchase.token, overrides)) {
         etherValue = amount;
       } else {
-        const erc20Contract = await ERC20.at(token);
-        await erc20Contract.approve(contract.address, amount, {from: purchaser});
+        const erc20Contract = await ERC20.at(purchase.token);
+        await erc20Contract.approve(contract.address, amount, {from: purchase.purchaser});
         etherValue = Zero;
       }
 
-      const callUnderscorePayment = contract.callUnderscorePayment(recipient, token, sku, quantity, userData, totalPrice, pricingData, {
-        from: purchaser,
-        value: etherValue,
-      });
+      const callUnderscorePayment = contract.callUnderscorePayment(
+        purchase.recipient,
+        purchase.token,
+        purchase.sku,
+        purchase.quantity,
+        purchase.userData,
+        totalPrice,
+        pricingData,
+        {
+          from: purchase.purchaser,
+          value: etherValue,
+        }
+      );
 
       return {
         callUnderscorePayment,
@@ -300,26 +308,18 @@ describe('UniswapSwapSale', function () {
       };
     }
 
-    async function shouldHandlePayment(purchaser, recipient, token, sku, quantity, userData, overrides = {}) {
-      const balanceBefore = await getBalance.bind(this)(token, purchaser, overrides);
+    async function shouldHandlePayment(purchase, overrides = {}) {
+      const balanceBefore = await getBalance.bind(this)(purchase.token, purchase.purchaser, overrides);
 
-      const {callUnderscorePayment, totalPrice} = await doCallUnderscorePayment.bind(this)(
-        purchaser,
-        recipient,
-        token,
-        sku,
-        quantity,
-        userData,
-        overrides
-      );
+      const {callUnderscorePayment, totalPrice} = await doCallUnderscorePayment.bind(this)(purchase, overrides);
 
       const receipt = await callUnderscorePayment;
       const contract = overrides.contract || this.contract;
 
-      const balanceAfter = await getBalance.bind(this)(token, purchaser, overrides);
+      const balanceAfter = await getBalance.bind(this)(purchase.token, purchase.purchaser, overrides);
       const balanceDiff = balanceBefore.sub(balanceAfter);
 
-      if (isEthToken.bind(this)(token, overrides)) {
+      if (isEthToken.bind(this)(purchase.token, overrides)) {
         const gasUsed = new BN(receipt.receipt.gasUsed);
         const gasPrice = new BN(network.config.gasPrice);
         const expected = totalPrice.add(gasUsed.mul(gasPrice));
@@ -338,8 +338,8 @@ describe('UniswapSwapSale', function () {
       }
     }
 
-    async function shouldRevertAndNotHandlePayment(revertMessage, purchaser, recipient, token, sku, quantity, userData, overrides = {}) {
-      const {callUnderscorePayment} = await doCallUnderscorePayment.bind(this)(purchaser, recipient, token, sku, quantity, userData, overrides);
+    async function shouldRevertAndNotHandlePayment(revertMessage, purchase, overrides = {}) {
+      const {callUnderscorePayment} = await doCallUnderscorePayment.bind(this)(purchase, overrides);
 
       if (revertMessage) {
         await expectRevert(callUnderscorePayment, revertMessage);
@@ -385,12 +385,14 @@ describe('UniswapSwapSale', function () {
 
             await shouldRevertAndNotHandlePayment.bind(this)(
               'UniswapV2Adapter: INVALID_MAX_AMOUNT_IN',
-              recipient,
-              recipient,
-              this.ethTokenAddress,
-              sku,
-              quantity,
-              userData,
+              {
+                purchaser: recipient,
+                recipient: recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
               {
                 amountVariance: new BN(1),
                 totalPricePrecision: 14,
@@ -418,12 +420,14 @@ describe('UniswapSwapSale', function () {
 
             await shouldRevertAndNotHandlePayment.bind(this)(
               'SwapSale: insufficient ETH provided',
-              recipient,
-              recipient,
-              this.ethTokenAddress,
-              sku,
-              quantity,
-              userData,
+              {
+                purchaser: recipient,
+                recipient: recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
               {
                 amountVariance: new BN(-1),
                 totalPricePrecision: 14,
@@ -449,7 +453,17 @@ describe('UniswapSwapSale', function () {
 
             const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-            await shouldHandlePayment.bind(this)(recipient, recipient, this.ethTokenAddress, sku, quantity, userData, {totalPricePrecision: 14});
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: recipient,
+                recipient: recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
+              {totalPricePrecision: 14}
+            );
           });
         });
 
@@ -470,10 +484,20 @@ describe('UniswapSwapSale', function () {
 
             const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-            await shouldHandlePayment.bind(this)(recipient, recipient, this.ethTokenAddress, sku, quantity, userData, {
-              amountVariance: new BN(1),
-              totalPricePrecision: 14,
-            });
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: recipient,
+                recipient: recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
+              {
+                amountVariance: new BN(1),
+                totalPricePrecision: 14,
+              }
+            );
           });
         });
 
@@ -484,7 +508,17 @@ describe('UniswapSwapSale', function () {
 
             const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-            await shouldHandlePayment.bind(this)(recipient, recipient, this.ethTokenAddress, sku, quantity, userData, {totalPricePrecision: 14});
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: recipient,
+                recipient: recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
+              {totalPricePrecision: 14}
+            );
           });
         });
       });
@@ -509,12 +543,14 @@ describe('UniswapSwapSale', function () {
 
             await shouldRevertAndNotHandlePayment.bind(this)(
               'UniswapV2Adapter: INVALID_MAX_AMOUNT_IN',
-              purchaser,
-              recipient,
-              this.ethTokenAddress,
-              sku,
-              quantity,
-              userData,
+              {
+                purchaser: purchaser,
+                recipient: recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
               {
                 amountVariance: new BN(1),
                 totalPricePrecision: 14,
@@ -542,12 +578,14 @@ describe('UniswapSwapSale', function () {
 
             await shouldRevertAndNotHandlePayment.bind(this)(
               'SwapSale: insufficient ETH provided',
-              purchaser,
-              recipient,
-              this.ethTokenAddress,
-              sku,
-              quantity,
-              userData,
+              {
+                purchaser: purchaser,
+                recipient: recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
               {
                 amountVariance: new BN(-1),
                 totalPricePrecision: 14,
@@ -573,7 +611,17 @@ describe('UniswapSwapSale', function () {
 
             const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-            await shouldHandlePayment.bind(this)(purchaser, recipient, this.ethTokenAddress, sku, quantity, userData, {totalPricePrecision: 14});
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: purchaser,
+                recipient: recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
+              {totalPricePrecision: 14}
+            );
           });
         });
 
@@ -594,10 +642,20 @@ describe('UniswapSwapSale', function () {
 
             const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-            await shouldHandlePayment.bind(this)(purchaser, recipient, this.ethTokenAddress, sku, quantity, userData, {
-              amountVariance: new BN(1),
-              totalPricePrecision: 14,
-            });
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: purchaser,
+                recipient: recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
+              {
+                amountVariance: new BN(1),
+                totalPricePrecision: 14,
+              }
+            );
           });
         });
 
@@ -608,7 +666,17 @@ describe('UniswapSwapSale', function () {
 
             const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-            await shouldHandlePayment.bind(this)(purchaser, recipient, this.ethTokenAddress, sku, quantity, userData, {totalPricePrecision: 14});
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: purchaser,
+                recipient: recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
+              {totalPricePrecision: 14}
+            );
           });
         });
       });
@@ -637,12 +705,15 @@ describe('UniswapSwapSale', function () {
 
             await shouldRevertAndNotHandlePayment.bind(this)(
               'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT',
-              recipient,
-              recipient,
-              this.erc20TokenAddress,
-              sku,
-              quantity,
-              userData
+              {
+                purchaser: recipient,
+                recipient: recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
+              {}
             );
           });
         });
@@ -664,7 +735,17 @@ describe('UniswapSwapSale', function () {
 
             const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-            await shouldHandlePayment.bind(this)(recipient, recipient, this.erc20TokenAddress, sku, quantity, userData);
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: recipient,
+                recipient: recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
+              {}
+            );
           });
         });
 
@@ -685,7 +766,17 @@ describe('UniswapSwapSale', function () {
 
             const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-            await shouldHandlePayment.bind(this)(recipient, recipient, this.erc20TokenAddress, sku, quantity, userData);
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: recipient,
+                recipient: recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
+              {}
+            );
           });
         });
 
@@ -696,7 +787,17 @@ describe('UniswapSwapSale', function () {
 
             const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-            await shouldHandlePayment.bind(this)(recipient, recipient, this.erc20TokenAddress, sku, quantity, userData);
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: recipient,
+                recipient: recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
+              {}
+            );
           });
         });
       });
@@ -721,12 +822,15 @@ describe('UniswapSwapSale', function () {
 
             await shouldRevertAndNotHandlePayment.bind(this)(
               'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT',
-              purchaser,
-              recipient,
-              this.erc20TokenAddress,
-              sku,
-              quantity,
-              userData
+              {
+                purchaser: purchaser,
+                recipient: recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
+              {}
             );
           });
         });
@@ -748,7 +852,17 @@ describe('UniswapSwapSale', function () {
 
             const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-            await shouldHandlePayment.bind(this)(purchaser, recipient, this.erc20TokenAddress, sku, quantity, userData);
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: purchaser,
+                recipient: recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
+              {}
+            );
           });
         });
 
@@ -769,7 +883,17 @@ describe('UniswapSwapSale', function () {
 
             const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-            await shouldHandlePayment.bind(this)(purchaser, recipient, this.erc20TokenAddress, sku, quantity, userData);
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: purchaser,
+                recipient: recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
+              {}
+            );
           });
         });
 
@@ -780,7 +904,17 @@ describe('UniswapSwapSale', function () {
 
             const userData = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-            await shouldHandlePayment.bind(this)(purchaser, recipient, this.erc20TokenAddress, sku, quantity, userData);
+            await shouldHandlePayment.bind(this)(
+              {
+                purchaser: purchaser,
+                recipient: recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: quantity,
+                userData: userData,
+              },
+              {}
+            );
           });
         });
       });
@@ -830,7 +964,7 @@ describe('UniswapSwapSale', function () {
       );
     });
 
-    describe(`should return the correct conversion rates`, async function () {
+    describe(`should return the correct conversion rates`, function () {
       it('when the source token has a reserve less than the destination token', async function () {
         const fromToken = tokens['TokenA'].contract.address;
         const toToken = tokens['ReferenceToken'].contract.address;
@@ -943,7 +1077,7 @@ describe('UniswapSwapSale', function () {
       );
     });
 
-    describe(`should return a swap estimate`, async function () {
+    describe(`should return a swap estimate`, function () {
       it('when the source token is an ERC20', async function () {
         const fromToken = tokens['TokenA'].contract.address;
         const toToken = tokens['ReferenceToken'].contract.address;
@@ -971,10 +1105,10 @@ describe('UniswapSwapSale', function () {
       return token === (overrides.ethTokenAddress || this.ethTokenAddress);
     }
 
-    async function doCallUnderscoreSwap(fromToken, fromAmount, toToken, toAmount, data, overrides = {}) {
+    async function doCallUnderscoreSwap(swap, overrides = {}) {
       const contract = overrides.contract || this.contract;
 
-      let amount = overrides.amount || fromAmount;
+      let amount = overrides.amount || swap.fromAmount;
       let amountVariance = overrides.amountVariance;
 
       if (!amountVariance) {
@@ -985,15 +1119,15 @@ describe('UniswapSwapSale', function () {
 
       let etherValue;
 
-      if (isEthToken.bind(this)(fromToken, overrides)) {
+      if (isEthToken.bind(this)(swap.fromToken, overrides)) {
         etherValue = amount;
       } else {
-        const erc20Contract = await ERC20.at(fromToken);
+        const erc20Contract = await ERC20.at(swap.fromToken);
         await erc20Contract.approve(this.contract.address, amount, {from: purchaser});
         etherValue = Zero;
       }
 
-      const callUnderscoreSwap = contract.callUnderscoreSwap(fromToken, amount, toToken, toAmount, data, {
+      const callUnderscoreSwap = contract.callUnderscoreSwap(swap.fromToken, amount, swap.toToken, swap.toAmount, swap.data, {
         from: purchaser,
         value: etherValue,
       });
@@ -1001,10 +1135,10 @@ describe('UniswapSwapSale', function () {
       return {callUnderscoreSwap};
     }
 
-    async function shouldHandleSwap(fromToken, fromAmount, toToken, toAmount, data, overrides = {}) {
+    async function shouldHandleSwap(swap, overrides = {}) {
       const contract = overrides.contract || this.contract;
 
-      const {callUnderscoreSwap} = await doCallUnderscoreSwap.bind(this)(fromToken, fromAmount, toToken, toAmount, data, overrides);
+      const {callUnderscoreSwap} = await doCallUnderscoreSwap.bind(this)(swap, overrides);
 
       const receipt = await callUnderscoreSwap;
 
@@ -1012,11 +1146,11 @@ describe('UniswapSwapSale', function () {
 
       const actualFromAmount = events[0].args.fromAmount;
 
-      actualFromAmount.should.be.bignumber.equal(fromAmount);
+      actualFromAmount.should.be.bignumber.equal(swap.fromAmount);
     }
 
-    async function shouldRevertAndNotHandleSwap(revertMessage, fromToken, fromAmount, toToken, toAmount, data, overrides = {}) {
-      const {callUnderscoreSwap} = await doCallUnderscoreSwap.bind(this)(fromToken, fromAmount, toToken, toAmount, data, overrides);
+    async function shouldRevertAndNotHandleSwap(revertMessage, swap, overrides = {}) {
+      const {callUnderscoreSwap} = await doCallUnderscoreSwap.bind(this)(swap, overrides);
 
       if (revertMessage) {
         await expectRevert(callUnderscoreSwap, revertMessage);
@@ -1051,9 +1185,19 @@ describe('UniswapSwapSale', function () {
 
           const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-          await shouldRevertAndNotHandleSwap.bind(this)('UniswapV2Adapter: INVALID_MAX_AMOUNT_IN', fromToken, fromAmount, toToken, toAmount, data, {
-            amountVariance: new BN(1),
-          });
+          await shouldRevertAndNotHandleSwap.bind(this)(
+            'UniswapV2Adapter: INVALID_MAX_AMOUNT_IN',
+            {
+              fromToken: fromToken,
+              fromAmount: fromAmount,
+              toToken: toToken,
+              toAmount: toAmount,
+              data: data,
+            },
+            {
+              amountVariance: new BN(1),
+            }
+          );
         });
       });
 
@@ -1070,9 +1214,19 @@ describe('UniswapSwapSale', function () {
 
           const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-          await shouldRevertAndNotHandleSwap.bind(this)('UniswapV2Router: EXCESSIVE_INPUT_AMOUNT', fromToken, fromAmount, toToken, toAmount, data, {
-            amountVariance: new BN(-1),
-          });
+          await shouldRevertAndNotHandleSwap.bind(this)(
+            'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT',
+            {
+              fromToken: fromToken,
+              fromAmount: fromAmount,
+              toToken: toToken,
+              toAmount: toAmount,
+              data: data,
+            },
+            {
+              amountVariance: new BN(-1),
+            }
+          );
         });
       });
 
@@ -1089,7 +1243,16 @@ describe('UniswapSwapSale', function () {
 
           const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-          await shouldHandleSwap.bind(this)(fromToken, fromAmount, toToken, toAmount, data);
+          await shouldHandleSwap.bind(this)(
+            {
+              fromToken: fromToken,
+              fromAmount: fromAmount,
+              toToken: toToken,
+              toAmount: toAmount,
+              data: data,
+            },
+            {}
+          );
         });
       });
 
@@ -1106,9 +1269,18 @@ describe('UniswapSwapSale', function () {
 
           const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-          await shouldHandleSwap.bind(this)(fromToken, fromAmount, toToken, toAmount, data, {
-            amountVariance: new BN(1),
-          });
+          await shouldHandleSwap.bind(this)(
+            {
+              fromToken: fromToken,
+              fromAmount: fromAmount,
+              toToken: toToken,
+              toAmount: toAmount,
+              data: data,
+            },
+            {
+              amountVariance: new BN(1),
+            }
+          );
         });
       });
 
@@ -1125,7 +1297,16 @@ describe('UniswapSwapSale', function () {
 
           const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-          await shouldHandleSwap.bind(this)(fromToken, fromAmount, toToken, toAmount, data);
+          await shouldHandleSwap.bind(this)(
+            {
+              fromToken: fromToken,
+              fromAmount: fromAmount,
+              toToken: toToken,
+              toAmount: toAmount,
+              data: data,
+            },
+            {}
+          );
         });
       });
     });
@@ -1144,9 +1325,19 @@ describe('UniswapSwapSale', function () {
 
           const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-          await shouldRevertAndNotHandleSwap.bind(this)('UniswapV2Router: EXCESSIVE_INPUT_AMOUNT', fromToken, fromAmount, toToken, toAmount, data, {
-            amountVariance: new BN(-1),
-          });
+          await shouldRevertAndNotHandleSwap.bind(this)(
+            'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT',
+            {
+              fromToken: fromToken,
+              fromAmount: fromAmount,
+              toToken: toToken,
+              toAmount: toAmount,
+              data: data,
+            },
+            {
+              amountVariance: new BN(-1),
+            }
+          );
         });
       });
 
@@ -1163,7 +1354,16 @@ describe('UniswapSwapSale', function () {
 
           const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-          await shouldHandleSwap.bind(this)(fromToken, fromAmount, toToken, toAmount, data);
+          await shouldHandleSwap.bind(this)(
+            {
+              fromToken: fromToken,
+              fromAmount: fromAmount,
+              toToken: toToken,
+              toAmount: toAmount,
+              data: data,
+            },
+            {}
+          );
         });
       });
 
@@ -1180,7 +1380,16 @@ describe('UniswapSwapSale', function () {
 
           const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-          await shouldHandleSwap.bind(this)(fromToken, fromAmount, toToken, toAmount, data, {amountVariance: new BN(1)});
+          await shouldHandleSwap.bind(this)(
+            {
+              fromToken: fromToken,
+              fromAmount: fromAmount,
+              toToken: toToken,
+              toAmount: toAmount,
+              data: data,
+            },
+            {amountVariance: new BN(1)}
+          );
         });
       });
 
@@ -1197,7 +1406,16 @@ describe('UniswapSwapSale', function () {
 
           const data = bytes32ArrayToBytes([maxFromAmount, deadlineDuration]);
 
-          await shouldHandleSwap.bind(this)(fromToken, fromAmount, toToken, toAmount, data);
+          await shouldHandleSwap.bind(this)(
+            {
+              fromToken: fromToken,
+              fromAmount: fromAmount,
+              toToken: toToken,
+              toAmount: toAmount,
+              data: data,
+            },
+            {}
+          );
         });
       });
     });

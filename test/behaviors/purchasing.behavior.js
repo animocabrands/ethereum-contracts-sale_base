@@ -21,16 +21,17 @@ function isEthToken(token, overrides = {}) {
 async function getBalance(token, account, overrides = {}) {
   if (isEthToken.bind(this)(token, overrides)) {
     return await balance.current(account);
-  } else {
-    const contract = await IERC20.at(token);
-    return await contract.balanceOf(account);
   }
+  const contract = await IERC20.at(token);
+  return await contract.balanceOf(account);
 }
 
-async function doPurchaseFor(purchaser, recipient, token, sku, quantity, userData, overrides = {}) {
+async function doPurchaseFor(purchase, overrides = {}) {
   const contract = overrides.contract || this.contract;
 
-  const estimatePurchase = await contract.estimatePurchase(recipient, token, sku, quantity, userData, {from: purchaser});
+  const estimatePurchase = await contract.estimatePurchase(purchase.recipient, purchase.token, purchase.sku, purchase.quantity, purchase.userData, {
+    from: purchase.purchaser,
+  });
 
   const totalPrice = estimatePurchase.totalPrice;
 
@@ -45,16 +46,16 @@ async function doPurchaseFor(purchaser, recipient, token, sku, quantity, userDat
 
   let etherValue;
 
-  if (isEthToken.bind(this)(token, overrides)) {
+  if (isEthToken.bind(this)(purchase.token, overrides)) {
     etherValue = amount;
   } else {
-    const erc20Contract = await IERC20.at(token);
-    await erc20Contract.approve(contract.address, amount, {from: purchaser});
+    const erc20Contract = await IERC20.at(purchase.token);
+    await erc20Contract.approve(contract.address, amount, {from: purchase.purchaser});
     etherValue = Zero;
   }
 
-  const purchaseFor = contract.purchaseFor(recipient, token, sku, quantity, userData, {
-    from: purchaser,
+  const purchaseFor = contract.purchaseFor(purchase.recipient, purchase.token, purchase.sku, purchase.quantity, purchase.userData, {
+    from: purchase.purchaser,
     value: etherValue,
   });
 
@@ -64,28 +65,28 @@ async function doPurchaseFor(purchaser, recipient, token, sku, quantity, userDat
   };
 }
 
-async function shouldPurchaseFor(purchaser, recipient, token, sku, quantity, userData, overrides = {}) {
-  const balanceBefore = await getBalance.bind(this)(token, purchaser, overrides);
+async function shouldPurchaseFor(purchase, overrides = {}) {
+  const balanceBefore = await getBalance.bind(this)(purchase.token, purchase.purchaser, overrides);
 
-  const {purchaseFor, totalPrice} = await doPurchaseFor.bind(this)(purchaser, recipient, token, sku, quantity, userData, overrides);
+  const {purchaseFor, totalPrice} = await doPurchaseFor.bind(this)(purchase, overrides);
 
   const receipt = await purchaseFor;
   const contract = overrides.contract || this.contract;
 
   expectEvent(receipt, 'Purchase', {
-    purchaser: purchaser,
-    recipient: recipient,
-    token: web3.utils.toChecksumAddress(token),
-    sku: sku,
-    quantity: quantity,
-    userData: userData,
+    purchaser: purchase.purchaser,
+    recipient: purchase.recipient,
+    token: web3.utils.toChecksumAddress(purchase.token),
+    sku: purchase.sku,
+    quantity: purchase.quantity,
+    userData: purchase.userData,
     totalPrice: totalPrice,
   });
 
-  const balanceAfter = await getBalance.bind(this)(token, purchaser, overrides);
+  const balanceAfter = await getBalance.bind(this)(purchase.token, purchase.purchaser, overrides);
   const balanceDiff = balanceBefore.sub(balanceAfter);
 
-  if (isEthToken.bind(this)(token, overrides)) {
+  if (isEthToken.bind(this)(purchase.token, overrides)) {
     const gasUsed = new BN(receipt.receipt.gasUsed);
     const gasPrice = new BN(network.config.gasPrice);
     const expected = totalPrice.add(gasUsed.mul(gasPrice));
@@ -104,8 +105,8 @@ async function shouldPurchaseFor(purchaser, recipient, token, sku, quantity, use
   }
 }
 
-async function shouldRevertAndNotPurchaseFor(revertMessage, purchaser, recipient, token, sku, quantity, userData, overrides = {}) {
-  const {purchaseFor} = await doPurchaseFor.bind(this)(purchaser, recipient, token, sku, quantity, userData, overrides);
+async function shouldRevertAndNotPurchaseFor(revertMessage, purchase, overrides = {}) {
+  const {purchaseFor} = await doPurchaseFor.bind(this)(purchase, overrides);
 
   if (revertMessage) {
     await expectRevert(purchaseFor, revertMessage);

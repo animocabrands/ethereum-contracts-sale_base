@@ -18,12 +18,14 @@ const purchasingScenario = function (sku, userData, overrides = {}) {
           it('should revert and not purchase for', async function () {
             await shouldRevertAndNotPurchaseFor.bind(this)(
               'Sale: insufficient ETH provided',
-              this.recipient,
-              this.recipient,
-              this.ethTokenAddress,
-              sku,
-              One,
-              userData,
+              {
+                purchaser: this.recipient,
+                recipient: this.recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
               Object.assign({amountVariance: new BN(-1)}, overrides)
             );
           });
@@ -31,19 +33,31 @@ const purchasingScenario = function (sku, userData, overrides = {}) {
 
         describe('when the payment amount is sufficient', function () {
           it('should purchase for', async function () {
-            await shouldPurchaseFor.bind(this)(this.recipient, this.recipient, this.ethTokenAddress, sku, One, userData, overrides);
+            await shouldPurchaseFor.bind(this)(
+              {
+                purchaser: this.recipient,
+                recipient: this.recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
+              overrides
+            );
           });
         });
 
         describe('when the payment amount is more than sufficient', function () {
           it('should purchase for', async function () {
             await shouldPurchaseFor.bind(this)(
-              this.recipient,
-              this.recipient,
-              this.ethTokenAddress,
-              sku,
-              One,
-              userData,
+              {
+                purchaser: this.recipient,
+                recipient: this.recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
               Object.assign({amountVariance: One}, overrides)
             );
           });
@@ -57,12 +71,14 @@ const purchasingScenario = function (sku, userData, overrides = {}) {
 
             await shouldRevertAndNotPurchaseFor.bind(this)(
               'Sale: insufficient ETH provided',
-              this.purchaser,
-              this.recipient,
-              this.ethTokenAddress,
-              sku,
-              One,
-              userData,
+              {
+                purchaser: this.purchaser,
+                recipient: this.recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
               Object.assign({amountVariance: new BN(-1)}, overrides)
             );
           });
@@ -70,19 +86,31 @@ const purchasingScenario = function (sku, userData, overrides = {}) {
 
         describe('when the payment amount is sufficient', function () {
           it('should purchase for', async function () {
-            await shouldPurchaseFor.bind(this)(this.purchaser, this.recipient, this.ethTokenAddress, sku, One, userData, overrides);
+            await shouldPurchaseFor.bind(this)(
+              {
+                purchaser: this.purchaser,
+                recipient: this.recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
+              overrides
+            );
           });
         });
 
         describe('when the payment amount is more than sufficient', function () {
           it('should purchase for', async function () {
             await shouldPurchaseFor.bind(this)(
-              this.purchaser,
-              this.recipient,
-              this.ethTokenAddress,
-              sku,
-              One,
-              userData,
+              {
+                purchaser: this.purchaser,
+                recipient: this.recipient,
+                token: this.ethTokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
               Object.assign({amountVariance: One}, overrides)
             );
           });
@@ -98,12 +126,14 @@ const purchasingScenario = function (sku, userData, overrides = {}) {
           it('should revert and not purchase for', async function () {
             await shouldRevertAndNotPurchaseFor.bind(this)(
               'ERC20: transfer amount exceeds allowance',
-              this.recipient,
-              this.recipient,
-              this.erc20TokenAddress,
-              sku,
-              One,
-              userData,
+              {
+                purchaser: this.recipient,
+                recipient: this.recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
               {
                 amountVariance: new BN(-1),
               }
@@ -113,15 +143,35 @@ const purchasingScenario = function (sku, userData, overrides = {}) {
 
         describe('when the payment amount is sufficient', function () {
           it('should purchase for', async function () {
-            await shouldPurchaseFor.bind(this)(this.recipient, this.recipient, this.erc20TokenAddress, sku, One, userData);
+            await shouldPurchaseFor.bind(this)(
+              {
+                purchaser: this.recipient,
+                recipient: this.recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
+              {}
+            );
           });
         });
 
         describe('when the payment amount is more than sufficient', function () {
           it('should purchase for', async function () {
-            await shouldPurchaseFor.bind(this)(this.recipient, this.recipient, this.erc20TokenAddress, sku, One, userData, {
-              amountVariance: One,
-            });
+            await shouldPurchaseFor.bind(this)(
+              {
+                purchaser: this.recipient,
+                recipient: this.recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
+              {
+                amountVariance: One,
+              }
+            );
           });
         });
       });
@@ -131,12 +181,14 @@ const purchasingScenario = function (sku, userData, overrides = {}) {
           it('should revert and not purchase for', async function () {
             await shouldRevertAndNotPurchaseFor.bind(this)(
               'ERC20: transfer amount exceeds allowance',
-              this.purchaser,
-              this.recipient,
-              this.erc20TokenAddress,
-              sku,
-              One,
-              userData,
+              {
+                purchaser: this.purchaser,
+                recipient: this.recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
               {
                 amountVariance: new BN(-1),
               }
@@ -146,15 +198,35 @@ const purchasingScenario = function (sku, userData, overrides = {}) {
 
         describe('when the payment amount is sufficient', function () {
           it('should purchase for', async function () {
-            await shouldPurchaseFor.bind(this)(this.purchaser, this.recipient, this.erc20TokenAddress, sku, One, userData);
+            await shouldPurchaseFor.bind(this)(
+              {
+                purchaser: this.purchaser,
+                recipient: this.recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
+              {}
+            );
           });
         });
 
         describe('when the payment amount is more than sufficient', function () {
           it('should purchase for', async function () {
-            await shouldPurchaseFor.bind(this)(this.purchaser, this.recipient, this.erc20TokenAddress, sku, One, userData, {
-              amountVariance: One,
-            });
+            await shouldPurchaseFor.bind(this)(
+              {
+                purchaser: this.purchaser,
+                recipient: this.recipient,
+                token: this.erc20TokenAddress,
+                sku: sku,
+                quantity: One,
+                userData: userData,
+              },
+              {
+                amountVariance: One,
+              }
+            );
           });
         });
       });
