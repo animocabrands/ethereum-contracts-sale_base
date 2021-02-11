@@ -712,9 +712,12 @@ describe('SwapSale', function () {
                 await this.referenceToken.transfer(this.contract.address, ether('1'));
 
                 this.erc20TokenAddress = this.erc20Token.address;
+
+                this.purchaser = purchaser;
+                this.recipient = recipient;
             });
 
-            purchasingScenario([ purchaser, recipient ], sku);
+            purchasingScenario(sku);
 
         });
 

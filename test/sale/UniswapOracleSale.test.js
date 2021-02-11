@@ -375,9 +375,12 @@ describe('UniswapOracleSale', function () {
                 const erc20TokenContract = await ERC20.at(this.erc20TokenAddress);
                 await erc20TokenContract.transfer(purchaser, ether('1'));
                 await erc20TokenContract.transfer(recipient, ether('1'));
+
+                this.purchaser = purchaser;
+                this.recipient = recipient;
             });
 
-            purchasingScenario([ purchaser, recipient ], sku);
+            purchasingScenario(sku);
 
         });
 

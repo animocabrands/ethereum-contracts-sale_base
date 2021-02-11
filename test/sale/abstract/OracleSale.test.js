@@ -284,9 +284,12 @@ describe('OracleSale', function () {
                 await this.erc20Token.transfer(recipient, ether('1'));
 
                 this.erc20TokenAddress = this.erc20Token.address;
+
+                this.purchaser = purchaser;
+                this.recipient = recipient;
             });
 
-            purchasingScenario([ purchaser, recipient ], sku);
+            purchasingScenario(sku);
 
         });
 

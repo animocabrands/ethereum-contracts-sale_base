@@ -9,12 +9,7 @@ const {
 
 const defaultUserData = stringToBytes32('userData');
 
-const purchasingScenario = function (accounts, sku, userData, overrides = {}) {
-    const [
-        purchaser,
-        recipient
-    ] = accounts;
-
+const purchasingScenario = function (sku, userData, overrides = {}) {
     if ((userData == null) || (userData == undefined)) {
         userData = defaultUserData;
     }
@@ -29,8 +24,8 @@ const purchasingScenario = function (accounts, sku, userData, overrides = {}) {
                     it('should revert and not purchase for', async function () {
                         await shouldRevertAndNotPurchaseFor.bind(this)(
                             'Sale: insufficient ETH provided',
-                            recipient,
-                            recipient,
+                            this.recipient,
+                            this.recipient,
                             this.ethTokenAddress,
                             sku,
                             One,
@@ -46,8 +41,8 @@ const purchasingScenario = function (accounts, sku, userData, overrides = {}) {
 
                     it('should purchase for', async function () {
                         await shouldPurchaseFor.bind(this)(
-                            recipient,
-                            recipient,
+                            this.recipient,
+                            this.recipient,
                             this.ethTokenAddress,
                             sku,
                             One,
@@ -61,8 +56,8 @@ const purchasingScenario = function (accounts, sku, userData, overrides = {}) {
 
                     it('should purchase for', async function () {
                         await shouldPurchaseFor.bind(this)(
-                            recipient,
-                            recipient,
+                            this.recipient,
+                            this.recipient,
                             this.ethTokenAddress,
                             sku,
                             One,
@@ -82,17 +77,17 @@ const purchasingScenario = function (accounts, sku, userData, overrides = {}) {
 
                     it('should revert and not purchase for', async function () {
                         const estimate = await this.contract.estimatePurchase(
-                            recipient,
+                            this.recipient,
                             this.ethTokenAddress,
                             sku,
                             One,
                             userData,
-                            { from: purchaser });
+                            { from: this.purchaser });
 
                         await shouldRevertAndNotPurchaseFor.bind(this)(
                             'Sale: insufficient ETH provided',
-                            purchaser,
-                            recipient,
+                            this.purchaser,
+                            this.recipient,
                             this.ethTokenAddress,
                             sku,
                             One,
@@ -108,8 +103,8 @@ const purchasingScenario = function (accounts, sku, userData, overrides = {}) {
 
                     it('should purchase for', async function () {
                         await shouldPurchaseFor.bind(this)(
-                            purchaser,
-                            recipient,
+                            this.purchaser,
+                            this.recipient,
                             this.ethTokenAddress,
                             sku,
                             One,
@@ -123,8 +118,8 @@ const purchasingScenario = function (accounts, sku, userData, overrides = {}) {
 
                     it('should purchase for', async function () {
                         await shouldPurchaseFor.bind(this)(
-                            purchaser,
-                            recipient,
+                            this.purchaser,
+                            this.recipient,
                             this.ethTokenAddress,
                             sku,
                             One,
@@ -151,8 +146,8 @@ const purchasingScenario = function (accounts, sku, userData, overrides = {}) {
                     it('should revert and not purchase for', async function () {
                         await shouldRevertAndNotPurchaseFor.bind(this)(
                             'ERC20: transfer amount exceeds allowance',
-                            recipient,
-                            recipient,
+                            this.recipient,
+                            this.recipient,
                             this.erc20TokenAddress,
                             sku,
                             One,
@@ -168,8 +163,8 @@ const purchasingScenario = function (accounts, sku, userData, overrides = {}) {
 
                     it('should purchase for', async function () {
                         await shouldPurchaseFor.bind(this)(
-                            recipient,
-                            recipient,
+                            this.recipient,
+                            this.recipient,
                             this.erc20TokenAddress,
                             sku,
                             One,
@@ -182,8 +177,8 @@ const purchasingScenario = function (accounts, sku, userData, overrides = {}) {
 
                     it('should purchase for', async function () {
                         await shouldPurchaseFor.bind(this)(
-                            recipient,
-                            recipient,
+                            this.recipient,
+                            this.recipient,
                             this.erc20TokenAddress,
                             sku,
                             One,
@@ -204,8 +199,8 @@ const purchasingScenario = function (accounts, sku, userData, overrides = {}) {
                     it('should revert and not purchase for', async function () {
                         await shouldRevertAndNotPurchaseFor.bind(this)(
                             'ERC20: transfer amount exceeds allowance',
-                            purchaser,
-                            recipient,
+                            this.purchaser,
+                            this.recipient,
                             this.erc20TokenAddress,
                             sku,
                             One,
@@ -221,8 +216,8 @@ const purchasingScenario = function (accounts, sku, userData, overrides = {}) {
 
                     it('should purchase for', async function () {
                         await shouldPurchaseFor.bind(this)(
-                            purchaser,
-                            recipient,
+                            this.purchaser,
+                            this.recipient,
                             this.erc20TokenAddress,
                             sku,
                             One,
@@ -235,8 +230,8 @@ const purchasingScenario = function (accounts, sku, userData, overrides = {}) {
 
                     it('should purchase for', async function () {
                         await shouldPurchaseFor.bind(this)(
-                            purchaser,
-                            recipient,
+                            this.purchaser,
+                            this.recipient,
                             this.erc20TokenAddress,
                             sku,
                             One,

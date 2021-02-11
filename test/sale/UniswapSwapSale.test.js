@@ -1574,6 +1574,9 @@ describe('UniswapSwapSale', function () {
                 await tokens['ReferenceToken'].contract.transfer(
                     this.contract.address,
                     ether('1'));
+
+                this.purchaser = purchaser;
+                this.recipient = recipient;
             });
 
             // This scenario requires an explicit total price precision set
@@ -1581,7 +1584,7 @@ describe('UniswapSwapSale', function () {
             // purchase total amount, which is not always accurate to what was
             // actually spent in payment. This is due solely to the fact that
             // the Oracle swap produces an approximate exchange rate.
-            purchasingScenario([ purchaser, recipient ], sku, userData, { totalPricePrecision: 14 });
+            purchasingScenario(sku, userData, { totalPricePrecision: 14 });
 
         });
 
