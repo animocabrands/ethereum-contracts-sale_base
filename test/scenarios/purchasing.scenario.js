@@ -14,7 +14,7 @@ const purchasingScenario = function (sku, userData, overrides = {}) {
         userData = defaultUserData;
     }
 
-    if (!overrides.onlyErc20 && overrides.onlyEth) {
+    if (!!overrides.onlyEth || !!!overrides.onlyErc20) {
         describe('when purchasing with ETH', function () {
 
             describe('when purchasing for yourself', function () {
@@ -136,7 +136,7 @@ const purchasingScenario = function (sku, userData, overrides = {}) {
         });
     }
 
-    if (!overrides.onlyEth && overrides.onlyErc20) {
+    if (!!overrides.onlyErc20 || !!!overrides.onlyEth) {
         describe('when purchasing with ERC20', function () {
 
             describe('when purchasing for yourself', function () {
