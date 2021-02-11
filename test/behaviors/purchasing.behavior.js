@@ -1,10 +1,8 @@
-const { network, artifacts, web3 } = require('hardhat');
-const { BN, balance, expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
-const { Zero } = require('@animoca/ethereum-contracts-core_library').constants;
+const {network, artifacts, web3} = require('hardhat');
+const {BN, balance, expectRevert, expectEvent} = require('@openzeppelin/test-helpers');
+const {Zero} = require('@animoca/ethereum-contracts-core_library').constants;
 
-const {
-    shouldBeEqualWithETHDecimalPrecision
-} = require('@animoca/ethereum-contracts-core_library/test/utils/weiPrecision');
+const {shouldBeEqualWithETHDecimalPrecision} = require('@animoca/ethereum-contracts-core_library/test/utils/weiPrecision');
 
 const IERC20 = artifacts.require('@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol:IERC20');
 
@@ -17,148 +15,106 @@ const IERC20 = artifacts.require('@animoca/ethereum-contracts-erc20_base/contrac
  */
 
 function isEthToken(token, overrides = {}) {
-    return token === (overrides.ethTokenAddress || this.ethTokenAddress);
+  return token === (overrides.ethTokenAddress || this.ethTokenAddress);
 }
 
 async function getBalance(token, account, overrides = {}) {
-    if (isEthToken.bind(this)(token, overrides)) {
-        return await balance.current(account);
-    } else {
-        const contract = await IERC20.at(token);
-        return await contract.balanceOf(account);
-    }
+  if (isEthToken.bind(this)(token, overrides)) {
+    return await balance.current(account);
+  } else {
+    const contract = await IERC20.at(token);
+    return await contract.balanceOf(account);
+  }
 }
 
 async function doPurchaseFor(purchaser, recipient, token, sku, quantity, userData, overrides = {}) {
-    const contract = overrides.contract || this.contract;
+  const contract = overrides.contract || this.contract;
 
-    const estimatePurchase = await contract.estimatePurchase(
-        recipient,
-        token,
-        sku,
-        quantity,
-        userData,
-        { from: purchaser });
+  const estimatePurchase = await contract.estimatePurchase(recipient, token, sku, quantity, userData, {from: purchaser});
 
-    const totalPrice = estimatePurchase.totalPrice;
+  const totalPrice = estimatePurchase.totalPrice;
 
-    let amount = overrides.amount || totalPrice;
-    let amountVariance = overrides.amountVariance;
+  let amount = overrides.amount || totalPrice;
+  let amountVariance = overrides.amountVariance;
 
-    if (!amountVariance) {
-        amountVariance = Zero;
-    }
+  if (!amountVariance) {
+    amountVariance = Zero;
+  }
 
-    amount = amount.add(amountVariance);
+  amount = amount.add(amountVariance);
 
-    let etherValue;
+  let etherValue;
 
-    if (isEthToken.bind(this)(token, overrides)) {
-        etherValue = amount;
-    } else {
-        const erc20Contract = await IERC20.at(token);
-        await erc20Contract.approve(contract.address, amount, { from: purchaser });
-        etherValue = Zero;
-    }
+  if (isEthToken.bind(this)(token, overrides)) {
+    etherValue = amount;
+  } else {
+    const erc20Contract = await IERC20.at(token);
+    await erc20Contract.approve(contract.address, amount, {from: purchaser});
+    etherValue = Zero;
+  }
 
-    const purchaseFor = contract.purchaseFor(
-        recipient,
-        token,
-        sku,
-        quantity,
-        userData,
-        {
-            from: purchaser,
-            value: etherValue
-        });
+  const purchaseFor = contract.purchaseFor(recipient, token, sku, quantity, userData, {
+    from: purchaser,
+    value: etherValue,
+  });
 
-    return {
-        purchaseFor,
-        totalPrice
-    };
+  return {
+    purchaseFor,
+    totalPrice,
+  };
 }
 
 async function shouldPurchaseFor(purchaser, recipient, token, sku, quantity, userData, overrides = {}) {
-    const balanceBefore = await getBalance.bind(this)(token, purchaser, overrides);
+  const balanceBefore = await getBalance.bind(this)(token, purchaser, overrides);
 
-    const {
-        purchaseFor,
-        totalPrice
-    } = await doPurchaseFor.bind(this)(
-        purchaser,
-        recipient,
-        token,
-        sku,
-        quantity,
-        userData,
-        overrides
-    );
+  const {purchaseFor, totalPrice} = await doPurchaseFor.bind(this)(purchaser, recipient, token, sku, quantity, userData, overrides);
 
-    const receipt = await purchaseFor;
-    const contract = overrides.contract || this.contract;
+  const receipt = await purchaseFor;
+  const contract = overrides.contract || this.contract;
 
-    expectEvent(
-        receipt,
-        'Purchase',
-        {
-            purchaser: purchaser,
-            recipient: recipient,
-            token: web3.utils.toChecksumAddress(token),
-            sku: sku,
-            quantity: quantity,
-            userData: userData,
-            totalPrice: totalPrice
-        });
+  expectEvent(receipt, 'Purchase', {
+    purchaser: purchaser,
+    recipient: recipient,
+    token: web3.utils.toChecksumAddress(token),
+    sku: sku,
+    quantity: quantity,
+    userData: userData,
+    totalPrice: totalPrice,
+  });
 
-    const balanceAfter = await getBalance.bind(this)(token, purchaser, overrides);
-    const balanceDiff = balanceBefore.sub(balanceAfter);
+  const balanceAfter = await getBalance.bind(this)(token, purchaser, overrides);
+  const balanceDiff = balanceBefore.sub(balanceAfter);
 
-    if (isEthToken.bind(this)(token, overrides)) {
-        const gasUsed = new BN(receipt.receipt.gasUsed);
-        const gasPrice = new BN(network.config.gasPrice);
-        const expected = totalPrice.add(gasUsed.mul(gasPrice));
+  if (isEthToken.bind(this)(token, overrides)) {
+    const gasUsed = new BN(receipt.receipt.gasUsed);
+    const gasPrice = new BN(network.config.gasPrice);
+    const expected = totalPrice.add(gasUsed.mul(gasPrice));
 
-        if (overrides.totalPricePrecision) {
-            shouldBeEqualWithETHDecimalPrecision(
-                balanceDiff,
-                expected,
-                overrides.totalPricePrecision);
-        } else {
-            balanceDiff.should.be.bignumber.equal(expected);
-        }
+    if (overrides.totalPricePrecision) {
+      shouldBeEqualWithETHDecimalPrecision(balanceDiff, expected, overrides.totalPricePrecision);
     } else {
-        if (overrides.totalPricePrecision) {
-            shouldBeEqualWithETHDecimalPrecision(
-                balanceDiff,
-                totalPrice,
-                overrides.totalPricePrecision);
-        } else {
-            balanceDiff.should.be.bignumber.equal(totalPrice);
-        }
+      balanceDiff.should.be.bignumber.equal(expected);
     }
+  } else {
+    if (overrides.totalPricePrecision) {
+      shouldBeEqualWithETHDecimalPrecision(balanceDiff, totalPrice, overrides.totalPricePrecision);
+    } else {
+      balanceDiff.should.be.bignumber.equal(totalPrice);
+    }
+  }
 }
 
 async function shouldRevertAndNotPurchaseFor(revertMessage, purchaser, recipient, token, sku, quantity, userData, overrides = {}) {
-    const {
-        purchaseFor
-    } = await doPurchaseFor.bind(this)(
-        purchaser,
-        recipient,
-        token,
-        sku,
-        quantity,
-        userData,
-        overrides
-    );
+  const {purchaseFor} = await doPurchaseFor.bind(this)(purchaser, recipient, token, sku, quantity, userData, overrides);
 
-    if (revertMessage) {
-        await expectRevert(purchaseFor, revertMessage);
-    } else {
-        await expectRevert.unspecified(purchaseFor);
-    }
+  if (revertMessage) {
+    await expectRevert(purchaseFor, revertMessage);
+  } else {
+    await expectRevert.unspecified(purchaseFor);
+  }
 }
 
 module.exports = {
-    shouldPurchaseFor,
-    shouldRevertAndNotPurchaseFor
+  shouldPurchaseFor,
+  shouldRevertAndNotPurchaseFor,
 };
