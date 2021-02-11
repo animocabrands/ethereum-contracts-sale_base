@@ -1,4 +1,4 @@
-const { artifacts, web3 } = require('hardhat');
+const { network, artifacts, web3 } = require('hardhat');
 const { BN, balance, ether, time, expectRevert } = require('@openzeppelin/test-helpers');
 const { ZeroAddress, Zero, One, Two, Three, Four } = require('@animoca/ethereum-contracts-core_library').constants;
 const { stringToBytes32, bytes32ArrayToBytes, uintToBytes32 } = require('../utils/bytes32');
@@ -361,7 +361,7 @@ describe('UniswapSwapSale', function () {
 
             if (isEthToken.bind(this)(token, overrides)) {
                 const gasUsed = new BN(receipt.receipt.gasUsed);
-                const gasPrice = new BN(await web3.eth.getGasPrice());
+                const gasPrice = new BN(network.config.gasPrice);
                 const expected = totalPrice.add(gasUsed.mul(gasPrice));
 
                 if (overrides.totalPricePrecision) {
@@ -492,7 +492,7 @@ describe('UniswapSwapSale', function () {
 
                 describe('when the payment token max amount to swap is sufficient', function () {
 
-                    it('should handle payment [ @skip-on-coverage ]', async function () {
+                    it('should handle payment', async function () {
                         const unitPrice = liquidity['ReferenceToken'].price;
                         const totalPrice = unitPrice.mul(quantity);
 
@@ -521,7 +521,7 @@ describe('UniswapSwapSale', function () {
 
                 describe('when the payment token max amount to swap is more than sufficient', function () {
 
-                    it('should handle payment [ @skip-on-coverage ]', async function () {
+                    it('should handle payment', async function () {
                         const unitPrice = liquidity['ReferenceToken'].price;
                         const totalPrice = unitPrice.mul(quantity);
 
@@ -553,7 +553,7 @@ describe('UniswapSwapSale', function () {
 
                 describe('when the payment token max amount to swap is the default 0 value (no limit)', function () {
 
-                    it('should handle payment [ @skip-on-coverage ]', async function () {
+                    it('should handle payment', async function () {
                         const maxFromAmount = uintToBytes32(Zero);
                         const deadlineDuration = uintToBytes32(Zero);
 
@@ -643,7 +643,7 @@ describe('UniswapSwapSale', function () {
 
                 describe('when the payment token max amount to swap is sufficient', function () {
 
-                    it('should handle payment [ @skip-on-coverage ]', async function () {
+                    it('should handle payment', async function () {
                         const unitPrice = liquidity['ReferenceToken'].price;
                         const totalPrice = unitPrice.mul(quantity);
 
@@ -672,7 +672,7 @@ describe('UniswapSwapSale', function () {
 
                 describe('when the payment token max amount to swap is more than sufficient', function () {
 
-                    it('should handle payment [ @skip-on-coverage ]', async function () {
+                    it('should handle payment', async function () {
                         const unitPrice = liquidity['ReferenceToken'].price;
                         const totalPrice = unitPrice.mul(quantity);
 
@@ -704,7 +704,7 @@ describe('UniswapSwapSale', function () {
 
                 describe('when the payment token max amount to swap is the maximum amount supported', function () {
 
-                    it('should handle payment [ @skip-on-coverage ]', async function () {
+                    it('should handle payment', async function () {
                         const maxFromAmount = uintToBytes32(Zero);
                         const deadlineDuration = uintToBytes32(Zero);
 

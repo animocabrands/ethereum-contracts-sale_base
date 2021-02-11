@@ -1,4 +1,4 @@
-const { web3 } = require('hardhat');
+const { network, web3 } = require('hardhat');
 const { BN, balance, ether, expectRevert } = require('@openzeppelin/test-helpers');
 const { ZeroAddress, Zero, One, Two, Three, Four } = require('@animoca/ethereum-contracts-core_library').constants;
 const { stringToBytes32, bytes32ToUint } = require('../../utils/bytes32');
@@ -237,7 +237,7 @@ describe('SwapSale', function () {
 
             if (isEthToken.bind(this)(token, overrides)) {
                 const gasUsed = new BN(receipt.receipt.gasUsed);
-                const gasPrice = new BN(await web3.eth.getGasPrice());
+                const gasPrice = new BN(network.config.gasPrice);
                 balanceDiff.should.be.bignumber.equal(totalPrice.add(gasUsed.mul(gasPrice)));
             } else {
                 balanceDiff.should.be.bignumber.equal(totalPrice);
@@ -302,7 +302,7 @@ describe('SwapSale', function () {
 
                 describe('when the payment amount is sufficient', function () {
 
-                    it('should handle payment [ @skip-on-coverage ]', async function () {
+                    it('should handle payment', async function () {
                         await shouldHandlePayment.bind(this)(
                             recipient,
                             recipient,
@@ -316,7 +316,7 @@ describe('SwapSale', function () {
 
                 describe('when the payment amount is more than sufficient', function () {
 
-                    it('should handle payment [ @skip-on-coverage ]', async function () {
+                    it('should handle payment', async function () {
                         await shouldHandlePayment.bind(this)(
                             recipient,
                             recipient,
@@ -363,7 +363,7 @@ describe('SwapSale', function () {
 
                 describe('when the payment amount is sufficient', function () {
 
-                    it('should handle payment [ @skip-on-coverage ]', async function () {
+                    it('should handle payment', async function () {
                         await shouldHandlePayment.bind(this)(
                             purchaser,
                             recipient,
@@ -377,7 +377,7 @@ describe('SwapSale', function () {
 
                 describe('when the payment amount is more than sufficient', function () {
 
-                    it('should handle payment [ @skip-on-coverage ]', async function () {
+                    it('should handle payment', async function () {
                         await shouldHandlePayment.bind(this)(
                             purchaser,
                             recipient,

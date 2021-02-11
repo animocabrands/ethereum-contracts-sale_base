@@ -1,4 +1,4 @@
-const { artifacts, web3 } = require('hardhat');
+const { network, artifacts, web3 } = require('hardhat');
 const { BN, balance, expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
 const { Zero } = require('@animoca/ethereum-contracts-core_library').constants;
 
@@ -115,7 +115,7 @@ async function shouldPurchaseFor(purchaser, recipient, token, sku, quantity, use
 
     if (isEthToken.bind(this)(token, overrides)) {
         const gasUsed = new BN(receipt.receipt.gasUsed);
-        const gasPrice = new BN(await web3.eth.getGasPrice());
+        const gasPrice = new BN(network.config.gasPrice);
         const expected = totalPrice.add(gasUsed.mul(gasPrice));
 
         if (overrides.totalPricePrecision) {
