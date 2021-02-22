@@ -11,7 +11,6 @@ import "../../sale/FixedOrderInventorySale.sol";
  * token list. Only a single SKU is supported.
  */
 contract FixedOrderInventorySaleMock is FixedOrderInventorySale {
-
     event DeliveryData(bytes32[] tokens);
 
     /**
@@ -28,13 +27,7 @@ contract FixedOrderInventorySaleMock is FixedOrderInventorySale {
         address inventory_,
         address payoutWallet,
         uint256 tokensPerSkuCapacity
-    )
-        public
-        FixedOrderInventorySale(
-            inventory_,
-            payoutWallet,
-            tokensPerSkuCapacity)
-    {}
+    ) public FixedOrderInventorySale(inventory_, payoutWallet, tokensPerSkuCapacity) {}
 
     /**
      * Creates an SKU.
@@ -119,5 +112,4 @@ contract FixedOrderInventorySaleMock is FixedOrderInventorySale {
 
         emit DeliveryData(purchaseData.deliveryData);
     }
-
 }

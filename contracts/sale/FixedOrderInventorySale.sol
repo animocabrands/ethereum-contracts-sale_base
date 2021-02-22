@@ -11,7 +11,6 @@ import "./FixedPricesSale.sol";
  * Only a single SKU is supported.
  */
 contract FixedOrderInventorySale is FixedPricesSale {
-
     address public immutable inventory;
 
     uint256 public tokenIndex;
@@ -36,11 +35,11 @@ contract FixedOrderInventorySale is FixedPricesSale {
         FixedPricesSale(
             payoutWallet,
             1, // single SKU
-            tokensPerSkuCapacity)
+            tokensPerSkuCapacity
+        )
     {
-        require(
-            inventory_ != address(0),
-            "FixedOrderInventorySale: zero address inventory");
+        // solhint-disable-next-line reason-string
+        require(inventory_ != address(0), "FixedOrderInventorySale: zero address inventory");
 
         inventory = inventory_;
     }
@@ -57,16 +56,14 @@ contract FixedOrderInventorySale is FixedPricesSale {
     function addSupply(uint256[] memory tokens) public virtual onlyOwner {
         uint256 numTokens = tokens.length;
 
-        require(
-            numTokens != 0,
-            "FixedOrderInventorySale: empty tokens to add");
+        // solhint-disable-next-line reason-string
+        require(numTokens != 0, "FixedOrderInventorySale: empty tokens to add");
 
-        for(uint256 i = 0; i != numTokens; ++i) {
+        for (uint256 i = 0; i != numTokens; ++i) {
             uint256 token = tokens[i];
 
-            require(
-                token != 0,
-                "FixedOrderInventorySale: adding zero token");
+            // solhint-disable-next-line reason-string
+            require(token != 0, "FixedOrderInventorySale: adding zero token");
 
             tokenList.push(token);
         }
@@ -100,47 +97,38 @@ contract FixedOrderInventorySale is FixedPricesSale {
      * @param tokens The new tokens to set in the ordered sale supply list at the corresponding
      *  positions provided by `indexes`.
      */
-    function setSupply(
-        uint256[] memory indexes,
-        uint256[] memory tokens
-    ) public virtual onlyOwner whenPaused {
+    function setSupply(uint256[] memory indexes, uint256[] memory tokens) public virtual onlyOwner whenPaused {
         uint256 tokenListLength = tokenList.length;
 
-        require(
-            tokenListLength != 0,
-            "FixedOrderInventorySale: empty token list");
+        // solhint-disable-next-line reason-string
+        require(tokenListLength != 0, "FixedOrderInventorySale: empty token list");
 
         uint256 numIndexes = indexes.length;
 
-        require(
-            numIndexes != 0,
-            "FixedOrderInventorySale: empty indexes");
-        
+        // solhint-disable-next-line reason-string
+        require(numIndexes != 0, "FixedOrderInventorySale: empty indexes");
+
         uint256 numTokens = tokens.length;
 
-        require(
-            numIndexes == numTokens,
-            "FixedOrderInventorySale: array length mismatch");
-        
+        // solhint-disable-next-line reason-string
+        require(numIndexes == numTokens, "FixedOrderInventorySale: array length mismatch");
+
         uint256 tokenIndex_ = tokenIndex;
 
         for (uint256 i = 0; i != numIndexes; ++i) {
             uint256 index = indexes[i];
 
-            require(
-                index >= tokenIndex_,
-                "FixedOrderInventorySale: invalid index");
-            
-            require(
-                index < tokenListLength,
-                "FixedOrderInventorySale: index out-of-bounds");
-            
+            // solhint-disable-next-line reason-string
+            require(index >= tokenIndex_, "FixedOrderInventorySale: invalid index");
+
+            // solhint-disable-next-line reason-string
+            require(index < tokenListLength, "FixedOrderInventorySale: index out-of-bounds");
+
             uint256 token = tokens[i];
 
-            require(
-                token != 0,
-                "FixedOrderInventorySale: zero token");
-            
+            // solhint-disable-next-line reason-string
+            require(token != 0, "FixedOrderInventorySale: zero token");
+
             tokenList[index] = token;
         }
     }
@@ -149,7 +137,7 @@ contract FixedOrderInventorySale is FixedPricesSale {
      * Retrieves the amount of total sale supply.
      * @return The amount of total sale supply.
      */
-    function getTotalSupply() public virtual view returns (uint256) {
+    function getTotalSupply() public view virtual returns (uint256) {
         return tokenList.length;
     }
 
@@ -180,5 +168,4 @@ contract FixedOrderInventorySale is FixedPricesSale {
 
         tokenIndex = tokenIndex_;
     }
-
 }
