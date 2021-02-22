@@ -99,7 +99,9 @@ contract SaleMock is Sale {
         purchase.totalPrice = purchase.quantity * price;
     }
 
-    function _payment(PurchaseData memory /*purchase*/) internal override {}
+    function _payment(
+        PurchaseData memory /*purchase*/
+    ) internal override {}
 
     function _getPurchaseData(
         address payable recipient,
