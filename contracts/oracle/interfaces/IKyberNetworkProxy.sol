@@ -10,16 +10,12 @@ import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol"
  * @dev https://github.com/KyberNetwork/smart-contracts/blob/master/contracts/sol6/IKyberNetworkProxy.sol
  */
 interface IKyberNetworkProxy {
-
     /// Rate units (10 ** 18) => destQty (twei) / srcQty (twei) * 10 ** 18
     function getExpectedRate(
         IERC20 src,
         IERC20 dest,
         uint256 srcQty
-    ) external view returns (
-        uint256 expectedRate,
-        uint256 slippageRate
-    );
+    ) external view returns (uint256 expectedRate, uint256 slippageRate);
 
     function trade(
         IERC20 src,
@@ -29,6 +25,5 @@ interface IKyberNetworkProxy {
         uint256 maxDestAmount,
         uint256 minConversionRate,
         address payable platformWallet
-    ) external payable returns(uint256);
-
+    ) external payable returns (uint256);
 }

@@ -36,14 +36,7 @@ abstract contract SwapSale is OracleSale, ISwapSale {
         uint256 skusCapacity,
         uint256 tokensPerSkuCapacity,
         address referenceToken
-    )
-        internal
-        OracleSale(
-            payoutWallet_,
-            skusCapacity,
-            tokensPerSkuCapacity,
-            referenceToken)
-    {
+    ) internal OracleSale(payoutWallet_, skusCapacity, tokensPerSkuCapacity, referenceToken) {
         bytes32[] memory names = new bytes32[](1);
         bytes32[] memory values = new bytes32[](1);
         (names[0], values[0]) = ("PRICE_SWAP_VIA_ORACLE", bytes32(PRICE_SWAP_VIA_ORACLE));
@@ -64,14 +57,12 @@ abstract contract SwapSale is OracleSale, ISwapSale {
         address[] calldata tokens,
         uint256 referenceAmount,
         bytes calldata data
-    ) external virtual override view returns (
-        uint256[] memory rates
-    ) {
+    ) external view virtual override returns (uint256[] memory rates) {
         uint256 length = tokens.length;
         rates = new uint256[](length);
         for (uint256 i = 0; i < length; ++i) {
             uint256 tokenAmount = _estimateSwap(tokens[i], referenceToken, referenceAmount, data);
-            rates[i] = referenceAmount.mul(10 ** 18).div(tokenAmount);
+            rates[i] = referenceAmount.mul(10**18).div(tokenAmount);
         }
     }
 
@@ -86,33 +77,23 @@ abstract contract SwapSale is OracleSale, ISwapSale {
      * @dev Reverts in case of payment failure.
      * @param purchase The purchase conditions.
      */
-    function _payment(
-        PurchaseData memory purchase
-    ) internal virtual override {
-        if ((purchase.pricingData.length == 0) ||
-            (uint256(purchase.pricingData[0]) != PRICE_SWAP_VIA_ORACLE)) {
+    function _payment(PurchaseData memory purchase) internal virtual override {
+        if ((purchase.pricingData.length == 0) || (uint256(purchase.pricingData[0]) != PRICE_SWAP_VIA_ORACLE)) {
             super._payment(purchase);
             return;
         }
 
         if (purchase.token == TOKEN_ETH) {
-            require(
-                msg.value >= purchase.totalPrice,
-                "SwapSale: insufficient ETH provided");
+            // solhint-disable-next-line reason-string
+            require(msg.value >= purchase.totalPrice, "SwapSale: insufficient ETH provided");
         } else {
-            require(
-                IERC20(purchase.token).transferFrom(_msgSender(), address(this), purchase.totalPrice),
-                "SwapSale: ERC20 payment failed");
+            require(IERC20(purchase.token).transferFrom(_msgSender(), address(this), purchase.totalPrice), "SwapSale: ERC20 payment failed");
         }
 
         uint256 swapRate = uint256(purchase.pricingData[1]);
-        uint256 referenceTotalPrice = swapRate.mul(purchase.totalPrice).div(10 ** 18);
+        uint256 referenceTotalPrice = swapRate.mul(purchase.totalPrice).div(10**18);
 
-        uint256 fromAmount = _swap(
-            purchase.token,
-            referenceToken,
-            referenceTotalPrice,
-            purchase.userData);
+        uint256 fromAmount = _swap(purchase.token, referenceToken, referenceTotalPrice, purchase.userData);
 
         if (purchase.token == TOKEN_ETH) {
             uint256 change = msg.value.sub(fromAmount);
@@ -124,18 +105,15 @@ abstract contract SwapSale is OracleSale, ISwapSale {
             uint256 change = purchase.totalPrice.sub(fromAmount);
 
             if (change != 0) {
-                require(
-                    IERC20(purchase.token).transfer(purchase.purchaser, change),
-                    "SwapSale: ERC20 payment change failed");
+                // solhint-disable-next-line reason-string
+                require(IERC20(purchase.token).transfer(purchase.purchaser, change), "SwapSale: ERC20 payment change failed");
             }
         }
 
         if (referenceToken == TOKEN_ETH) {
             payoutWallet.transfer(fromAmount);
         } else {
-            require(
-                IERC20(referenceToken).transfer(payoutWallet, fromAmount),
-                "SwapSale: ERC20 payout failed");
+            require(IERC20(referenceToken).transfer(payoutWallet, fromAmount), "SwapSale: ERC20 payout failed");
         }
     }
 
@@ -152,7 +130,12 @@ abstract contract SwapSale is OracleSale, ISwapSale {
      * @return fromAmount The estimated optimal amount of `fromToken` to provide in order to perform a swap,
      *  via the oracle.
      */
-    function _estimateSwap(address fromToken, address toToken, uint256 toAmount, bytes memory data) internal virtual view returns (uint256 fromAmount);
+    function _estimateSwap(
+        address fromToken,
+        address toToken,
+        uint256 toAmount,
+        bytes memory data
+    ) internal view virtual returns (uint256 fromAmount);
 
     /**
      * Swaps `fromToken` for the specified amount of `toToken`, via the oracle.
@@ -164,7 +147,12 @@ abstract contract SwapSale is OracleSale, ISwapSale {
      * return fromAmount The amount of `fromToken` swapped for the specified amount of `toToken`, via the
      *  oracle.
      */
-    function _swap(address fromToken, address toToken, uint256 toAmount, bytes memory data) internal virtual returns (uint256 fromAmount);
+    function _swap(
+        address fromToken,
+        address toToken,
+        uint256 toAmount,
+        bytes memory data
+    ) internal virtual returns (uint256 fromAmount);
 
     /**
      * Computes the oracle-based purchase price.
@@ -182,9 +170,7 @@ abstract contract SwapSale is OracleSale, ISwapSale {
         PurchaseData memory purchase,
         EnumMap.Map storage tokenPrices,
         uint256 unitPrice
-    ) internal virtual override view returns (
-        bool
-    ) {
+    ) internal view virtual override returns (bool) {
         if (unitPrice != PRICE_SWAP_VIA_ORACLE) {
             return super._oraclePricing(purchase, tokenPrices, unitPrice);
         }
@@ -192,13 +178,9 @@ abstract contract SwapSale is OracleSale, ISwapSale {
         uint256 referenceUnitPrice = uint256(tokenPrices.get(bytes32(uint256(referenceToken))));
         uint256 referenceTotalPrice = referenceUnitPrice.mul(purchase.quantity);
 
-        uint256 totalPrice = _estimateSwap(
-            purchase.token,
-            referenceToken,
-            referenceTotalPrice,
-            purchase.userData);
+        uint256 totalPrice = _estimateSwap(purchase.token, referenceToken, referenceTotalPrice, purchase.userData);
 
-        uint256 swapRate = referenceTotalPrice.mul(10 ** 18).div(totalPrice);
+        uint256 swapRate = referenceTotalPrice.mul(10**18).div(totalPrice);
 
         purchase.pricingData = new bytes32[](2);
         purchase.pricingData[0] = bytes32(unitPrice);

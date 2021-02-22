@@ -29,12 +29,7 @@ abstract contract PurchaseLifeCycles {
      * `estimatePurchase` lifecycle.
      * @param purchase The purchase conditions.
      */
-    function _estimatePurchase(PurchaseData memory purchase)
-        internal
-        virtual
-        view
-        returns (uint256 totalPrice, bytes32[] memory pricingData)
-    {
+    function _estimatePurchase(PurchaseData memory purchase) internal view virtual returns (uint256 totalPrice, bytes32[] memory pricingData) {
         _validation(purchase);
         _pricing(purchase);
 
@@ -62,7 +57,7 @@ abstract contract PurchaseLifeCycles {
      *  - Ensure that the purchase pre-conditions are met and revert if not.
      * @param purchase The purchase conditions.
      */
-    function _validation(PurchaseData memory purchase) internal virtual view;
+    function _validation(PurchaseData memory purchase) internal view virtual;
 
     /**
      * Lifecycle step which computes the purchase price.
@@ -72,7 +67,7 @@ abstract contract PurchaseLifeCycles {
      *  - Add any relevant extra data related to pricing in `purchase.pricingData` and document how to interpret it.
      * @param purchase The purchase conditions.
      */
-    function _pricing(PurchaseData memory purchase) internal virtual view;
+    function _pricing(PurchaseData memory purchase) internal view virtual;
 
     /**
      * Lifecycle step which manages the transfer of funds from the purchaser.

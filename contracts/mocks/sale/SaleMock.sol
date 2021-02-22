@@ -5,31 +5,15 @@ pragma solidity 0.6.8;
 import "../../sale/abstract/Sale.sol";
 
 contract SaleMock is Sale {
-
-    event PurchaseForCalled(
-        address payable recipient,
-        address token,
-        bytes32 sku,
-        uint256 quantity,
-        bytes userData
-    );
+    event PurchaseForCalled(address payable recipient, address token, bytes32 sku, uint256 quantity, bytes userData);
 
     constructor(
         address payoutWallet_,
         uint256 skusCapacity,
         uint256 tokensPerSkuCapacity
-    )
-        public
-        Sale(
-            payoutWallet_,
-            skusCapacity,
-            tokensPerSkuCapacity
-        )
-    {}
+    ) public Sale(payoutWallet_, skusCapacity, tokensPerSkuCapacity) {}
 
-    function setPaused(
-        bool paused
-    ) external {
+    function setPaused(bool paused) external {
         if (paused) {
             _pause();
         } else {
@@ -67,16 +51,8 @@ contract SaleMock is Sale {
         bytes32[] calldata paymentData,
         bytes32[] calldata deliveryData
     ) external view {
-        PurchaseData memory purchaseData = _getPurchaseData(
-            recipient,
-            token,
-            sku,
-            quantity,
-            userData,
-            totalPrice,
-            pricingData,
-            paymentData,
-            deliveryData);
+        PurchaseData memory purchaseData =
+            _getPurchaseData(recipient, token, sku, quantity, userData, totalPrice, pricingData, paymentData, deliveryData);
 
         _validation(purchaseData);
     }
@@ -92,16 +68,8 @@ contract SaleMock is Sale {
         bytes32[] calldata paymentData,
         bytes32[] calldata deliveryData
     ) external {
-        PurchaseData memory purchaseData = _getPurchaseData(
-            recipient,
-            token,
-            sku,
-            quantity,
-            userData,
-            totalPrice,
-            pricingData,
-            paymentData,
-            deliveryData);
+        PurchaseData memory purchaseData =
+            _getPurchaseData(recipient, token, sku, quantity, userData, totalPrice, pricingData, paymentData, deliveryData);
 
         _delivery(purchaseData);
     }
@@ -117,23 +85,13 @@ contract SaleMock is Sale {
         bytes32[] calldata paymentData,
         bytes32[] calldata deliveryData
     ) external {
-        PurchaseData memory purchaseData = _getPurchaseData(
-            recipient,
-            token,
-            sku,
-            quantity,
-            userData,
-            totalPrice,
-            pricingData,
-            paymentData,
-            deliveryData);
+        PurchaseData memory purchaseData =
+            _getPurchaseData(recipient, token, sku, quantity, userData, totalPrice, pricingData, paymentData, deliveryData);
 
         _notification(purchaseData);
     }
 
-    function _pricing(
-        PurchaseData memory purchase
-    ) internal override view {
+    function _pricing(PurchaseData memory purchase) internal view override {
         SkuInfo storage skuInfo = _skuInfos[purchase.sku];
         bytes32 key = bytes32(uint256(purchase.token));
         bytes32 value = skuInfo.prices.get(key);
@@ -141,9 +99,7 @@ contract SaleMock is Sale {
         purchase.totalPrice = purchase.quantity * price;
     }
 
-    function _payment(
-        PurchaseData memory purchase
-    ) internal override {}
+    function _payment(PurchaseData memory /*purchase*/) internal override {}
 
     function _getPurchaseData(
         address payable recipient,
@@ -155,9 +111,7 @@ contract SaleMock is Sale {
         bytes32[] memory pricingData,
         bytes32[] memory paymentData,
         bytes32[] memory deliveryData
-    ) internal view returns (
-        PurchaseData memory purchase
-    ) {
+    ) internal view returns (PurchaseData memory purchase) {
         purchase.purchaser = _msgSender();
         purchase.recipient = recipient;
         purchase.token = token;
@@ -169,5 +123,4 @@ contract SaleMock is Sale {
         purchase.paymentData = paymentData;
         purchase.deliveryData = deliveryData;
     }
-
 }

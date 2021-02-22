@@ -12,23 +12,20 @@ contract PurchaseNotificationsReceiverMock is PurchaseNotificationsReceiver {
     event OnPurchaseNotificationReceivedResult(bytes4 result);
 
     function onPurchaseNotificationReceived(
-        address /* purchaser */,
-        address /* recipient */,
-        address /* token */,
-        bytes32 /* sku */,
-        uint256 /* quantity */,
-        bytes calldata /* userData */,
-        uint256 /* totalPrice */,
-        bytes32[] calldata /* pricingData */,
-        bytes32[] calldata /* paymentData */,
+        address, /* purchaser */
+        address, /* recipient */
+        address, /* token */
+        bytes32, /* sku */
+        uint256, /* quantity */
+        bytes calldata, /* userData */
+        uint256, /* totalPrice */
+        bytes32[] calldata, /* pricingData */
+        bytes32[] calldata, /* paymentData */
         bytes32[] calldata /* deliveryData */
-    ) external override returns (
-        bytes4
-    ) {
+    ) external override returns (bytes4) {
         emit PurchaseNotificationReceived();
         bytes4 result = PURCHASE_NOTIFICATION_RECEIVED_RESULT;
         emit OnPurchaseNotificationReceivedResult(result);
         return result;
     }
-
 }

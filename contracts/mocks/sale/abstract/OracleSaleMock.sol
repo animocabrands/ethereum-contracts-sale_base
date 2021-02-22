@@ -8,10 +8,7 @@ import "../../../sale/abstract/OracleSale.sol";
 contract OracleSaleMock is OracleSale {
     using SafeMath for uint256;
 
-    event UnderscoreOraclePricingResult(
-        bool handled,
-        bytes32[] pricingData,
-        uint256 totalPrice);
+    event UnderscoreOraclePricingResult(bool handled, bytes32[] pricingData, uint256 totalPrice);
 
     mapping(address => mapping(address => uint256)) public mockConversionRates;
 
@@ -20,15 +17,7 @@ contract OracleSaleMock is OracleSale {
         uint256 skusCapacity,
         uint256 tokensPerSkuCapacity,
         address referenceToken
-    )
-        public
-        OracleSale(
-            payoutWallet_,
-            skusCapacity,
-            tokensPerSkuCapacity,
-            referenceToken
-        )
-    {}
+    ) public OracleSale(payoutWallet_, skusCapacity, tokensPerSkuCapacity, referenceToken) {}
 
     function createSku(
         bytes32 sku,
@@ -68,10 +57,7 @@ contract OracleSaleMock is OracleSale {
 
         bool handled = _oraclePricing(purchaseData, tokenPrices, unitPrice);
 
-        emit UnderscoreOraclePricingResult(
-            handled,
-            purchaseData.pricingData,
-            purchaseData.totalPrice);
+        emit UnderscoreOraclePricingResult(handled, purchaseData.pricingData, purchaseData.totalPrice);
     }
 
     function callUnderscoreSetTokenPrices(
@@ -88,10 +74,9 @@ contract OracleSaleMock is OracleSale {
         address fromToken,
         address toToken,
         bytes memory /*data*/
-    ) internal override view returns (
-        uint256 rate
-    ) {
+    ) internal view override returns (uint256 rate) {
         rate = mockConversionRates[fromToken][toToken];
+        // solhint-disable-next-line reason-string
         require(rate != 0, "OracleSaleMock: undefined conversion rate");
     }
 }

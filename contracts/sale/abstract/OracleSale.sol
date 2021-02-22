@@ -35,13 +35,7 @@ abstract contract OracleSale is IOracleSale, FixedPricesSale {
         uint256 skusCapacity,
         uint256 tokensPerSkuCapacity,
         address referenceToken_
-    )
-        internal
-        FixedPricesSale(
-            payoutWallet_,
-            skusCapacity,
-            tokensPerSkuCapacity)
-    {
+    ) internal FixedPricesSale(payoutWallet_, skusCapacity, tokensPerSkuCapacity) {
         referenceToken = referenceToken_;
         bytes32[] memory names = new bytes32[](1);
         bytes32[] memory values = new bytes32[](1);
@@ -62,9 +56,7 @@ abstract contract OracleSale is IOracleSale, FixedPricesSale {
      * @dev Reverts in case of price overflow.
      * @param purchase The purchase conditions.
      */
-    function _pricing(
-        PurchaseData memory purchase
-    ) internal virtual override view {
+    function _pricing(PurchaseData memory purchase) internal view virtual override {
         SkuInfo storage skuInfo = _skuInfos[purchase.sku];
         require(skuInfo.totalSupply != 0, "Sale: unsupported SKU");
         EnumMap.Map storage prices = skuInfo.prices;
@@ -84,12 +76,7 @@ abstract contract OracleSale is IOracleSale, FixedPricesSale {
      * @param data Additional data with no specified format for deriving the conversion rates.
      * @return rates The conversion rates for the `tokens`/`referenceToken` pairs, retrieved via the oracle.
      */
-    function conversionRates(
-        address[] calldata tokens,
-        bytes calldata data
-    ) external virtual override view returns (
-        uint256[] memory rates
-    ) {
+    function conversionRates(address[] calldata tokens, bytes calldata data) external view virtual override returns (uint256[] memory rates) {
         uint256 length = tokens.length;
         rates = new uint256[](length);
         for (uint256 i = 0; i < length; ++i) {
@@ -116,10 +103,8 @@ abstract contract OracleSale is IOracleSale, FixedPricesSale {
         uint256[] memory prices
     ) internal virtual override {
         super._setTokenPrices(tokenPrices, tokens, prices);
-        require(
-            tokenPrices.length() == 0 || tokenPrices.contains(bytes32(uint256(referenceToken))),
-            "OracleSale: missing reference token"
-        );
+        // solhint-disable-next-line reason-string
+        require(tokenPrices.length() == 0 || tokenPrices.contains(bytes32(uint256(referenceToken))), "OracleSale: missing reference token");
     }
 
     /**
@@ -138,24 +123,16 @@ abstract contract OracleSale is IOracleSale, FixedPricesSale {
         PurchaseData memory purchase,
         EnumMap.Map storage tokenPrices,
         uint256 unitPrice
-    ) internal virtual view returns (
-        bool
-    ) {
+    ) internal view virtual returns (bool) {
         if (unitPrice != PRICE_CONVERT_VIA_ORACLE) {
             return false;
         }
 
         uint256 referenceUnitPrice = uint256(tokenPrices.get(bytes32(uint256(referenceToken))));
 
-        uint256 conversionRate = _conversionRate(
-            purchase.token,
-            referenceToken,
-            purchase.userData);
+        uint256 conversionRate = _conversionRate(purchase.token, referenceToken, purchase.userData);
 
-        uint256 totalPrice = referenceUnitPrice
-            .mul(10 ** 18)
-            .div(conversionRate)
-            .mul(purchase.quantity);
+        uint256 totalPrice = referenceUnitPrice.mul(10**18).div(conversionRate).mul(purchase.quantity);
 
         purchase.pricingData = new bytes32[](2);
         purchase.pricingData[0] = bytes32(unitPrice);
@@ -174,5 +151,9 @@ abstract contract OracleSale is IOracleSale, FixedPricesSale {
      * @param data Additional data with no specified format for deriving the conversion rate.
      * @return rate The conversion rate for the `fromToken`/`toToken` pair, retrieved via the oracle.
      */
-    function _conversionRate(address fromToken, address toToken, bytes memory data) internal virtual view returns (uint256 rate);
+    function _conversionRate(
+        address fromToken,
+        address toToken,
+        bytes memory data
+    ) internal view virtual returns (uint256 rate);
 }

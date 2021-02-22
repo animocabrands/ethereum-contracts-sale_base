@@ -5,10 +5,7 @@ pragma solidity 0.6.8;
 import "../../../sale/abstract/PurchaseLifeCycles.sol";
 
 contract PurchaseLifeCyclesMock is PurchaseLifeCycles {
-
-    event PurchaseLifeCyclePath(
-        uint256 path
-    );
+    event PurchaseLifeCyclePath(uint256 path);
 
     uint256 public constant LIFECYCLE_STEP_VALIDATION = 1 << 1;
     uint256 public constant LIFECYCLE_STEP_PRICING = 1 << 2;
@@ -23,16 +20,8 @@ contract PurchaseLifeCyclesMock is PurchaseLifeCycles {
         uint256 quantity,
         bytes calldata userData
     ) external {
-        PurchaseData memory purchaseData = _getPurchaseData(
-            recipient,
-            token,
-            sku,
-            quantity,
-            userData,
-            0,
-            new bytes32[](0),
-            new bytes32[](0),
-            new bytes32[](0));
+        PurchaseData memory purchaseData =
+            _getPurchaseData(recipient, token, sku, quantity, userData, 0, new bytes32[](0), new bytes32[](0), new bytes32[](0));
 
         _estimatePurchase(purchaseData);
 
@@ -46,27 +35,19 @@ contract PurchaseLifeCyclesMock is PurchaseLifeCycles {
         uint256 quantity,
         bytes calldata userData
     ) external {
-        PurchaseData memory purchaseData = _getPurchaseData(
-            recipient,
-            token,
-            sku,
-            quantity,
-            userData,
-            0,
-            new bytes32[](0),
-            new bytes32[](0),
-            new bytes32[](0));
+        PurchaseData memory purchaseData =
+            _getPurchaseData(recipient, token, sku, quantity, userData, 0, new bytes32[](0), new bytes32[](0), new bytes32[](0));
 
         _purchaseFor(purchaseData);
 
         emit PurchaseLifeCyclePath(purchaseData.totalPrice);
     }
 
-    function _validation(PurchaseData memory purchase) internal override view {
+    function _validation(PurchaseData memory purchase) internal view override {
         purchase.totalPrice = purchase.totalPrice | LIFECYCLE_STEP_VALIDATION;
     }
 
-    function _pricing(PurchaseData memory purchase) internal override view {
+    function _pricing(PurchaseData memory purchase) internal view override {
         purchase.totalPrice = purchase.totalPrice | LIFECYCLE_STEP_PRICING;
     }
 
@@ -92,9 +73,7 @@ contract PurchaseLifeCyclesMock is PurchaseLifeCycles {
         bytes32[] memory pricingData,
         bytes32[] memory paymentData,
         bytes32[] memory deliveryData
-    ) internal view returns (
-        PurchaseData memory purchase
-    ) {
+    ) internal view returns (PurchaseData memory purchase) {
         purchase.purchaser = msg.sender;
         purchase.recipient = recipient;
         purchase.token = token;
@@ -106,5 +85,4 @@ contract PurchaseLifeCyclesMock is PurchaseLifeCycles {
         purchase.paymentData = paymentData;
         purchase.deliveryData = deliveryData;
     }
-
 }

@@ -19,15 +19,7 @@ contract SwapSaleMock is SwapSale {
         uint256 skusCapacity,
         uint256 tokensPerSkuCapacity,
         address referenceToken
-    )
-        public
-        SwapSale(
-            payoutWallet_,
-            skusCapacity,
-            tokensPerSkuCapacity,
-            referenceToken
-        )
-    {}
+    ) public SwapSale(payoutWallet_, skusCapacity, tokensPerSkuCapacity, referenceToken) {}
 
     function createSku(
         bytes32 sku,
@@ -46,9 +38,7 @@ contract SwapSaleMock is SwapSale {
         mockSwapRates[fromToken][toToken] = rate;
     }
 
-    function setMockSwapVariance(
-        int256 value
-    ) external {
+    function setMockSwapVariance(int256 value) external {
         mockSwapVariance = value;
     }
 
@@ -58,10 +48,7 @@ contract SwapSaleMock is SwapSale {
         bytes32 sku,
         uint256 quantity,
         bytes calldata userData
-    ) external view returns (
-        uint256 totalPrice,
-        bytes32[] memory pricingData
-    ) {
+    ) external view returns (uint256 totalPrice, bytes32[] memory pricingData) {
         PurchaseData memory purchaseData;
         purchaseData.purchaser = _msgSender();
         purchaseData.recipient = recipient;
@@ -104,11 +91,15 @@ contract SwapSaleMock is SwapSale {
         bytes32 sku,
         uint256 quantity,
         bytes calldata userData
-    ) external view returns (
-        bool handled,
-        uint256 totalPrice,
-        bytes32[] memory pricingData
-    ) {
+    )
+        external
+        view
+        returns (
+            bool handled,
+            uint256 totalPrice,
+            bytes32[] memory pricingData
+        )
+    {
         PurchaseData memory purchaseData;
         purchaseData.purchaser = _msgSender();
         purchaseData.recipient = recipient;
@@ -128,12 +119,10 @@ contract SwapSaleMock is SwapSale {
     }
 
     function _conversionRate(
-        address /*fromToken*/,
-        address /*toToken*/,
+        address, /*fromToken*/
+        address, /*toToken*/
         bytes memory /*data*/
-    ) internal override view returns (
-        uint256 rate
-    ) {
+    ) internal view override returns (uint256 rate) {
         rate = 1;
     }
 
@@ -142,12 +131,11 @@ contract SwapSaleMock is SwapSale {
         address toToken,
         uint256 toAmount,
         bytes memory /*data*/
-    ) internal override view returns (
-        uint256 fromAmount
-    ) {
+    ) internal view override returns (uint256 fromAmount) {
         uint256 swapRate = mockSwapRates[fromToken][toToken];
+        // solhint-disable-next-line reason-string
         require(swapRate != 0, "SwapSaleMock: undefined swap rate");
-        fromAmount = toAmount.mul(10 ** 18).div(swapRate);
+        fromAmount = toAmount.mul(10**18).div(swapRate);
     }
 
     function _swap(
@@ -155,14 +143,8 @@ contract SwapSaleMock is SwapSale {
         address toToken,
         uint256 toAmount,
         bytes memory data
-    ) internal override returns (
-        uint256 fromAmount
-    ) {
-        fromAmount = _estimateSwap(
-            fromToken,
-            toToken,
-            toAmount,
-            data);
+    ) internal override returns (uint256 fromAmount) {
+        fromAmount = _estimateSwap(fromToken, toToken, toAmount, data);
         fromAmount.add(mockSwapVariance.toUint256());
     }
 }

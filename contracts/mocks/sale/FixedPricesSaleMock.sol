@@ -5,7 +5,6 @@ pragma solidity 0.6.8;
 import "../../sale/FixedPricesSale.sol";
 
 contract FixedPricesSaleMock is FixedPricesSale {
-
     /**
      * Constructor.
      * @dev Emits the `MagicValues` event.
@@ -18,14 +17,7 @@ contract FixedPricesSaleMock is FixedPricesSale {
         address payoutWallet_,
         uint256 skusCapacity,
         uint256 tokensPerSkuCapacity
-    )
-        public
-        FixedPricesSale(
-            payoutWallet_,
-            skusCapacity,
-            tokensPerSkuCapacity
-        )
-    {}
+    ) public FixedPricesSale(payoutWallet_, skusCapacity, tokensPerSkuCapacity) {}
 
     function createSku(
         bytes32 sku,
@@ -35,5 +27,4 @@ contract FixedPricesSaleMock is FixedPricesSale {
     ) external {
         _createSku(sku, totalSupply, maxQuantityPerPurchase, notificationsReceiver);
     }
-
 }

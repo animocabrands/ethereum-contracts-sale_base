@@ -8,7 +8,6 @@ import "../../oracle/UniswapV2Adapter.sol";
 import "../../sale/UniswapSwapSale.sol";
 
 contract UniswapSwapSaleMock is UniswapSwapSale {
-
     event UnderscoreSwapResult(uint256 fromAmount);
 
     constructor(
@@ -17,16 +16,7 @@ contract UniswapSwapSaleMock is UniswapSwapSale {
         uint256 tokensPerSkuCapacity,
         address referenceToken,
         IUniswapV2Router uniswapV2Router
-    )
-        public
-        UniswapSwapSale(
-            payoutWallet_,
-            skusCapacity,
-            tokensPerSkuCapacity,
-            referenceToken,
-            uniswapV2Router
-        )
-    {}
+    ) public UniswapSwapSale(payoutWallet_, skusCapacity, tokensPerSkuCapacity, referenceToken, uniswapV2Router) {}
 
     function createSku(
         bytes32 sku,
@@ -63,10 +53,7 @@ contract UniswapSwapSaleMock is UniswapSwapSale {
         bytes32 sku,
         uint256 quantity,
         bytes calldata userData
-    ) external view returns (
-        uint256 totalPrice,
-        bytes32[] memory pricingData
-    ) {
+    ) external view returns (uint256 totalPrice, bytes32[] memory pricingData) {
         PurchaseData memory purchaseData;
         purchaseData.purchaser = _msgSender();
         purchaseData.recipient = recipient;
@@ -107,9 +94,7 @@ contract UniswapSwapSaleMock is UniswapSwapSale {
         address fromToken,
         address toToken,
         bytes calldata data
-    ) external view returns (
-        uint256 rate
-    ) {
+    ) external view returns (uint256 rate) {
         rate = _conversionRate(fromToken, toToken, data);
     }
 
@@ -118,9 +103,7 @@ contract UniswapSwapSaleMock is UniswapSwapSale {
         address toToken,
         uint256 toAmount,
         bytes calldata data
-    ) external view returns (
-        uint256 fromAmount
-    ) {
+    ) external view returns (uint256 fromAmount) {
         fromAmount = _estimateSwap(fromToken, toToken, toAmount, data);
     }
 
@@ -132,29 +115,18 @@ contract UniswapSwapSaleMock is UniswapSwapSale {
         bytes calldata data
     ) external payable {
         if (fromToken != TOKEN_ETH) {
-            require(
-                IERC20(fromToken).approve(address(uniswapV2Router), fromAmount),
-                "UniswapSwapSaleMock: ERC20 swap approval failed");
-
-            require(
-                IERC20(fromToken).allowance(msg.sender, address(this)) >= fromAmount,
-                "UniswapSwapSaleMock: ERC20 allowance insufficient");
-
-            require(
-                IERC20(fromToken).transferFrom(msg.sender, address(this), fromAmount),
-                "UniswapSwapSaleMock: ERC20 transfer from failed");
+            // solhint-disable-next-line reason-string
+            require(IERC20(fromToken).approve(address(uniswapV2Router), fromAmount), "UniswapSwapSaleMock: ERC20 swap approval failed");
+            // solhint-disable-next-line reason-string
+            require(IERC20(fromToken).allowance(msg.sender, address(this)) >= fromAmount, "UniswapSwapSaleMock: ERC20 allowance insufficient");
+            // solhint-disable-next-line reason-string
+            require(IERC20(fromToken).transferFrom(msg.sender, address(this), fromAmount), "UniswapSwapSaleMock: ERC20 transfer from failed");
         }
         fromAmount = _swap(fromToken, toToken, toAmount, data);
         emit UnderscoreSwapResult(fromAmount);
     }
 
-    function getReserves(
-        address tokenA,
-        address tokenB
-    ) external view returns (
-        uint256 reserveA,
-        uint256 reserveB
-    ) {
+    function getReserves(address tokenA, address tokenB) external view returns (uint256 reserveA, uint256 reserveB) {
         if (tokenA == TOKEN_ETH) {
             tokenA = uniswapV2Router.WETH();
         }
@@ -165,5 +137,4 @@ contract UniswapSwapSaleMock is UniswapSwapSale {
 
         (reserveA, reserveB) = _getReserves(tokenA, tokenB);
     }
-
 }

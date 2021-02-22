@@ -44,27 +44,15 @@ contract UniswapSwapSale is SwapSale, UniswapV2Adapter {
         uint256 tokensPerSkuCapacity,
         address referenceToken,
         IUniswapV2Router uniswapV2Router
-    )
-        public
-        SwapSale(
-            payoutWallet_,
-            skusCapacity,
-            tokensPerSkuCapacity,
-            referenceToken
-        )
-        UniswapV2Adapter(
-            uniswapV2Router
-        )
-    {}
+    ) public SwapSale(payoutWallet_, skusCapacity, tokensPerSkuCapacity, referenceToken) UniswapV2Adapter(uniswapV2Router) {}
 
     /**
      * Receives refunded ETH from the Uniswap token swapping operation.
      * @dev Reverts if the sender of ETH isn't the Uniswap V2 router.
      */
     receive() external payable {
-        require(
-            _msgSender() == address(uniswapV2Router),
-            "UniswapSwapSale: Invalid ETH sender");
+        // solhint-disable-next-line reason-string
+        require(_msgSender() == address(uniswapV2Router), "UniswapSwapSale: Invalid ETH sender");
     }
 
     /*                               Internal Life Cycle Functions                               */
@@ -75,13 +63,10 @@ contract UniswapSwapSale is SwapSale, UniswapV2Adapter {
      *  - Ensure that the purchase pre-conditions are met and revert if not.
      * @param purchase The purchase conditions.
      */
-    function _validation(
-        PurchaseData memory purchase
-    ) internal virtual override view {
+    function _validation(PurchaseData memory purchase) internal view virtual override {
         super._validation(purchase);
-        require(
-            purchase.userData.length >= 64,
-            "UniswapSwapSale: Missing expected purchase user data");
+        // solhint-disable-next-line reason-string
+        require(purchase.userData.length >= 64, "UniswapSwapSale: Missing expected purchase user data");
     }
 
     /**
@@ -93,22 +78,21 @@ contract UniswapSwapSale is SwapSale, UniswapV2Adapter {
      * @dev Reverts in case of payment failure.
      * @param purchase The purchase conditions.
      */
-    function _payment(
-        PurchaseData memory purchase
-    ) internal virtual override {
+    function _payment(PurchaseData memory purchase) internal virtual override {
         if ((purchase.pricingData.length != 0) && (purchase.token != TOKEN_ETH)) {
             bytes memory data = purchase.userData;
             uint256 maxFromAmount;
 
-            assembly { maxFromAmount := mload(add(data, 32)) }
+            assembly {
+                maxFromAmount := mload(add(data, 32))
+            }
 
             if (maxFromAmount == 0) {
                 maxFromAmount = type(uint256).max;
             }
 
-            require(
-                IERC20(purchase.token).approve(address(uniswapV2Router), maxFromAmount),
-                "UniswapSwapSale: ERC20 payment approval failed");
+            // solhint-disable-next-line reason-string
+            require(IERC20(purchase.token).approve(address(uniswapV2Router), maxFromAmount), "UniswapSwapSale: ERC20 payment approval failed");
         }
         super._payment(purchase);
     }
@@ -127,7 +111,7 @@ contract UniswapSwapSale is SwapSale, UniswapV2Adapter {
         address fromToken,
         address toToken,
         bytes memory /*data*/
-    ) internal virtual override view returns (uint256 rate) {
+    ) internal view virtual override returns (uint256 rate) {
         if (fromToken == TOKEN_ETH) {
             fromToken = uniswapV2Router.WETH();
         }
@@ -137,7 +121,7 @@ contract UniswapSwapSale is SwapSale, UniswapV2Adapter {
         }
 
         (uint256 fromReserve, uint256 toReserve) = _getReserves(fromToken, toToken);
-        rate = toReserve.mul(10 ** 18).div(fromReserve);
+        rate = toReserve.mul(10**18).div(fromReserve);
     }
 
     /**
@@ -156,9 +140,7 @@ contract UniswapSwapSale is SwapSale, UniswapV2Adapter {
         address toToken,
         uint256 toAmount,
         bytes memory /*data*/
-    ) internal virtual override view returns (
-        uint256 fromAmount
-    ) {
+    ) internal view virtual override returns (uint256 fromAmount) {
         if (fromToken == TOKEN_ETH) {
             fromToken = uniswapV2Router.WETH();
         }
@@ -185,9 +167,7 @@ contract UniswapSwapSale is SwapSale, UniswapV2Adapter {
         address toToken,
         uint256 toAmount,
         bytes memory data
-    ) internal virtual override returns (
-        uint256 fromAmount
-    ) {
+    ) internal virtual override returns (uint256 fromAmount) {
         uint256 maxFromAmount;
         uint256 deadline;
 
@@ -216,12 +196,6 @@ contract UniswapSwapSale is SwapSale, UniswapV2Adapter {
             toToken = uniswapV2Router.WETH();
         }
 
-        fromAmount = _swapTokensForExactAmount(
-            fromToken,
-            toToken,
-            toAmount,
-            maxFromAmount,
-            address(this),
-            deadline);
+        fromAmount = _swapTokensForExactAmount(fromToken, toToken, toAmount, maxFromAmount, address(this), deadline);
     }
 }

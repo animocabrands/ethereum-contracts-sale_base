@@ -35,18 +35,7 @@ contract UniswapOracleSale is OracleSale, UniswapV2Adapter {
         uint256 tokensPerSkuCapacity,
         address referenceToken,
         IUniswapV2Router uniswapV2Router
-    )
-        public
-        OracleSale(
-            payoutWallet_,
-            skusCapacity,
-            tokensPerSkuCapacity,
-            referenceToken
-        )
-        UniswapV2Adapter(
-            uniswapV2Router
-        )
-    {}
+    ) public OracleSale(payoutWallet_, skusCapacity, tokensPerSkuCapacity, referenceToken) UniswapV2Adapter(uniswapV2Router) {}
 
     /*                               Internal Utility Functions                                  */
 
@@ -62,7 +51,7 @@ contract UniswapOracleSale is OracleSale, UniswapV2Adapter {
         address fromToken,
         address toToken,
         bytes memory /*data*/
-    ) internal virtual override view returns (uint256 rate) {
+    ) internal view virtual override returns (uint256 rate) {
         if (fromToken == TOKEN_ETH) {
             fromToken = uniswapV2Router.WETH();
         }
@@ -72,7 +61,6 @@ contract UniswapOracleSale is OracleSale, UniswapV2Adapter {
         }
 
         (uint256 fromReserve, uint256 toReserve) = _getReserves(fromToken, toToken);
-        rate = toReserve.mul(10 ** 18).div(fromReserve);
+        rate = toReserve.mul(10**18).div(fromReserve);
     }
-
 }

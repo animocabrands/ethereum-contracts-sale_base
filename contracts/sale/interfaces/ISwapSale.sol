@@ -2,17 +2,18 @@
 
 pragma solidity 0.6.8;
 
-
 /**
  * @title ISwapSale
  * An IOracleSale which can manage token swaps through an oracle.
  */
-interface ISwapSale /*is IOracleSale*/ {
+/*is IOracleSale*/
+interface ISwapSale {
     /**
      * Returns the price magic value used to represent an oracle-based token swap pricing.
      * @dev MUST NOT be zero. SHOULD BE a prohibitively big value, so that it doesn’t collide with a possible price value.
      * @return The price magic value used to represent an oracle-based token swap pricing.
      */
+    // solhint-disable-next-line func-name-mixedcase
     function PRICE_SWAP_VIA_ORACLE() external pure returns (uint256);
 
     /**
@@ -23,5 +24,9 @@ interface ISwapSale /*is IOracleSale*/ {
      * @param data Additional data with no specified format for deriving the swap rates.
      * @return rates The swap rates for the `tokens`/`referenceToken` pairs, retrieved via the oracle.
      */
-    function swapRates(address[] calldata tokens, uint256 referenceAmount, bytes calldata data) external view returns (uint256[] memory rates);
+    function swapRates(
+        address[] calldata tokens,
+        uint256 referenceAmount,
+        bytes calldata data
+    ) external view returns (uint256[] memory rates);
 }

@@ -54,10 +54,7 @@ abstract contract Sale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pa
         address payoutWallet_,
         uint256 skusCapacity,
         uint256 tokensPerSkuCapacity
-    )
-        internal
-        PayoutWallet(payoutWallet_)
-    {
+    ) internal PayoutWallet(payoutWallet_) {
         _skusCapacity = skusCapacity;
         _tokensPerSkuCapacity = tokensPerSkuCapacity;
         bytes32[] memory names = new bytes32[](2);
@@ -125,6 +122,7 @@ abstract contract Sale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pa
         uint256[] memory prices
     ) public virtual onlyOwner {
         uint256 length = tokens.length;
+        // solhint-disable-next-line reason-string
         require(length == prices.length, "Sale: tokens/prices lengths mismatch");
         SkuInfo storage skuInfo = _skuInfos[sku];
         require(skuInfo.totalSupply != 0, "Sale: non-existent sku");
@@ -170,7 +168,7 @@ abstract contract Sale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pa
         bytes32 sku,
         uint256 quantity,
         bytes calldata userData
-    ) external virtual override payable whenStarted whenNotPaused {
+    ) external payable virtual override whenStarted whenNotPaused {
         PurchaseData memory purchase;
         purchase.purchaser = _msgSender();
         purchase.recipient = recipient;
@@ -210,10 +208,7 @@ abstract contract Sale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pa
         bytes32 sku,
         uint256 quantity,
         bytes calldata userData
-    ) external virtual override view whenStarted whenNotPaused returns (
-        uint256 totalPrice,
-        bytes32[] memory pricingData
-    ) {
+    ) external view virtual override whenStarted whenNotPaused returns (uint256 totalPrice, bytes32[] memory pricingData) {
         PurchaseData memory purchase;
         purchase.purchaser = _msgSender();
         purchase.recipient = recipient;
@@ -238,16 +233,19 @@ abstract contract Sale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pa
      * @return tokens The list of supported payment tokens.
      * @return prices The list of associated prices for each of the `tokens`.
      */
-    function getSkuInfo(
-        bytes32 sku
-    ) external override view returns (
-        uint256 totalSupply,
-        uint256 remainingSupply,
-        uint256 maxQuantityPerPurchase,
-        address notificationsReceiver,
-        address[] memory tokens,
-        uint256[] memory prices
-    ) {
+    function getSkuInfo(bytes32 sku)
+        external
+        view
+        override
+        returns (
+            uint256 totalSupply,
+            uint256 remainingSupply,
+            uint256 maxQuantityPerPurchase,
+            address notificationsReceiver,
+            address[] memory tokens,
+            uint256[] memory prices
+        )
+    {
         SkuInfo storage skuInfo = _skuInfos[sku];
         uint256 length = skuInfo.prices.length();
 
@@ -270,12 +268,9 @@ abstract contract Sale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pa
      * Returns the list of created SKU identifiers.
      * @return skus the list of created SKU identifiers.
      */
-    function getSkus() external override view returns (
-        bytes32[] memory skus
-    ) {
+    function getSkus() external view override returns (bytes32[] memory skus) {
         skus = _skus.values;
     }
-
 
     /*                               Internal Utility Functions                                  */
 
@@ -302,6 +297,7 @@ abstract contract Sale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pa
         require(_skus.length() < _skusCapacity, "Sale: too many skus");
         require(_skus.add(sku), "Sale: sku already created");
         if (notificationsReceiver != address(0)) {
+            // solhint-disable-next-line reason-string
             require(notificationsReceiver.isContract(), "Sale: receiver is not a contract");
         }
         SkuInfo storage skuInfo = _skuInfos[sku];
@@ -355,9 +351,7 @@ abstract contract Sale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pa
      * @dev If this function is overriden, the implementer SHOULD super call this before.
      * @param purchase The purchase conditions.
      */
-    function _validation(
-        PurchaseData memory purchase
-    ) internal virtual override view {
+    function _validation(PurchaseData memory purchase) internal view virtual override {
         require(purchase.recipient != address(0), "Sale: zero address recipient");
         require(purchase.token != address(0), "Sale: zero address token");
         require(purchase.quantity != 0, "Sale: zero quantity purchase");
@@ -381,9 +375,7 @@ abstract contract Sale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pa
      * @dev If this function is overriden, the implementer SHOULD super call it.
      * @param purchase The purchase conditions.
      */
-    function _delivery(
-        PurchaseData memory purchase
-    ) internal virtual override {
+    function _delivery(PurchaseData memory purchase) internal virtual override {
         SkuInfo memory skuInfo = _skuInfos[purchase.sku];
         if (skuInfo.totalSupply != SUPPLY_UNLIMITED) {
             _skuInfos[purchase.sku].remainingSupply = skuInfo.remainingSupply.sub(purchase.quantity);
@@ -401,9 +393,7 @@ abstract contract Sale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pa
      * @dev If this function is overriden, the implementer SHOULD super call it.
      * @param purchase The purchase conditions.
      */
-    function _notification(
-        PurchaseData memory purchase
-    ) internal virtual override {
+    function _notification(PurchaseData memory purchase) internal virtual override {
         emit Purchase(
             purchase.purchaser,
             purchase.recipient,
@@ -412,13 +402,12 @@ abstract contract Sale is PurchaseLifeCycles, ISale, PayoutWallet, Startable, Pa
             purchase.quantity,
             purchase.userData,
             purchase.totalPrice,
-            abi.encodePacked(
-                purchase.pricingData,
-                purchase.paymentData,
-                purchase.deliveryData));
+            abi.encodePacked(purchase.pricingData, purchase.paymentData, purchase.deliveryData)
+        );
 
         address notificationsReceiver = _skuInfos[purchase.sku].notificationsReceiver;
         if (notificationsReceiver != address(0)) {
+            // solhint-disable-next-line reason-string
             require(
                 IPurchaseNotificationsReceiver(notificationsReceiver).onPurchaseNotificationReceived(
                     purchase.purchaser,

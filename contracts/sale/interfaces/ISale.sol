@@ -34,8 +34,8 @@ interface ISale {
      * @param sku The identifier of the created SKU.
      * @param totalSupply The initial total supply for sale.
      * @param maxQuantityPerPurchase The maximum allowed quantity for a single purchase.
-     * @param notificationsReceiver If not the zero address, the address of a contract on which `onPurchaseNotificationReceived` will be called after each purchase,
-     *  If this is the zero address, the call is not enabled.
+     * @param notificationsReceiver If not the zero address, the address of a contract on which `onPurchaseNotificationReceived` will be called after
+     *  each purchase. If this is the zero address, the call is not enabled.
      */
     event SkuCreation(bytes32 sku, uint256 totalSupply, uint256 maxQuantityPerPurchase, address notificationsReceiver);
 
@@ -77,6 +77,7 @@ interface ISale {
      * @dev MUST NOT be the zero address.
      * @return the magic value used to represent the ETH payment token.
      */
+    // solhint-disable-next-line func-name-mixedcase
     function TOKEN_ETH() external pure returns (address);
 
     /**
@@ -84,6 +85,7 @@ interface ISale {
      * @dev MUST NOT be zero.
      * @return the magic value used to represent an infinite, never-decreasing SKU's supply.
      */
+    // solhint-disable-next-line func-name-mixedcase
     function SUPPLY_UNLIMITED() external pure returns (uint256);
 
     /**
