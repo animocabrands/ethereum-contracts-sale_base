@@ -1,0 +1,56 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "KyberAdapter",
+  "sourceName": "contracts/oracle/KyberAdapter.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_kyberProxy",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "fallback"
+    },
+    {
+      "inputs": [],
+      "name": "KYBER_ETH_ADDRESS",
+      "outputs": [
+        {
+          "internalType": "contract IERC20",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "kyber",
+      "outputs": [
+        {
+          "internalType": "contract IKyberNetworkProxy",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "receive"
+    }
+  ],
+  "bytecode": "0x6080604052600180546001600160a01b03191673eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee17905534801561003657600080fd5b506040516101763803806101768339818101604052602081101561005957600080fd5b5051600080546001600160a01b039092166001600160a01b031990921691909117905560ec8061008a6000396000f3fe60806040526004361060295760003560e01c806329f7fc9e146031578063a2d10ba514606c57602f565b36602f57005b005b348015603c57600080fd5b506043607e565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b348015607757600080fd5b506043609a565b60015473ffffffffffffffffffffffffffffffffffffffff1681565b60005473ffffffffffffffffffffffffffffffffffffffff168156fea26469706673582212202c9f229a8e9c5d3139b92da39749bc1a2dd420e0354e04aeded33de39370634a64736f6c63430006080033",
+  "deployedBytecode": "0x60806040526004361060295760003560e01c806329f7fc9e146031578063a2d10ba514606c57602f565b36602f57005b005b348015603c57600080fd5b506043607e565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b348015607757600080fd5b506043609a565b60015473ffffffffffffffffffffffffffffffffffffffff1681565b60005473ffffffffffffffffffffffffffffffffffffffff168156fea26469706673582212202c9f229a8e9c5d3139b92da39749bc1a2dd420e0354e04aeded33de39370634a64736f6c63430006080033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
