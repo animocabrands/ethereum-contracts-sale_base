@@ -2,13 +2,11 @@
 
 pragma solidity 0.6.8;
 
-
 /**
  * @title IPurchaseNotificationsReceiver
  * Interface for any contract that wants to support purchase notifications from a Sale contract.
  */
 interface IPurchaseNotificationsReceiver {
-
     /**
      * Handles the receipt of a purchase notification.
      * @dev This function MUST return the function selector, otherwise the caller will revert the transaction.
@@ -24,7 +22,8 @@ interface IPurchaseNotificationsReceiver {
      * @param pricingData Implementation-specific extra pricing data, such as details about discounts applied.
      * @param paymentData Implementation-specific extra payment data, such as conversion rates.
      * @param deliveryData Implementation-specific extra delivery data, such as purchase receipts.
-     * @return `bytes4(keccak256("onPurchaseNotificationReceived(address,address,address,bytes32,uint256,bytes,uint256,bytes32[],bytes32[],bytes32[])"))`
+     * @return `bytes4(keccak256(
+     *  "onPurchaseNotificationReceived(address,address,address,bytes32,uint256,bytes,uint256,bytes32[],bytes32[],bytes32[])"))`
      */
     function onPurchaseNotificationReceived(
         address purchaser,
@@ -37,5 +36,5 @@ interface IPurchaseNotificationsReceiver {
         bytes32[] calldata pricingData,
         bytes32[] calldata paymentData,
         bytes32[] calldata deliveryData
-    ) external pure returns (bytes4);
+    ) external returns (bytes4);
 }

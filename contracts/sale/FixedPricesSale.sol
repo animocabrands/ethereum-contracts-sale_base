@@ -3,14 +3,14 @@
 pragma solidity 0.6.8;
 
 import "@animoca/ethereum-contracts-erc20_base/contracts/token/ERC20/IERC20.sol";
-import "./AbstractSale.sol";
+import "./abstract/Sale.sol";
 
 /**
  * @title FixedPricesSale
- * An AbstractSale which implements a fixed prices strategy.
+ * An Sale which implements a fixed prices strategy.
  *  The final implementer is responsible for implementing any additional pricing and/or delivery logic.
  */
-contract FixedPricesSale is AbstractSale {
+contract FixedPricesSale is Sale {
     /**
      * Constructor.
      * @dev Emits the `MagicValues` event.
@@ -23,7 +23,7 @@ contract FixedPricesSale is AbstractSale {
         address payoutWallet_,
         uint256 skusCapacity,
         uint256 tokensPerSkuCapacity
-    ) internal AbstractSale(payoutWallet_, skusCapacity, tokensPerSkuCapacity) {}
+    ) internal Sale(payoutWallet_, skusCapacity, tokensPerSkuCapacity) {}
 
     /*                               Internal Life Cycle Functions                               */
 
@@ -38,7 +38,7 @@ contract FixedPricesSale is AbstractSale {
      * @dev Reverts in case of price overflow.
      * @param purchase The purchase conditions.
      */
-    function _pricing(PurchaseData memory purchase) internal virtual override view {
+    function _pricing(PurchaseData memory purchase) internal view virtual override {
         SkuInfo storage skuInfo = _skuInfos[purchase.sku];
         require(skuInfo.totalSupply != 0, "Sale: unsupported SKU");
         EnumMap.Map storage prices = skuInfo.prices;
@@ -67,21 +67,20 @@ contract FixedPricesSale is AbstractSale {
                 purchase.purchaser.transfer(change);
             }
         } else {
-            require(
-                IERC20(purchase.token).transferFrom(_msgSender(), payoutWallet, purchase.totalPrice),
-                "Sale: ERC20 payment failed"
-            );
+            require(IERC20(purchase.token).transferFrom(_msgSender(), payoutWallet, purchase.totalPrice), "Sale: ERC20 payment failed");
         }
     }
 
-    /*                               Internal Utility Functions                               */
+    /*                               Internal Utility Functions                                  */
 
-    function _unitPrice(PurchaseData memory purchase, EnumMap.Map storage prices)
-        internal
-        virtual
-        view
-        returns (uint256 unitPrice)
-    {
+    /**
+     * Retrieves the unit price of a SKU for the specified payment token.
+     * @dev Reverts if the specified payment token is unsupported.
+     * @param purchase The purchase conditions specifying the payment token with which the unit price will be retrieved.
+     * @param prices Storage pointer to a mapping of SKU token prices to retrieve the unit price from.
+     * @return unitPrice The unit price of a SKU for the specified payment token.
+     */
+    function _unitPrice(PurchaseData memory purchase, EnumMap.Map storage prices) internal view virtual returns (uint256 unitPrice) {
         unitPrice = uint256(prices.get(bytes32(uint256(purchase.token))));
         require(unitPrice != 0, "Sale: unsupported payment token");
     }

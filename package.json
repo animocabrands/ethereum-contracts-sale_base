@@ -1,11 +1,40 @@
 {
   "name": "@animoca/ethereum-contracts-sale_base",
-  "version": "6.0.0",
+  "version": "7.0.0",
   "description": "Solidity sale contracts managing inventory purchases with ETH/ERC-20 token payments",
   "scripts": {
-    "compile": "./node_modules/@animoca/ethereum-contracts-core_library/scripts/oz-compile.sh",
-    "test": "./scripts/ganache-test.sh",
-    "coverage": "./scripts/ganache-coverage.sh"
+    "postinstall": "node ./.setup.js",
+    "lint:js": "eslint \"**/*.{js,ts}\"",
+    "lint:sol": "solhint \"contracts/**/*.sol\"",
+    "lint": "run-s lint:js lint:sol",
+    "fix:js": "eslint --fix \"**/*.{js,ts}\"",
+    "fix:sol": "solhint --fix \"contracts/**/*.sol\"",
+    "fix": "run-s fix:js fix:sol",
+    "format:js": "prettier --write \"**/*.{ts,js}\"",
+    "format:sol": "prettier --write \"**/*.sol\"",
+    "format": "run-s format:js format:sol",
+    "compile": "hardhat compile --show-stack-traces",
+    "flatten": "hardhat flatten-all --show-stack-traces",
+    "smartcheck": "smartcheck -p contracts &> smartcheck.log",
+    "test": "hardhat test --show-stack-traces",
+    "coverage": "hardhat coverage --show-stack-traces",
+    "ganache": "ganache-cli -g 1000000000",
+    "gas-report": "wait-on tcp:8545 && cross-env REPORT_GAS=true hardhat --network localhost test --show-stack-traces",
+    "doc:slate:setup_tofix": "node documentation/setup-slate.js",
+    "doc:slate:generate_tofix": "node documentation/generate-slate.js",
+    "doc:sol": "hardhat docgen --show-stack-traces",
+    "doc": "run-s doc:sol",
+    "clean:vscode": "rm -rf .vscode/extensions.json .vscode/launch.json .vscode/settings.json",
+    "clean:compile": "rm -rf cache",
+    "clean:artifacts:soft": "./.clean-artifacts.sh",
+    "clean:artifacts:hard": "rm -rf artifacts",
+    "clean:flatten": "rm -rf contracts_flattened",
+    "clean:smartcheck": "rm -rf smartcheck*",
+    "clean:coverage": "rm -rf coverage* .coverage*",
+    "clean:doc": "rm -rf docs",
+    "clean": "run-p clean:compile clean:artifacts:soft clean:flatten clean:smartcheck clean:coverage clean:doc",
+    "run-all": "run-s format fix clean clean:artifacts:hard compile flatten smartcheck test coverage doc",
+    "prepack": "run-s clean:artifacts:hard compile clean clean:vscode"
   },
   "repository": {
     "type": "git",
@@ -18,14 +47,15 @@
   "author": "Animoca Brands",
   "license": "MIT",
   "dependencies": {
-    "ganache-cli": "^6.9.1"
+    "ganache-cli": "^6.12.2"
   },
   "devDependencies": {
-    "@animoca/blockchain-inventory_metadata": "^0.0.1",
-    "@animoca/ethereum-contracts-assets_inventory": "^3.0.0",
-    "@animoca/ethereum-contracts-core_library": "^3.1.1",
-    "@animoca/ethereum-contracts-erc20_base": "^3.0.0",
-    "@truffle/provisioner": "^0.2.5",
-    "@uniswap/v2-periphery": "^1.1.0-beta.0"
+    "@animoca/blockchain-inventory_metadata": "=0.1.0",
+    "@animoca/ethereum-contracts-assets_inventory": "=5.0.0",
+    "@animoca/ethereum-contracts-core_library": "=4.0.3",
+    "@animoca/ethereum-contracts-erc20_base": "=3.0.0",
+    "@openzeppelin/test-helpers": "git+https://github.com/nataouze/openzeppelin-test-helpers.git#fix_bn_array_event_args",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0",
+    "hardhat": "^2.0.9"
   }
 }
