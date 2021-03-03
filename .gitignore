@@ -3,6 +3,7 @@
 !.vscode/launch.json.default
 !.vscode/extensions.json.default
 
+build/
 cache/
 artifacts/*
 !artifacts/build-info/
@@ -12,8 +13,10 @@ artifacts/*
 coverage*
 .coverage*
 smartcheck*
-contracts_flattened/
+flattened/
 docs/
+
+ganache.log
 
 yarn-error.log
 node_modules/

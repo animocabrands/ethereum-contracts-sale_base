@@ -28,7 +28,7 @@
     "clean:compile": "rm -rf cache",
     "clean:artifacts:soft": "./.clean-artifacts.sh",
     "clean:artifacts:hard": "rm -rf artifacts",
-    "clean:flatten": "rm -rf contracts_flattened",
+    "clean:flatten": "rm -rf flattened",
     "clean:smartcheck": "rm -rf smartcheck*",
     "clean:coverage": "rm -rf coverage* .coverage*",
     "clean:doc": "rm -rf docs",
