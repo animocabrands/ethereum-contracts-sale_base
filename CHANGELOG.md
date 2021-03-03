@@ -1,5 +1,62 @@
 # Changelog
 
+## 7.0.0
+
+### New Features
+ * `FixedOrderInventorySale.sol`: A new FixedPricesSale contract for selling inventory in a fixed sequential order.
+ * `IUniswapV2Pair.sol`: A new interface for interacting with Uniswap V2 token pair contracts.
+ * `SwapSale.sol`: A new abstract oracle-based sale contract using token swap rates for dynamically determining SKU prices.
+ * `UniswapOracleSale.sol`: A new Uniswap-based implementation of `OracleSale.sol` that uses token reserve conversion rates for dynamically determining SKU prices.
+ * `UniswapSwapSale.sol`: A new Uniswap-based implementation of `SwapSale.sol` that uses token swap rates for dynamically determining SKU prices.
+ * `UniswapV2Router.sol`: Added `factory()` interface for retrieving the Uniswap V2 factory used by the router.
+ * `UniswapV2Router.sol`: Added `swapETHForExactTokens()` interface for performing a token swap with ETH.
+ * `UniswapV2Router.sol`: Added `swapTokensForExactETH()` interface for performint a token swap to ETH.
+
+### Breaking changes
+ * `AbstractSale.sol`: Relocated from `contracts/sale/` to `contracts/sale/abstract/`.
+ * `AbstractSale.sol`: Renamed to `Sale.sol`.
+ * `IKyberNetworkProxy.sol`: Relocated from `contracts/sale/payment/interfaces/` to `contracts/oracle/interfaces/`.
+ * `ISale.sol`: `Purchase` event pricing, payment, and delivery data parameters are aggregated into a packed encoding (`bytes`) of the arrays.
+ * `IUniswapV2Router.sol`: Relocated from `contracts/sale/payment/interfaces/` to `contracts/oracle/interfaces/`.
+ * `IWETH.sol`: Removed.
+ * `KyberAdapter.sol`: Relocated from `contracts/sale/payment/` to `contracts/oracle/`.
+ * `OracleSale.sol`: Relocated from `contracts/sale/` to `contracts/sale/abstract/`.
+ * `OracleSale.sol`: Renamed `_referenceToken` state member variable to `referenceToken`.
+ * `OracleSale.sol`: Removed `referenceToken()` getter function and mad `referenceToken` state member variable public.
+ * `OracleSale.sol`: Changed `conversionRates()` override to accept an additional argument for implementation-specific extra `bytes` data for deriving the conversion rate.
+ * `OracleSale.sol`: Changed `_conversionRate()` abstract function to accept an additiona argument for implementation-specific extra `bytes` data for deriving the conversion rate.
+ * `OracleSale.sol`: Removed `_unitPrice()`.
+ * `PayoutToken.sol`: Removed.
+ * `PurchaseLifeCycles.sol`: Relocated from `contracts/sale/` to `contracts/sale/abstract/`.
+ * `PurchaseNotificationsReceiver.sol`: Relocated from `contracts/sale/` to `contracts/sale/abstract/`.
+ * `Sale.sol`: `estimatePurchase()` return parameter `priceInfo` renamed to `pricingData`.
+ * `Sale.sol`: Changed `createSku()` into an internal function `_createSku()` for added flexibility in defining an implementation-specific sku creation function. 
+ * `UniswapV2Adapter.sol`: Relocated from `contracts/sale/payment/` to `contracts/oracle/`.
+ * `UniswapV2Adapter.sol`: Replaced `_conversionRate()` with `_getAmountsIn()` for retrieving the amount of source tokens necessary to convert into an amount of target tokens.
+ * `UniswapV2Adapter.sol`: Replaced `_swap()` with `_swapTokensForExactAmount()` for performing a token swap of source tokens to target tokens.
+ * Updated the `package.json` package dependency versions.
+ * Removed `package-lock.json` in preference for using `yarn` as the default package manager.
+ * Removed `@animoca/ethereum-contracts-assets_inventory` as a package dependency.
+ * Removed `@animoca/blockchain-inventory_metadata` as a package dependency.
+ * Removed `@animoca/ethereum-contracts-assets_inventory/contracts/mocks/token/ERC1155721/AssetsInventoryMock.sol` as an imported test dependency.
+ * Updated the `@animoca/ethereum-contracts-core_library` package dependency version to v4.0.3.
+ * Using the Hardhat toolchain for source compilation and testing instead of vanilla Truffle.
+
+### Improvements
+ * Improved/corrected NatSpec documentation.
+ * `OracleSale.sol`: Added `_pricing()` override for calculating oracle-based pricing in addition to fixed pricing.
+ * `OracleSale.sol`: Added `_oraclePricing()` for handling the calculation of oracle-based pricing of a purchase.
+ * `PurchaseNotificationsReceiver.sol`: Minor gas optimization in its construction.
+ * `Sale.sol`: Added a `require` validation to `getSkuInfo()` to ensure that the sku being queried for exists.
+ * `Sale.sol`: Added a `require` validation to `_validation()` to ensure that the purchase token is not the zero address.
+ * `Sale.sol`: Added a `require` validation to `_validation()` to ensure that the SKU being purchased exists.
+ * `Sale.sol`: Added a `require` validation to `_validation()` to ensure that the purchase token is valid for the SKU.
+ * `UniswapV2Adapter.sol`: Added `_sortTokens()` utility function for deterministically ordering a token pair.
+ * `UniswapV2Adapter.sol`: Added `_pairFor()` utility function for retrieving the Uniswap V2 token pair contract for a given token pair.
+ * `UniswapV2Adapter.sol`: Added `_getReserves()` utility function for retrieving the total reserve amounts for a token pair.
+ * Updated the purchase scenario behavior testing so that ETH purchases and ERC20 purchases can be tested in isolation of one another.
+ * Updated the `truffle-config.js` with a workaround for an issue with Truffle in a test context, which should improve test run times.
+
 ## 6.0.0
 
 ### New Features

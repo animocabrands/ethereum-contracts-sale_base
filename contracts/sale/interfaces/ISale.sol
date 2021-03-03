@@ -34,8 +34,8 @@ interface ISale {
      * @param sku The identifier of the created SKU.
      * @param totalSupply The initial total supply for sale.
      * @param maxQuantityPerPurchase The maximum allowed quantity for a single purchase.
-     * @param notificationsReceiver If not the zero address, the address of a contract on which `onPurchaseNotificationReceived` will be called after each purchase,
-     *  If this is the zero address, the call is not enabled.
+     * @param notificationsReceiver If not the zero address, the address of a contract on which `onPurchaseNotificationReceived` will be called after
+     *  each purchase. If this is the zero address, the call is not enabled.
      */
     event SkuCreation(bytes32 sku, uint256 totalSupply, uint256 maxQuantityPerPurchase, address notificationsReceiver);
 
@@ -58,9 +58,8 @@ interface ISale {
      * @param quantity The purchased quantity.
      * @param userData Optional extra user input data.
      * @param totalPrice The amount of `token` paid.
-     * @param pricingData Implementation-specific extra pricing data, such as details about discounts applied.
-     * @param paymentData Implementation-specific extra payment data, such as conversion rates.
-     * @param deliveryData Implementation-specific extra delivery data, such as purchase receipts.
+     * @param extData Implementation-specific extra purchase data, such as
+     *  details about discounts applied, conversion rates, purchase receipts, etc.
      */
     event Purchase(
         address indexed purchaser,
@@ -70,9 +69,7 @@ interface ISale {
         uint256 quantity,
         bytes userData,
         uint256 totalPrice,
-        bytes32[] pricingData,
-        bytes32[] paymentData,
-        bytes32[] deliveryData
+        bytes extData
     );
 
     /**
@@ -80,6 +77,7 @@ interface ISale {
      * @dev MUST NOT be the zero address.
      * @return the magic value used to represent the ETH payment token.
      */
+    // solhint-disable-next-line func-name-mixedcase
     function TOKEN_ETH() external pure returns (address);
 
     /**
@@ -87,10 +85,12 @@ interface ISale {
      * @dev MUST NOT be zero.
      * @return the magic value used to represent an infinite, never-decreasing SKU's supply.
      */
+    // solhint-disable-next-line func-name-mixedcase
     function SUPPLY_UNLIMITED() external pure returns (uint256);
 
     /**
      * Performs a purchase.
+     * @dev Reverts if `recipient` is the zero address.
      * @dev Reverts if `token` is the address zero.
      * @dev Reverts if `quantity` is zero.
      * @dev Reverts if `quantity` is greater than the maximum purchase quantity.
@@ -115,6 +115,8 @@ interface ISale {
     /**
      * Estimates the computed final total amount to pay for a purchase, including any potential discount.
      * @dev This function MUST compute the same price as `purchaseFor` would in identical conditions (same arguments, same point in time).
+     * @dev If an implementer contract uses the `pricingData` field, it SHOULD document how to interpret the values.
+     * @dev Reverts if `recipient` is the zero address.
      * @dev Reverts if `token` is the zero address.
      * @dev Reverts if `quantity` is zero.
      * @dev Reverts if `quantity` is greater than the maximum purchase quantity.
